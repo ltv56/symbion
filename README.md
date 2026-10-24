@@ -28,3 +28,14 @@ apps/
 packages/
   ledger/   append-only point ledger (internal package)
 ```
+
+## CI and Docker
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint, format check, typecheck, tests and build on every PR and on pushes to `dev` and `master`. Run the same checks locally with `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build`.
+
+Build and run the API image from the repo root:
+
+```bash
+docker build -f apps/api/Dockerfile -t symbion-api .
+docker run --rm -p 3000:3000 symbion-api
+```
