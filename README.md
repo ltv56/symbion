@@ -16,6 +16,7 @@ pnpm typecheck   # all workspaces
 pnpm test        # all workspaces
 
 pnpm --filter @symbion/api start:dev   # API on http://localhost:3000
+# Swagger UI on http://localhost:3000/docs while the API runs
 pnpm --filter @symbion/web dev         # web on http://localhost:5173
 ```
 
