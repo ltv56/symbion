@@ -1,7 +1,25 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { MembersModule } from './members/members.module';
 
 @Module({
-  imports: [MembersModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.getOrThrow<string>('DB_HOST'),
+        port: config.get<number>('DB_PORT', 3306),
+        database: config.getOrThrow<string>('DB_NAME'),
+        username: config.getOrThrow<string>('DB_USER'),
+        password: config.getOrThrow<string>('DB_PASSWORD'),
+        synchronize: false,
+        logging: true,
+      }),
+    }),
+    MembersModule,
+  ],
 })
 export class AppModule {}
