@@ -2,7 +2,7 @@
 
 ## Members (in-memory)
 
-Start the api: `pnpm --filter api start` (listens on `PORT`, default 3000).
+Start the api: `pnpm start` (listens on `PORT`, default 3000).
 
 ```sh
 # create a member -> 201 {"id":1,"name":"An","email":"an@x.com"}
@@ -17,6 +17,12 @@ curl -s localhost:3000/members/1
 
 # error path -> 404 {"message":"Member with id 99 not found",...}
 curl -s localhost:3000/members/99
+
+# error path -> 400 (id is not an integer)
+curl -s localhost:3000/members/abc
+
+# error path -> 400 (name and email are required)
+curl -s -X POST localhost:3000/members -H 'content-type: application/json' -d '{}'
 ```
 
 Data lives in memory and is lost on restart.
