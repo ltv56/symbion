@@ -39,3 +39,14 @@ Build and run the API image from the repo root:
 docker build -f apps/api/Dockerfile -t symbion-api .
 docker run --rm -p 3000:3000 symbion-api
 ```
+
+## Docker Compose
+
+`infra/compose.yaml` runs the API and MySQL 8.4. The API starts after MySQL reports healthy.
+
+```bash
+cp infra/.env.example infra/.env   # then replace every change-me with your own password
+docker compose -f infra/compose.yaml up --build
+```
+
+The API is on http://localhost:3000 and MySQL on `localhost:3306` (override with `API_PORT` and `DB_PORT` in `infra/.env`). Data lives in the `mysql-data` volume; `docker compose -f infra/compose.yaml down -v` removes it.
