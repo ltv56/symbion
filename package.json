@@ -11,7 +11,8 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "oxlint --type-aware",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
