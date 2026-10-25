@@ -51,3 +51,7 @@ docker compose -f infra/compose.yaml up --build
 ```
 
 The API is on http://localhost:3000 and MySQL on `localhost:3306` (override with `API_PORT` and `DB_PORT` in `infra/.env`). Data lives in the `mysql-data` volume; `docker compose -f infra/compose.yaml down -v` removes it.
+
+## Database connection
+
+The API connects to MySQL through TypeORM with SQL logging on and `synchronize` off; schema changes are hand-written SQL. It reads `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and `DB_PASSWORD` and refuses to start if one is missing. The e2e tests need a running MySQL: start one with `pnpm db:up`, then export the same variables (see `infra/.env.example`, with `DB_HOST=127.0.0.1`).
