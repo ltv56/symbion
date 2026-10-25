@@ -6,6 +6,9 @@
     "node": ">=26"
   },
   "scripts": {
+    "dev": "pnpm --filter @symbion/api start:dev",
+    "dev:web": "pnpm --filter @symbion/web dev",
+    "start": "pnpm --filter @symbion/api start",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
