@@ -1,25 +1,48 @@
-import { Injectable } from '@nestjs/common';
-import type { Member } from './member';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
+import { Member } from './member.entity';
 
 @Injectable()
 export class MembersService {
-  private members: Member[] = [];
-  private nextId = 1;
+  constructor(
+    @InjectRepository(Member) private readonly members: Repository<Member>,
+  ) {}
 
-  findAll(): Member[] {
-    return [...this.members];
+  findAll(): Promise<Member[]> {
+    return this.members.find();
   }
-  findOne(id: number): Member | undefined {
-    return this.members.find((member) => member.id === id);
-  }
-  create(name: string, email: string): Member {
-    const member: Member = {
-      id: this.nextId++,
-      name,
-      email,
-    };
 
-    this.members.push(member);
-    return member;
+  findOne(id: number): Promise<Member | null> {
+    return this.members.findOneBy({ id });
+  }
+
+  async create(
+    name: string,
+    email: string,
+    merchantId: number,
+  ): Promise<Member> {
+    const [tier] = await this.members.query(
+      'SELECT id FROM tiers ORDER BY min_points ASC LIMIT 1',
+    );
+
+    try {
+      return await this.members.save(
+        this.members.create({
+          name,
+          email,
+          merchantId,
+          tierId: Number(tier.id),
+        }),
+      );
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
+      ) {
+        throw new ConflictException(`Email ${email} is already registered`);
+      }
+      throw error;
+    }
   }
 }

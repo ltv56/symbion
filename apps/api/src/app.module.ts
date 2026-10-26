@@ -15,6 +15,8 @@ import { MembersModule } from './members/members.module';
         database: config.getOrThrow<string>('DB_NAME'),
         username: config.getOrThrow<string>('DB_USER'),
         password: config.getOrThrow<string>('DB_PASSWORD'),
+        autoLoadEntities: true,
+        bigNumberStrings: false,
         synchronize: false,
         logging: true,
       }),
