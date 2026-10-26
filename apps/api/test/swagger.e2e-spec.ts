@@ -27,4 +27,14 @@ describe('Swagger', () => {
     expect(res.body.openapi).toBeDefined();
     expect(res.body.paths['/members']).toBeDefined();
   });
+
+  it('documents both the created and the replayed order responses', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/docs-json')
+      .expect(200);
+    const responses = res.body.paths['/orders'].post.responses;
+    expect(Object.keys(responses)).toEqual(
+      expect.arrayContaining(['200', '201']),
+    );
+  });
 });

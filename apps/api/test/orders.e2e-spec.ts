@@ -64,7 +64,7 @@ describe('Orders', () => {
     );
 
     expect(res.body).toMatchObject({ merchantId, memberId });
-    expect(Number(res.body.amount)).toBe(120.5);
+    expect(res.body.amount).toBe('120.50');
     const rows = await dataSource.query(
       'SELECT idempotency_key FROM orders WHERE id = ?',
       [res.body.id],
@@ -73,10 +73,22 @@ describe('Orders', () => {
   });
 
   it.each([
+    ['one cent', 0.01, '0.01'],
+    ['the column maximum', 9_999_999_999.99, '9999999999.99'],
+  ])('accepts %s', async (_label, amount, stored) => {
+    const res = await post('k1', { memberEmail, amount }).expect(201);
+    expect(res.body.amount).toBe(stored);
+  });
+
+  it.each([
     ['no idempotency key', undefined, { memberEmail, amount: 10 }],
     ['a missing amount', 'k1', { memberEmail }],
     ['a zero amount', 'k1', { memberEmail, amount: 0 }],
     ['a negative amount', 'k1', { memberEmail, amount: -5 }],
+    ['an amount below one cent', 'k1', { memberEmail, amount: 0.004 }],
+    ['an amount with three decimals', 'k1', { memberEmail, amount: 10.005 }],
+    ['an exponent amount below one cent', 'k1', { memberEmail, amount: 1e-9 }],
+    ['an amount over the column limit', 'k1', { memberEmail, amount: 1e10 }],
     ['an invalid email', 'k1', { memberEmail: 'nope', amount: 10 }],
     [
       'a merchantId in the body',
@@ -111,6 +123,23 @@ describe('Orders', () => {
     expect(res1.body.id).toBe(res2.body.id);
     const rows = await dataSource.query('SELECT COUNT(*) as count FROM orders');
     expect(Number(rows[0].count)).toBe(1);
+  });
+
+  it('keeps the original values when a repeated key has a different body', async () => {
+    await post('k1', { memberEmail, amount: 10 }).expect(201);
+    const res2 = await post('k1', { memberEmail, amount: 99 }).expect(200);
+    expect(res2.body.amount).toBe('10.00');
+    const rows = await dataSource.query('SELECT amount FROM orders');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].amount).toBe('10.00');
+  });
+
+  it('treats idempotency keys that differ only by case as different', async () => {
+    const res1 = await post('Order-1', { memberEmail, amount: 10 }).expect(201);
+    const res2 = await post('order-1', { memberEmail, amount: 10 }).expect(201);
+    expect(res1.body.id).not.toBe(res2.body.id);
+    const rows = await dataSource.query('SELECT COUNT(*) as count FROM orders');
+    expect(Number(rows[0].count)).toBe(2);
   });
 
   it('creates one order when the same key arrives in parallel', async () => {

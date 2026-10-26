@@ -8,7 +8,12 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiHeader, ApiSecurity } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiHeader,
+  ApiOkResponse,
+  ApiSecurity,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ApiKeyGuard } from '../merchants/api-key.guard';
 import { CurrentMerchant } from '../merchants/current-merchant.decorator';
@@ -25,6 +30,11 @@ export class OrdersController {
   @UseGuards(ApiKeyGuard)
   @ApiSecurity('api-key')
   @ApiHeader({ name: 'Idempotency-Key', required: true })
+  @ApiCreatedResponse({ type: Order, description: 'Order created' })
+  @ApiOkResponse({
+    type: Order,
+    description: 'Idempotency-Key already used: the original order',
+  })
   async create(
     @Body() body: CreateOrderDto,
     @CurrentMerchant() merchant: Merchant,

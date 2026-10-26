@@ -50,4 +50,4 @@ No auth columns yet: members are identified by email for the demo. `POST /member
 | `amount`          | DECIMAL(12,2)       | DECIMAL avoids float rounding         |
 | `created_at`      | TIMESTAMP           | defaults to now                       |
 
-`UNIQUE (merchant_id, idempotency_key)` (`uq_orders_merchant_idempotency_key`) is the last line of defence against duplicate orders. It is scoped per merchant, so two merchants may reuse the same key.
+`UNIQUE (merchant_id, idempotency_key)` (`uq_orders_merchant_idempotency_key`) is the last line of defence against duplicate orders. `idempotency_key` uses the binary collation `utf8mb4_bin`, so keys that differ only by case are different orders (the default collation would treat them as equal). It is scoped per merchant, so two merchants may reuse the same key.
