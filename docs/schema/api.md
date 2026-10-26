@@ -24,6 +24,8 @@ Unexpected errors return 500 with `"message": "Internal server error"`; the caus
 
 Logs record the method, path and status of failed requests only, never request bodies or headers, so API keys do not reach the logs.
 
+With `NODE_ENV=production` the SQL log (`RedactedSqlLogger`) prints the query text only: no parameters (member emails) and no MySQL error message (it repeats the duplicate value). Failed queries log the MySQL `code` and `errno`. Other environments keep TypeORM's full log.
+
 Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filter.ts`.
 
 ## Authentication
