@@ -41,6 +41,14 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - '${API_PORT:-3000}:3000'
+    healthcheck:
+      # busybox wget ships with the alpine image; 127.0.0.1 because the api listens on IPv4 only
+      test:
+        ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       mysql:
         condition: service_healthy
