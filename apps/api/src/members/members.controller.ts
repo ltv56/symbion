@@ -6,7 +6,12 @@ import {
   Body,
   ParseIntPipe,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiSecurity } from '@nestjs/swagger';
+import { ApiKeyGuard } from '../merchants/api-key.guard';
+import { CurrentMerchant } from '../merchants/current-merchant.decorator';
+import { Merchant } from '../merchants/merchant.entity';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { MembersService } from './members.service';
 import { Member } from './member.entity';
@@ -32,8 +37,12 @@ export class MembersController {
   }
 
   @Post()
-  create(@Body() body: CreateMemberDto): Promise<Member> {
-    // Manual field checks removed: the global ValidationPipe validates CreateMemberDto.
-    return this.membersService.create(body.name, body.email, body.merchantId);
+  @UseGuards(ApiKeyGuard)
+  @ApiSecurity('api-key')
+  create(
+    @Body() body: CreateMemberDto,
+    @CurrentMerchant() merchant: Merchant,
+  ): Promise<Member> {
+    return this.membersService.create(body.name, body.email, merchant.id);
   }
 }

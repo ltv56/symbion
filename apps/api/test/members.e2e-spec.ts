@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -8,6 +9,7 @@ describe('Members', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let merchantId: number;
+  const apiKey = 'test-api-key';
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -23,7 +25,8 @@ describe('Members', () => {
     await dataSource.query('DELETE FROM tiers');
     await dataSource.query('DELETE FROM merchants');
     const merchant = await dataSource.query(
-      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop A', REPEAT('a', 64))`,
+      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop A', ?)`,
+      [createHash('sha256').update(apiKey).digest('hex')],
     );
     merchantId = Number(merchant.insertId);
     await dataSource.query(
@@ -38,7 +41,8 @@ describe('Members', () => {
   it('creates a member on the lowest tier', async () => {
     const res = await request(app.getHttpServer())
       .post('/members')
-      .send({ name: 'John Doe', email: 'john@example.com', merchantId })
+      .set('x-api-key', apiKey)
+      .send({ name: 'John Doe', email: 'john@example.com' })
       .expect(201);
 
     expect(res.body).toMatchObject({
@@ -54,15 +58,24 @@ describe('Members', () => {
   });
 
   it('returns 409 for a duplicate email', async () => {
-    const body = { name: 'John Doe', email: 'john@example.com', merchantId };
-    await request(app.getHttpServer()).post('/members').send(body).expect(201);
-    await request(app.getHttpServer()).post('/members').send(body).expect(409);
+    const body = { name: 'John Doe', email: 'john@example.com' };
+    await request(app.getHttpServer())
+      .post('/members')
+      .set('x-api-key', apiKey)
+      .send(body)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post('/members')
+      .set('x-api-key', apiKey)
+      .send(body)
+      .expect(409);
   });
 
   it('returns 400 when a field is missing', async () => {
     await request(app.getHttpServer())
       .post('/members')
-      .send({ name: 'John Doe', merchantId })
+      .set('x-api-key', apiKey)
+      .send({ name: 'John Doe' })
       .expect(400);
   });
 
@@ -70,8 +83,8 @@ describe('Members', () => {
     ['an invalid email', { name: 'John Doe', email: 'not-an-email' }],
     ['a blank name', { name: '   ', email: 'john@example.com' }],
     [
-      'a non-integer merchantId',
-      { name: 'John Doe', email: 'j@example.com', merchantId: 'x' },
+      'a merchantId in the body',
+      { name: 'John Doe', email: 'j@example.com', merchantId: 1 },
     ],
     [
       'an unknown field',
@@ -80,8 +93,18 @@ describe('Members', () => {
   ])('returns 400 for %s', async (_label, extra) => {
     await request(app.getHttpServer())
       .post('/members')
-      .send({ merchantId, ...extra })
+      .set('x-api-key', apiKey)
+      .send(extra)
       .expect(400);
+  });
+
+  it.each([
+    ['no api key', undefined],
+    ['an unknown api key', 'wrong-key'],
+  ])('returns 401 for %s', async (_label, key) => {
+    const req = request(app.getHttpServer()).post('/members');
+    if (key) req.set('x-api-key', key);
+    await req.send({ name: 'John Doe', email: 'john@example.com' }).expect(401);
   });
 
   it('returns 404 for an unknown id', async () => {
@@ -91,7 +114,8 @@ describe('Members', () => {
   it('gets a created member by id', async () => {
     const created = await request(app.getHttpServer())
       .post('/members')
-      .send({ name: 'John Doe', email: 'john@example.com', merchantId })
+      .set('x-api-key', apiKey)
+      .send({ name: 'John Doe', email: 'john@example.com' })
       .expect(201);
     const res = await request(app.getHttpServer())
       .get(`/members/${created.body.id}`)

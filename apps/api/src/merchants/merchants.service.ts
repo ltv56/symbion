@@ -25,6 +25,11 @@ export class MerchantsService {
     return this.merchants.findOneBy({ id });
   }
 
+  findByApiKey(apiKey: string): Promise<Merchant | null> {
+    const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
+    return this.merchants.findOneBy({ apiKeyHash });
+  }
+
   async create(name: string): Promise<CreatedMerchant> {
     const apiKey = randomBytes(32).toString('hex');
     const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');

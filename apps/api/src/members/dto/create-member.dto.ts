@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -13,7 +13,4 @@ export class CreateMemberDto {
   @Transform(trim)
   @IsEmail()
   email!: string;
-
-  @IsInt()
-  merchantId!: number;
 }
