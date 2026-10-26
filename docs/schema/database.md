@@ -37,4 +37,4 @@ Points are shared across merchants, so `email` is unique across the whole progra
 | `name`        | VARCHAR(255), null   |                                                          |
 | `created_at`  | TIMESTAMP            | defaults to now                                          |
 
-No auth columns yet: members are identified by email for the demo.
+No auth columns yet: members are identified by email for the demo. `POST /members` requires the merchant's `x-api-key` header (SHA-256 of the key is matched against `merchants.api_key_hash`) and sets `merchant_id` from it; the request body no longer carries `merchantId`.
