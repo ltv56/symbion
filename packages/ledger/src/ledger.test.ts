@@ -90,6 +90,21 @@ describe('ledger', () => {
     expect(second.lot.id).not.toBe(first.lot.id);
   });
 
+  it('does not let callers change stored lots', async () => {
+    const input = {
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 100,
+      idempotencyKey: 'key1',
+    };
+    const first = await ledger.earn(tx, input);
+    first.lot.remaining = 0;
+    const second = await ledger.earn(tx, input);
+    second.lot.remaining = 0;
+
+    await expect(ledger.balance(tx, 'member1')).resolves.toBe(100);
+  });
+
   it('throws when storage reports a duplicate but finds no lot', async () => {
     const storage = new InMemoryLedgerStorage<undefined>();
     jest.spyOn(storage, 'insertLot').mockRejectedValue(new DuplicateKeyError());

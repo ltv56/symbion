@@ -19,7 +19,7 @@ export class InMemoryLedgerStorage<Tx> implements LedgerStorage<Tx> {
       createdAt: new Date(),
     };
 
-    this.lots.set(key, lot);
+    this.lots.set(key, this.copy(lot));
     return lot;
   }
 
@@ -28,13 +28,23 @@ export class InMemoryLedgerStorage<Tx> implements LedgerStorage<Tx> {
     merchantId: Lot['merchantId'],
     idempotencyKey: Lot['idempotencyKey'],
   ): Promise<Lot | undefined> {
-    return this.lots.get(this.key(merchantId, idempotencyKey));
+    const lot = this.lots.get(this.key(merchantId, idempotencyKey));
+    return lot && this.copy(lot);
   }
 
   async sumRemaining(_tx: Tx, memberId: Lot['memberId']): Promise<number> {
     return [...this.lots.values()]
       .filter((lot) => lot.memberId === memberId)
       .reduce((sum, lot) => sum + lot.remaining, 0);
+  }
+
+  // Copies in and out so a caller can't change stored lots (like a DB row would be).
+  private copy(lot: Lot): Lot {
+    return {
+      ...lot,
+      expiresAt: lot.expiresAt && new Date(lot.expiresAt),
+      createdAt: new Date(lot.createdAt),
+    };
   }
 
   private key(
