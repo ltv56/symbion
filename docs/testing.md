@@ -1,5 +1,20 @@
 # Manual testing
 
+## Merchants (MySQL)
+
+```sh
+# create a merchant -> 201 {"id":1,"name":"Shop A","apiKey":"<64 hex chars>"}; the key is shown only once
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' \
+  -d '{"name":"Shop A"}'
+
+# list / get never include the key or its hash
+curl -s localhost:3000/merchants
+curl -s localhost:3000/merchants/1
+
+# error path -> 400 (blank name)
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d '{"name":" "}'
+```
+
 ## Members (MySQL)
 
 Needs MySQL with migrations applied (see Migrations) and at least one merchant and one tier row. Start the api: `pnpm start` (listens on `PORT`, default 3000). New members get the tier with the lowest `min_points`.
