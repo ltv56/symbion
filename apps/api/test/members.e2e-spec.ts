@@ -66,6 +66,24 @@ describe('Members', () => {
       .expect(400);
   });
 
+  it.each([
+    ['an invalid email', { name: 'John Doe', email: 'not-an-email' }],
+    ['a blank name', { name: '   ', email: 'john@example.com' }],
+    [
+      'a non-integer merchantId',
+      { name: 'John Doe', email: 'j@example.com', merchantId: 'x' },
+    ],
+    [
+      'an unknown field',
+      { name: 'John Doe', email: 'j@example.com', role: 'admin' },
+    ],
+  ])('returns 400 for %s', async (_label, extra) => {
+    await request(app.getHttpServer())
+      .post('/members')
+      .send({ merchantId, ...extra })
+      .expect(400);
+  });
+
   it('returns 404 for an unknown id', async () => {
     await request(app.getHttpServer()).get('/members/999999').expect(404);
   });
