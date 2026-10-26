@@ -17,6 +17,7 @@
     "format:check": "prettier --check .",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "db:up": "docker compose -f infra/compose.yaml up -d --wait mysql",
+    "db:migrate": "pnpm --filter @symbion/api migration:run",
     "db:down": "docker compose -f infra/compose.yaml down"
   },
   "devDependencies": {
