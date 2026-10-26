@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MerchantsModule } from './merchants/merchants.module';
     }),
     MembersModule,
     MerchantsModule,
+    OrdersModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

@@ -38,3 +38,16 @@ Points are shared across merchants, so `email` is unique across the whole progra
 | `created_at`  | TIMESTAMP            | defaults to now                                          |
 
 No auth columns yet: members are identified by email for the demo. `POST /members` requires the merchant's `x-api-key` header (SHA-256 of the key is matched against `merchants.api_key_hash`) and sets `merchant_id` from it; the request body no longer carries `merchantId`.
+
+## orders
+
+| Column            | Type                | Notes                                 |
+| ----------------- | ------------------- | ------------------------------------- |
+| `id`              | BIGINT UNSIGNED, PK | auto increment                        |
+| `merchant_id`     | BIGINT UNSIGNED, FK | `merchants(id)`; set from the API key |
+| `member_id`       | BIGINT UNSIGNED, FK | `members(id)`                         |
+| `idempotency_key` | VARCHAR(255)        | chosen by the merchant per order      |
+| `amount`          | DECIMAL(12,2)       | DECIMAL avoids float rounding         |
+| `created_at`      | TIMESTAMP           | defaults to now                       |
+
+`UNIQUE (merchant_id, idempotency_key)` (`uq_orders_merchant_idempotency_key`) is the last line of defence against duplicate orders. It is scoped per merchant, so two merchants may reuse the same key.

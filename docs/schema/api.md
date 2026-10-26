@@ -28,6 +28,19 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 
 ## Authentication
 
-- `POST /members` requires the `x-api-key` header of a merchant.
+- `POST /members` and `POST /orders` require the `x-api-key` header of a merchant.
 - `GET /members*` is unauthenticated until member auth is added.
 - `POST /merchants` is unauthenticated until admin auth is added.
+
+## POST /orders
+
+A merchant reports an order for a member. `merchant_id` comes from the API key, never from the body.
+
+| Input             | Notes                                                     |
+| ----------------- | --------------------------------------------------------- |
+| `x-api-key`       | header, required                                          |
+| `Idempotency-Key` | header, required, 1-255 characters; unique per merchant   |
+| `memberEmail`     | body, email of an existing member                         |
+| `amount`          | body, number greater than 0 with at most 2 decimal places |
+
+Responses: `201` with the created order (`amount` is a string such as `"99.90"`), `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member.
