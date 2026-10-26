@@ -1,0 +1,38 @@
+# Database schema
+
+MySQL 8, InnoDB, utf8mb4. Migrations are hand-written SQL in `apps/api/src/migrations/`.
+
+## merchants
+
+| Column         | Type                | Notes                                                      |
+| -------------- | ------------------- | ---------------------------------------------------------- |
+| `id`           | BIGINT UNSIGNED, PK | auto increment                                             |
+| `name`         | VARCHAR(255)        |                                                            |
+| `api_key_hash` | CHAR(64), UNIQUE    | SHA-256 hex digest (64 chars); the raw key is never stored |
+| `created_at`   | TIMESTAMP           | defaults to now                                            |
+
+## tiers
+
+Global: managed by the app admin, shared by all merchants (no `merchant_id`).
+
+| Column       | Type                 | Notes                                                   |
+| ------------ | -------------------- | ------------------------------------------------------- |
+| `id`         | BIGINT UNSIGNED, PK  | auto increment                                          |
+| `name`       | VARCHAR(255), UNIQUE | e.g. silver, gold                                       |
+| `min_points` | INT UNSIGNED         | threshold to reach this tier                            |
+| `earn_rate`  | DECIMAL(5,2)         | points per currency unit; DECIMAL avoids float rounding |
+
+## members
+
+Points are shared across merchants, so `email` is unique across the whole programme.
+
+| Column        | Type                 | Notes                                                    |
+| ------------- | -------------------- | -------------------------------------------------------- |
+| `id`          | BIGINT UNSIGNED, PK  | auto increment                                           |
+| `merchant_id` | BIGINT UNSIGNED, FK  | `merchants(id)`; the merchant where the member signed up |
+| `tier_id`     | BIGINT UNSIGNED, FK  | `tiers(id)`                                              |
+| `email`       | VARCHAR(255), UNIQUE |                                                          |
+| `name`        | VARCHAR(255), null   |                                                          |
+| `created_at`  | TIMESTAMP            | defaults to now                                          |
+
+No auth columns yet: members are identified by email for the demo.
