@@ -45,7 +45,29 @@ curl -s localhost:3000/members/abc
 curl -s -X POST localhost:3000/members -H 'content-type: application/json' -H "x-api-key: $KEY" -d '{}'
 ```
 
-The e2e tests (`pnpm check`) delete all rows in `members`, `tiers` and `merchants`, so run them against a throwaway database only.
+## Orders (MySQL)
+
+Needs a merchant (`$KEY`) and a member with email `an@x.com` (see Members).
+
+```sh
+# create an order -> 201
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":99.9}'
+
+# same key again -> 200 with the same order id, no second row
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":99.9}'
+
+# error path -> 400 (missing Idempotency-Key)
+curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
+  -d '{"memberEmail":"an@x.com","amount":5}'
+
+# error path -> 404 (unknown member)
+curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
+  -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5}'
+```
+
+The e2e tests (`pnpm check`) delete all rows in `orders`, `members`, `tiers` and `merchants`, so run them against a throwaway database only.
 
 ## Migrations
 
