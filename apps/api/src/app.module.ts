@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MembersModule } from './members/members.module';
+import { MerchantsModule } from './merchants/merchants.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MembersModule } from './members/members.module';
       }),
     }),
     MembersModule,
+    MerchantsModule,
   ],
   providers: [
     {

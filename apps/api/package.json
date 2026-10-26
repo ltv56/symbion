@@ -11,7 +11,7 @@
     "typeorm": "typeorm -d dist/data-source.js",
     "migration:run": "pnpm build && pnpm typeorm migration:run",
     "migration:revert": "pnpm build && pnpm typeorm migration:revert",
-    "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --passWithNoTests"
+    "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --passWithNoTests"
   },
   "dependencies": {
     "@nestjs/common": "^12.2.0",
