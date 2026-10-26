@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { Member } from './member.entity';
@@ -25,6 +29,9 @@ export class MembersService {
     const [tier] = await this.members.query(
       'SELECT id FROM tiers ORDER BY min_points ASC LIMIT 1',
     );
+    if (!tier) {
+      throw new ServiceUnavailableException('No tiers configured');
+    }
 
     try {
       return await this.members.save(

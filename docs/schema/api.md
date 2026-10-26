@@ -39,6 +39,10 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 
 Liveness plus a MySQL check (`SELECT 1`). Responses: `200` with `{ "status": "ok" }`, `503` in the common error shape (`"message": "Database unavailable"`) when MySQL does not answer. The cause is logged server-side only.
 
+## POST /members
+
+Creates a member on the lowest tier (smallest `min_points`). Responses: `201`, `400` validation, `401` bad key, `409` email already registered, `503` (`"message": "No tiers configured"`) when the `tiers` table is empty.
+
 ## POST /orders
 
 A merchant reports an order for a member. `merchant_id` comes from the API key, never from the body.
