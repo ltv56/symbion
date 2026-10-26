@@ -64,7 +64,7 @@ describe('Orders', () => {
     );
 
     expect(res.body).toMatchObject({ merchantId, memberId });
-    expect(Number(res.body.amount)).toBe(120.5);
+    expect(res.body.amount).toBe('120.50');
     const rows = await dataSource.query(
       'SELECT idempotency_key FROM orders WHERE id = ?',
       [res.body.id],
@@ -73,10 +73,22 @@ describe('Orders', () => {
   });
 
   it.each([
+    ['one cent', 0.01, '0.01'],
+    ['the column maximum', 9_999_999_999.99, '9999999999.99'],
+  ])('accepts %s', async (_label, amount, stored) => {
+    const res = await post('k1', { memberEmail, amount }).expect(201);
+    expect(res.body.amount).toBe(stored);
+  });
+
+  it.each([
     ['no idempotency key', undefined, { memberEmail, amount: 10 }],
     ['a missing amount', 'k1', { memberEmail }],
     ['a zero amount', 'k1', { memberEmail, amount: 0 }],
     ['a negative amount', 'k1', { memberEmail, amount: -5 }],
+    ['an amount below one cent', 'k1', { memberEmail, amount: 0.004 }],
+    ['an amount with three decimals', 'k1', { memberEmail, amount: 10.005 }],
+    ['an exponent amount below one cent', 'k1', { memberEmail, amount: 1e-9 }],
+    ['an amount over the column limit', 'k1', { memberEmail, amount: 1e10 }],
     ['an invalid email', 'k1', { memberEmail: 'nope', amount: 10 }],
     [
       'a merchantId in the body',
