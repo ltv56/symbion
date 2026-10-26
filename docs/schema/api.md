@@ -31,6 +31,11 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 - `POST /members` and `POST /orders` require the `x-api-key` header of a merchant.
 - `GET /members*` is unauthenticated until member auth is added.
 - `POST /merchants` is unauthenticated until admin auth is added.
+- `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
+
+## GET /health
+
+Liveness plus a MySQL check (`SELECT 1`). Responses: `200` with `{ "status": "ok" }`, `503` in the common error shape (`"message": "Database unavailable"`) when MySQL does not answer. The cause is logged server-side only.
 
 ## POST /orders
 

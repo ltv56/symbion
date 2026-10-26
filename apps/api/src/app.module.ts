@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { HealthModule } from './health/health.module';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { OrdersModule } from './orders/orders.module';
@@ -25,6 +26,7 @@ import { OrdersModule } from './orders/orders.module';
         logging: true,
       }),
     }),
+    HealthModule,
     MembersModule,
     MerchantsModule,
     OrdersModule,
