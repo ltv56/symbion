@@ -6,7 +6,6 @@ import {
   Body,
   ParseIntPipe,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { MembersService } from './members.service';
@@ -34,16 +33,7 @@ export class MembersController {
 
   @Post()
   create(@Body() body: CreateMemberDto): Promise<Member> {
-    if (
-      typeof body?.name !== 'string' ||
-      !body.name.trim() ||
-      typeof body?.email !== 'string' ||
-      !body.email.trim() ||
-      !Number.isInteger(body?.merchantId)
-    ) {
-      throw new BadRequestException('Name, email and merchantId are required');
-    }
-
+    // Manual field checks removed: the global ValidationPipe validates CreateMemberDto.
     return this.membersService.create(body.name, body.email, body.merchantId);
   }
 }
