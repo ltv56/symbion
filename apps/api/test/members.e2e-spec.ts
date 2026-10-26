@@ -64,11 +64,16 @@ describe('Members', () => {
       .set('x-api-key', apiKey)
       .send(body)
       .expect(201);
-    await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .post('/members')
       .set('x-api-key', apiKey)
       .send(body)
       .expect(409);
+    expect(res.body).toEqual({
+      statusCode: 409,
+      error: 'Conflict',
+      message: 'Email john@example.com is already registered',
+    });
   });
 
   it('returns 400 when a field is missing', async () => {

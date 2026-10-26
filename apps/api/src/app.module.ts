@@ -1,7 +1,8 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
 
@@ -27,6 +28,7 @@ import { MerchantsModule } from './merchants/merchants.module';
     MerchantsModule,
   ],
   providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
     {
       provide: APP_PIPE,
       useValue: new ValidationPipe({
