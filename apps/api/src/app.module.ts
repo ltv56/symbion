@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { RedactedSqlLogger } from './common/redacted-sql.logger';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { OrdersModule } from './orders/orders.module';
@@ -23,6 +24,10 @@ import { OrdersModule } from './orders/orders.module';
         bigNumberStrings: false,
         synchronize: false,
         logging: true,
+        logger:
+          config.get<string>('NODE_ENV') === 'production'
+            ? new RedactedSqlLogger()
+            : 'advanced-console',
       }),
     }),
     MembersModule,
