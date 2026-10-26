@@ -24,6 +24,8 @@ Unexpected errors return 500 with `"message": "Internal server error"`; the caus
 
 Logs record the method, path and status of failed requests only, never request bodies or headers, so API keys do not reach the logs.
 
+With `NODE_ENV=production` the SQL log (`RedactedSqlLogger`) prints the query text only: no parameters (member emails) and no MySQL error message (it repeats the duplicate value). Failed queries log the MySQL `code` and `errno`. Other environments keep TypeORM's full log.
+
 Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filter.ts`.
 
 ## Authentication
@@ -31,6 +33,11 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 - `POST /members` and `POST /orders` require the `x-api-key` header of a merchant.
 - `GET /members*` is unauthenticated until member auth is added.
 - `POST /merchants` is unauthenticated until admin auth is added.
+- `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
+
+## GET /health
+
+Liveness plus a MySQL check (`SELECT 1`). Responses: `200` with `{ "status": "ok" }`, `503` in the common error shape (`"message": "Database unavailable"`) when MySQL does not answer. The cause is logged server-side only.
 
 ## POST /orders
 

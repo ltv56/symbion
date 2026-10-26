@@ -43,7 +43,7 @@ docker run --rm -p 3000:3000 symbion-api
 
 ## Docker Compose
 
-`infra/compose.yaml` runs the API and MySQL 8.4. The API starts after MySQL reports healthy.
+`infra/compose.yaml` runs the API and MySQL 8.4. The API starts after MySQL reports healthy, and Compose marks the API healthy once `GET /health` answers 200 (it also checks MySQL).
 
 ```bash
 cp infra/.env.example infra/.env   # then replace every change-me with your own password
