@@ -43,4 +43,4 @@ A merchant reports an order for a member. `merchant_id` comes from the API key, 
 | `memberEmail`     | body, email of an existing member                         |
 | `amount`          | body, number greater than 0 with at most 2 decimal places |
 
-Responses: `201` with the created order (`amount` is a string such as `"99.90"`), `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member.
+Responses: `201` with the created order (`amount` is a string such as `"99.90"`), `200` with the original order when the same `Idempotency-Key` was already used by this merchant (no second order is created), `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member.

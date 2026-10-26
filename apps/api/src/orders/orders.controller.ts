@@ -3,10 +3,13 @@ import {
   Body,
   Controller,
   Headers,
+  HttpStatus,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiHeader, ApiSecurity } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { ApiKeyGuard } from '../merchants/api-key.guard';
 import { CurrentMerchant } from '../merchants/current-merchant.decorator';
 import { Merchant } from '../merchants/merchant.entity';
@@ -22,9 +25,10 @@ export class OrdersController {
   @UseGuards(ApiKeyGuard)
   @ApiSecurity('api-key')
   @ApiHeader({ name: 'Idempotency-Key', required: true })
-  create(
+  async create(
     @Body() body: CreateOrderDto,
     @CurrentMerchant() merchant: Merchant,
+    @Res({ passthrough: true }) res: Response,
     @Headers('idempotency-key') idempotencyKey?: string,
   ): Promise<Order> {
     const key = idempotencyKey?.trim();
@@ -34,11 +38,13 @@ export class OrdersController {
       );
     }
 
-    return this.ordersService.create(
+    const { order, created } = await this.ordersService.create(
       merchant.id,
       key,
       body.memberEmail,
       body.amount,
     );
+    res.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+    return order;
   }
 }

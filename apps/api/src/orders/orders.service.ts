@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { Member } from '../members/member.entity';
 import { Order } from './order.entity';
 
@@ -16,19 +16,35 @@ export class OrdersService {
     idempotencyKey: string,
     memberEmail: string,
     amount: number,
-  ): Promise<Order> {
+  ): Promise<{ order: Order; created: boolean }> {
     const member = await this.members.findOneBy({ email: memberEmail });
     if (!member) {
       throw new NotFoundException(`Member ${memberEmail} not found`);
     }
 
-    return this.orders.save(
-      this.orders.create({
-        merchantId,
-        memberId: member.id,
-        idempotencyKey,
-        amount: amount.toFixed(2),
-      }),
-    );
+    // Insert first, don't SELECT first: parallel retries would both see "not found".
+    try {
+      const order = await this.orders.save(
+        this.orders.create({
+          merchantId,
+          memberId: member.id,
+          idempotencyKey,
+          amount: amount.toFixed(2),
+        }),
+      );
+      return { order, created: true };
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
+      ) {
+        const order = await this.orders.findOneByOrFail({
+          merchantId,
+          idempotencyKey,
+        });
+        return { order, created: false };
+      }
+      throw error;
+    }
   }
 }

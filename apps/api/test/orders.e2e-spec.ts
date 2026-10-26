@@ -104,4 +104,47 @@ describe('Orders', () => {
       404,
     );
   });
+
+  it('returns the original order when the same key is sent again', async () => {
+    const res1 = await post('k1', { memberEmail, amount: 10 }).expect(201);
+    const res2 = await post('k1', { memberEmail, amount: 10 }).expect(200);
+    expect(res1.body.id).toBe(res2.body.id);
+    const rows = await dataSource.query('SELECT COUNT(*) as count FROM orders');
+    expect(Number(rows[0].count)).toBe(1);
+  });
+
+  it('creates one order when the same key arrives in parallel', async () => {
+    const [res1, res2] = await Promise.all([
+      post('k1', { memberEmail, amount: 10 }),
+      post('k1', { memberEmail, amount: 10 }),
+    ]);
+    expect([res1.status, res2.status].sort((a, b) => a - b)).toEqual([
+      200, 201,
+    ]);
+    expect(res1.body.id).toBe(res2.body.id);
+    const rows = await dataSource.query('SELECT COUNT(*) as count FROM orders');
+    expect(Number(rows[0].count)).toBe(1);
+  });
+
+  it('allows two merchants to reuse the same key', async () => {
+    const secondApiKey = 'test-api-key-2';
+    const secondMerchant = await dataSource.query(
+      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop B', ?)`,
+      [createHash('sha256').update(secondApiKey).digest('hex')],
+    );
+    const secondMerchantId = Number(secondMerchant.insertId);
+    const res1 = await post('k1', { memberEmail, amount: 10 }).expect(201);
+    const res2 = await post(
+      'k1',
+      { memberEmail, amount: 10 },
+      secondApiKey,
+    ).expect(201);
+
+    expect(res1.body.merchantId).toBe(merchantId);
+    expect(res2.body.merchantId).toBe(secondMerchantId);
+    expect(res1.body.id).not.toBe(res2.body.id);
+
+    const rows = await dataSource.query('SELECT COUNT(*) as count FROM orders');
+    expect(Number(rows[0].count)).toBe(2);
+  });
 });
