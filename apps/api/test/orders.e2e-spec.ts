@@ -125,6 +125,23 @@ describe('Orders', () => {
     expect(Number(rows[0].count)).toBe(1);
   });
 
+  it('keeps the original values when a repeated key has a different body', async () => {
+    await post('k1', { memberEmail, amount: 10 }).expect(201);
+    const res2 = await post('k1', { memberEmail, amount: 99 }).expect(200);
+    expect(res2.body.amount).toBe('10.00');
+    const rows = await dataSource.query('SELECT amount FROM orders');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].amount).toBe('10.00');
+  });
+
+  it('treats idempotency keys that differ only by case as different', async () => {
+    const res1 = await post('Order-1', { memberEmail, amount: 10 }).expect(201);
+    const res2 = await post('order-1', { memberEmail, amount: 10 }).expect(201);
+    expect(res1.body.id).not.toBe(res2.body.id);
+    const rows = await dataSource.query('SELECT COUNT(*) as count FROM orders');
+    expect(Number(rows[0].count)).toBe(2);
+  });
+
   it('creates one order when the same key arrives in parallel', async () => {
     const [res1, res2] = await Promise.all([
       post('k1', { memberEmail, amount: 10 }),
