@@ -1,13 +1,14 @@
 # Manual testing
 
-## Members (in-memory)
+## Members (MySQL)
 
-Start the api: `pnpm start` (listens on `PORT`, default 3000).
+Needs MySQL with migrations applied (see Migrations) and at least one merchant and one tier row. Start the api: `pnpm start` (listens on `PORT`, default 3000). New members get the tier with the lowest `min_points`.
 
 ```sh
-# create a member -> 201 {"id":1,"name":"An","email":"an@x.com"}
+# create a member -> 201; the same email again -> 409
+# (merchantId must exist in merchants)
 curl -s -X POST localhost:3000/members -H 'content-type: application/json' \
-  -d '{"name":"An","email":"an@x.com"}'
+  -d '{"name":"An","email":"an@x.com","merchantId":1}'
 
 # list all members
 curl -s localhost:3000/members
@@ -21,11 +22,11 @@ curl -s localhost:3000/members/99
 # error path -> 400 (id is not an integer)
 curl -s localhost:3000/members/abc
 
-# error path -> 400 (name and email are required)
+# error path -> 400 (name, email and merchantId are required)
 curl -s -X POST localhost:3000/members -H 'content-type: application/json' -d '{}'
 ```
 
-Data lives in memory and is lost on restart.
+The e2e tests (`pnpm check`) delete all rows in `members`, `tiers` and `merchants`, so run them against a throwaway database only.
 
 ## Migrations
 
