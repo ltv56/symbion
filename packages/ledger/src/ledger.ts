@@ -1,5 +1,5 @@
 import type { LedgerStorage } from './storage';
-import type { EarnInput, EarnResult } from './types';
+import type { EarnInput, EarnResult, SpendInput, SpendResult } from './types';
 import { DuplicateKeyError } from './storage';
 
 export class Ledger<Tx> {
@@ -40,6 +40,47 @@ export class Ledger<Tx> {
       }
       return { lot: existingLot, duplicate: true };
     }
+  }
+
+  // Check the total before changing any lot: in-memory has no rollback, so a half spend would stay.
+  async spend(tx: Tx, input: SpendInput): Promise<SpendResult> {
+    if (!Number.isInteger(input.points) || input.points <= 0) {
+      throw new Error('Points must be a positive integer');
+    }
+
+    const lots = await this.storage.findSpendableLots(
+      tx,
+      input.memberId,
+      input.now,
+    );
+
+    // Narrow case first: with no lots the total is 0 and would hit the broader check below.
+    if (lots.length === 0) {
+      throw new Error(
+        `Not enough points to spend: requested ${input.points}, no available lots`,
+      );
+    }
+
+    const totalRemaining = lots.reduce((sum, lot) => sum + lot.remaining, 0);
+    if (totalRemaining < input.points) {
+      throw new Error(
+        `Not enough points to spend: requested ${input.points}, available ${totalRemaining}`,
+      );
+    }
+
+    let left = input.points;
+    const consumed: { lotId: string; points: number }[] = [];
+    for (const lot of lots) {
+      if (left <= 0) {
+        break;
+      }
+      const take = Math.min(lot.remaining, left);
+      await this.storage.setRemaining(tx, lot.id, lot.remaining - take);
+      consumed.push({ lotId: lot.id, points: take });
+      left -= take;
+    }
+
+    return { consumed };
   }
 
   balance(tx: Tx, memberId: string, now: Date): Promise<number> {

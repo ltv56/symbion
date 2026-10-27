@@ -19,7 +19,17 @@ export type EarnInput = {
   expiresAt?: Date | null;
 };
 
-// duplicate is true when the key was already used and `lot` is the original one.
+export type SpendInput = {
+  memberId: string;
+  points: number;
+  now: Date;
+};
+
+export type SpendResult = {
+  consumed: { lotId: string; points: number }[];
+};
+
+// `duplicate` is true when the key was already used and `lot` is the original one.
 export type EarnResult = {
   lot: Lot;
   duplicate: boolean;

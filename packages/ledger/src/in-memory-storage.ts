@@ -43,6 +43,44 @@ export class InMemoryLedgerStorage<Tx> implements LedgerStorage<Tx> {
       .reduce((sum, lot) => sum + lot.remaining, 0);
   }
 
+  async findSpendableLots(
+    _tx: Tx,
+    memberId: Lot['memberId'],
+    now: Date,
+  ): Promise<Lot[]> {
+    // ids compare as numbers in the sort: as strings "10" < "9".
+    return [...this.lots.values()]
+      .filter((lot) => lot.memberId === memberId)
+      .filter((lot) => lot.remaining > 0)
+      .filter((lot) => !lot.expiresAt || lot.expiresAt > now)
+      .sort((a, b) => {
+        if (a.expiresAt === null && b.expiresAt === null) {
+          return Number(a.id) - Number(b.id);
+        }
+        if (a.expiresAt === null) {
+          return 1;
+        }
+        if (b.expiresAt === null) {
+          return -1;
+        }
+        const expiresDiff = a.expiresAt.getTime() - b.expiresAt.getTime();
+        if (expiresDiff !== 0) {
+          return expiresDiff;
+        }
+        return Number(a.id) - Number(b.id);
+      })
+      .map((lot) => this.copy(lot));
+  }
+
+  // Lots are keyed by idempotency key, so look the lot up by id.
+  async setRemaining(_tx: Tx, lotId: string, remaining: number): Promise<void> {
+    const lot = [...this.lots.values()].find((lot) => lot.id === lotId);
+    if (!lot) {
+      throw new Error(`Lot with id ${lotId} not found`);
+    }
+    lot.remaining = remaining;
+  }
+
   // Copies in and out so a caller can't change stored lots (like a DB row would be).
   private copy(lot: Lot): Lot {
     return {
