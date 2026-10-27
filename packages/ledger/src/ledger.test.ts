@@ -5,7 +5,7 @@ import { DuplicateKeyError } from './storage';
 describe('ledger', () => {
   let ledger: Ledger<undefined>;
   const tx = undefined;
-
+  const now = new Date('2026-01-10T00:00:00Z');
   beforeEach(() => {
     ledger = new Ledger(new InMemoryLedgerStorage<undefined>());
   });
@@ -18,7 +18,7 @@ describe('ledger', () => {
       idempotencyKey: 'key1',
     });
 
-    await expect(ledger.balance(tx, 'member1')).resolves.toBe(100);
+    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(100);
   });
 
   it('counts the same merchant key only once', async () => {
@@ -35,7 +35,7 @@ describe('ledger', () => {
     expect(first.duplicate).toBe(false);
     expect(second.duplicate).toBe(true);
     expect(second.lot.id).toBe(first.lot.id);
-    await expect(ledger.balance(tx, 'member1')).resolves.toBe(100);
+    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(100);
   });
 
   it('allows different merchants to use the same key', async () => {
@@ -55,11 +55,13 @@ describe('ledger', () => {
     expect(first.duplicate).toBe(false);
     expect(second.duplicate).toBe(false);
     expect(second.lot.id).not.toBe(first.lot.id);
-    await expect(ledger.balance(tx, 'member1')).resolves.toBe(30);
+    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(30);
   });
 
   it('returns zero for a member with no lots', async () => {
-    await expect(ledger.balance(tx, 'member-without-lots')).resolves.toBe(0);
+    await expect(ledger.balance(tx, 'member-without-lots', now)).resolves.toBe(
+      0,
+    );
   });
 
   it.each([0, -5, 1.5])('rejects invalid points: %s', async (points) => {
@@ -102,7 +104,7 @@ describe('ledger', () => {
     const second = await ledger.earn(tx, input);
     second.lot.remaining = 0;
 
-    await expect(ledger.balance(tx, 'member1')).resolves.toBe(100);
+    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(100);
   });
 
   it('throws when storage reports a duplicate but finds no lot', async () => {

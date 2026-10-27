@@ -32,9 +32,14 @@ export class InMemoryLedgerStorage<Tx> implements LedgerStorage<Tx> {
     return lot && this.copy(lot);
   }
 
-  async sumRemaining(_tx: Tx, memberId: Lot['memberId']): Promise<number> {
+  async sumRemaining(
+    _tx: Tx,
+    memberId: Lot['memberId'],
+    now: Date,
+  ): Promise<number> {
     return [...this.lots.values()]
       .filter((lot) => lot.memberId === memberId)
+      .filter((lot) => !lot.expiresAt || lot.expiresAt > now)
       .reduce((sum, lot) => sum + lot.remaining, 0);
   }
 

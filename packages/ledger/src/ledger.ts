@@ -42,7 +42,7 @@ export class Ledger<Tx> {
     }
   }
 
-  balance(tx: Tx, memberId: string): Promise<number> {
-    return this.storage.sumRemaining(tx, memberId);
+  balance(tx: Tx, memberId: string, now: Date): Promise<number> {
+    return this.storage.sumRemaining(tx, memberId, now);
   }
 }

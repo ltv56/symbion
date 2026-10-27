@@ -17,5 +17,5 @@ export type LedgerStorage<Tx> = {
     merchantId: string,
     idempotencyKey: string,
   ): Promise<Lot | undefined>;
-  sumRemaining(tx: Tx, memberId: string): Promise<number>;
+  sumRemaining(tx: Tx, memberId: string, now: Date): Promise<number>;
 };
