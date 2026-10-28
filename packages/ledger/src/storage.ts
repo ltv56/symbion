@@ -11,6 +11,9 @@ export class DuplicateKeyError extends Error {
 // Tx is the caller's transaction. The ledger never opens one, so every method takes it first.
 // The storage creates id and createdAt (MySQL auto increment / default later).
 export type LedgerStorage<Tx> = {
+  // After it returns, no other earn/spend of this member runs until the tx ends.
+  // MySQL: SELECT ... FOR UPDATE on the member row.
+  lockMember(tx: Tx, memberId: string): Promise<void>;
   insertLot(tx: Tx, lot: Omit<Lot, 'id' | 'createdAt'>): Promise<Lot>;
   findLotByKey(
     tx: Tx,

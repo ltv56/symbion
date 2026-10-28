@@ -20,6 +20,9 @@ export class Ledger<Tx> {
       throw new Error('Points must be a positive integer');
     }
 
+    // Lock first, so every read below sees the latest committed data.
+    await this.storage.lockMember(tx, input.memberId);
+
     const debtLots = await this.storage.findDebtLots(tx, input.memberId);
     const oldDebt = debtLots.reduce((sum, lot) => sum - lot.remaining, 0);
     // A lot that is already expired is worth nothing, so it must not pay debt (balance ignores it).
@@ -78,6 +81,8 @@ export class Ledger<Tx> {
     if (!Number.isSafeInteger(input.points) || input.points <= 0) {
       throw new Error('Points must be a positive integer');
     }
+
+    await this.storage.lockMember(tx, input.memberId);
 
     const lots = await this.storage.findSpendableLots(
       tx,

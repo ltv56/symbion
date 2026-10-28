@@ -6,6 +6,9 @@ export class InMemoryLedgerStorage<Tx> implements LedgerStorage<Tx> {
   private readonly lots = new Map<string, Lot>();
   private nextId = 1;
 
+  // No-op: one process and no await between check and write, so nothing can interleave.
+  async lockMember(_tx: Tx, _memberId: string): Promise<void> {}
+
   async insertLot(_tx: Tx, input: Omit<Lot, 'id' | 'createdAt'>): Promise<Lot> {
     const key = this.key(input.merchantId, input.idempotencyKey);
 

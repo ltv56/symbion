@@ -23,6 +23,7 @@ await ledger.balance(tx, '42', new Date()); // 100
 - **Idempotent earn:** the same `(merchantId, idempotencyKey)` twice adds points once. The second call returns the original lot with `duplicate: true`.
 - **Idempotent spend:** every `spend` writes one entry with its key (`points` = minus what was spent, `remaining` = minus the shortfall, 0 when the lots cover it). Sending the same spend again throws `DuplicateKeyError` and changes nothing. Earn and spend keys share one `(merchantId, idempotencyKey)` space, so use different keys.
 - **Transaction from the caller:** `tx` is passed to every storage call. The ledger never opens or commits a transaction, so the caller can put earning and other writes in one transaction.
+- **One member at a time:** `earn` and `spend` call `storage.lockMember(tx, memberId)` first. After it returns, no other earn or spend of that member runs until the caller's transaction ends. The MySQL adapter locks the member row (`SELECT ... FOR UPDATE`); the in-memory one does nothing because it has no concurrency.
 - **Storage:** `LedgerStorage<Tx>` is the only thing the ledger needs. `InMemoryLedgerStorage` is for tests. The MySQL adapter lives in the app.
 - **Expiry:** a lot with `expiresAt` at or before `now` is ignored by `balance` and `spend`. `expiresAt: null` never expires.
 - **FIFO spend:** `spend(tx, { merchantId, memberId, points, idempotencyKey, now })` takes points from the lot that expires first (no expiry last, then lower id). It returns `consumed` (points taken per lot) and `debt`.
