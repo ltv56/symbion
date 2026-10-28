@@ -67,7 +67,9 @@ curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-
   -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5}'
 ```
 
-The e2e tests (`pnpm check`) delete all rows in `orders`, `members`, `tiers` and `merchants`, so run them against a throwaway database only.
+The e2e tests (`pnpm check`) delete all rows in `ledger_lots`, `orders`, `members`, `tiers` and `merchants`, so run them against a throwaway database only.
+
+The ledger MySQL tests need the migrations applied first (`pnpm db:migrate`). Run only them with `pnpm --filter @symbion/api test ledger-mysql`.
 
 ## Migrations
 

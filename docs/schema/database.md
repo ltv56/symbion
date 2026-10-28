@@ -51,3 +51,20 @@ No auth columns yet: members are identified by email for the demo. `POST /member
 | `created_at`      | TIMESTAMP           | defaults to now                       |
 
 `UNIQUE (merchant_id, idempotency_key)` (`uq_orders_merchant_idempotency_key`) is the last line of defence against duplicate orders. `idempotency_key` uses the binary collation `utf8mb4_bin`, so keys that differ only by case are different orders (the default collation would treat them as equal). It is scoped per merchant, so two merchants may reuse the same key.
+
+## ledger_lots
+
+One row per lot of points (see `packages/ledger`). Lots are never deleted; only `remaining` changes. The balance is the sum of `remaining` of the member's lots that are not expired.
+
+| Column            | Type                        | Notes                                                            |
+| ----------------- | --------------------------- | ---------------------------------------------------------------- |
+| `id`              | BIGINT UNSIGNED, PK         | auto increment; FIFO ties are broken by lower id                 |
+| `merchant_id`     | BIGINT UNSIGNED, FK         | merchant that sent the order or spend                            |
+| `member_id`       | BIGINT UNSIGNED, FK         |                                                                  |
+| `points`          | BIGINT                      | signed: negative for spend entries; `CHECK (points <> 0)`        |
+| `remaining`       | BIGINT                      | signed: points not spent yet; negative for a debt lot            |
+| `expires_at`      | DATETIME, NULL              | NULL never expires; debt lots ignore it                          |
+| `idempotency_key` | VARCHAR(255), `utf8mb4_bin` | case sensitive; earn and spend keys share one space per merchant |
+| `created_at`      | TIMESTAMP                   | defaults to now                                                  |
+
+`UNIQUE (merchant_id, idempotency_key)` is the last line of defence for a repeated earn or spend. Index `(member_id, expires_at, id)` serves the FIFO read.
