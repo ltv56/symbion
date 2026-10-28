@@ -29,6 +29,7 @@ import { OrdersModule } from './orders/orders.module';
         password: config.getOrThrow<string>('DB_PASSWORD'),
         autoLoadEntities: true,
         bigNumberStrings: false,
+        timezone: 'Z',
         synchronize: false,
         logging: true,
         logger:

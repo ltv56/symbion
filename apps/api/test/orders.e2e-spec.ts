@@ -24,6 +24,7 @@ describe('Orders', () => {
 
   beforeEach(async () => {
     await dataSource.query('DELETE FROM orders');
+    await dataSource.query('DELETE FROM ledger_lots');
     await dataSource.query('DELETE FROM members');
     await dataSource.query('DELETE FROM tiers');
     await dataSource.query('DELETE FROM merchants');
