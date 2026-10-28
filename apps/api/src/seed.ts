@@ -8,8 +8,19 @@ const TIERS = [
 ];
 
 // Upsert on the unique tier name, so running it twice is safe.
+// Only the name is unique, so a custom tier at the same threshold would tie with ours
+// and members could get either earn rate. Refuse instead of guessing which one wins.
 export async function seedTiers(ds: DataSource): Promise<void> {
   for (const tier of TIERS) {
+    const [clash] = await ds.query(
+      `SELECT name FROM tiers WHERE min_points = ? AND name <> ? LIMIT 1`,
+      [tier.minPoints, tier.name],
+    );
+    if (clash) {
+      throw new Error(
+        `Cannot seed ${tier.name}: tier "${clash.name}" already has min_points ${tier.minPoints}`,
+      );
+    }
     await ds.query(
       `INSERT INTO tiers (name, min_points, earn_rate) VALUES (?, ?, ?)
        ON DUPLICATE KEY UPDATE min_points = VALUES(min_points), earn_rate = VALUES(earn_rate)`,

@@ -53,4 +53,15 @@ describe('Seed', () => {
     );
     expect(Number(bronze.earn_rate)).toBe(1);
   });
+
+  it('refuses to seed when another tier already has a default threshold', async () => {
+    await dataSource.query(
+      `INSERT INTO tiers (name, min_points, earn_rate) VALUES ('Basic', 0, 2)`,
+    );
+
+    await expect(seedTiers(dataSource)).rejects.toThrow(/min_points 0/);
+
+    const rows = await dataSource.query('SELECT name FROM tiers');
+    expect(rows.map((r: { name: string }) => r.name)).toEqual(['Basic']);
+  });
 });
