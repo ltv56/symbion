@@ -16,16 +16,19 @@ export class Ledger<Tx> {
   // Insert first, then catch the duplicate. A check-then-insert would race.
   // The debt lots are written only after a successful insert, so a retry can't pay the debt twice.
   async earn(tx: Tx, input: EarnInput): Promise<EarnResult> {
-    if (!Number.isInteger(input.points) || input.points <= 0) {
+    if (!Number.isSafeInteger(input.points) || input.points <= 0) {
       throw new Error('Points must be a positive integer');
     }
 
     const debtLots = await this.storage.findDebtLots(tx, input.memberId);
     const oldDebt = debtLots.reduce((sum, lot) => sum - lot.remaining, 0);
-    const pay = Math.min(input.points, oldDebt);
+    // A lot that is already expired is worth nothing, so it must not pay debt (balance ignores it).
+    const { now, ...lotFields } = input;
+    const alreadyExpired = !!input.expiresAt && input.expiresAt <= now;
+    const pay = alreadyExpired ? 0 : Math.min(input.points, oldDebt);
 
     const lotToInsert = {
-      ...input,
+      ...lotFields,
       remaining: input.points - pay,
       expiresAt: input.expiresAt ?? null,
     };
@@ -72,7 +75,7 @@ export class Ledger<Tx> {
   }
 
   async spend(tx: Tx, input: SpendInput): Promise<SpendResult> {
-    if (!Number.isInteger(input.points) || input.points <= 0) {
+    if (!Number.isSafeInteger(input.points) || input.points <= 0) {
       throw new Error('Points must be a positive integer');
     }
 
@@ -85,17 +88,17 @@ export class Ledger<Tx> {
     const available = lots.reduce((sum, lot) => sum + lot.remaining, 0);
     const shortfall = Math.max(0, input.points - available);
 
+    // Every spend writes one entry, so its key is recorded even when the lots cover it.
+    // `points` is minus what was spent, `remaining` is minus the shortfall (0 when covered).
     // Insert first: if the key is a duplicate nothing else was changed yet.
-    if (shortfall > 0) {
-      await this.storage.insertLot(tx, {
-        merchantId: input.merchantId,
-        memberId: input.memberId,
-        points: -shortfall,
-        remaining: -shortfall,
-        expiresAt: null,
-        idempotencyKey: input.idempotencyKey,
-      });
-    }
+    await this.storage.insertLot(tx, {
+      merchantId: input.merchantId,
+      memberId: input.memberId,
+      points: -input.points,
+      remaining: -shortfall,
+      expiresAt: null,
+      idempotencyKey: input.idempotencyKey,
+    });
 
     let left = input.points;
     const consumed: { lotId: string; points: number }[] = [];

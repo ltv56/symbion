@@ -17,6 +17,7 @@ export type EarnInput = {
   points: number;
   idempotencyKey: string;
   expiresAt?: Date | null;
+  now: Date;
 };
 
 export type SpendInput = {

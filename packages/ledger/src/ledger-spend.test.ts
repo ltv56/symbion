@@ -11,6 +11,7 @@ describe('Ledger.spend', () => {
   });
   it('spends less than one lot -> consumed has one entry, balance goes down by that amount', async () => {
     const lot = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -30,6 +31,7 @@ describe('Ledger.spend', () => {
   });
   it('spends across two lots -> the lot with the earlier expiresAt is drained first', async () => {
     const lot1 = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -37,6 +39,7 @@ describe('Ledger.spend', () => {
       expiresAt: new Date(now.getTime() + oneDayMs), // expires in 1 day
     });
     const lot2 = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -58,6 +61,7 @@ describe('Ledger.spend', () => {
   });
   it('a lot with expiresAt null is consumed after lots that expire', async () => {
     const lot1 = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -65,6 +69,7 @@ describe('Ledger.spend', () => {
       expiresAt: new Date(now.getTime() + oneDayMs),
     });
     const lot2 = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -86,6 +91,7 @@ describe('Ledger.spend', () => {
   });
   it('same expiresAt -> the lot with the lower id is consumed first (earn it first)', async () => {
     const lot1 = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -93,6 +99,7 @@ describe('Ledger.spend', () => {
       expiresAt: new Date(now.getTime() + oneDayMs),
     });
     const lot2 = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -114,6 +121,7 @@ describe('Ledger.spend', () => {
   });
   it('an expired lot is skipped', async () => {
     const lot1 = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -121,6 +129,7 @@ describe('Ledger.spend', () => {
       expiresAt: new Date(now.getTime() + oneDayMs),
     });
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -128,6 +137,7 @@ describe('Ledger.spend', () => {
       expiresAt: new Date(now.getTime() - oneDayMs),
     });
     const lot2 = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -149,6 +159,7 @@ describe('Ledger.spend', () => {
   });
   it('not enough balance -> spend rejects AND balance is unchanged (nothing half-spent)', async () => {
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -167,6 +178,7 @@ describe('Ledger.spend', () => {
   });
   it('only an expired lot', async () => {
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -183,7 +195,7 @@ describe('Ledger.spend', () => {
     expect(spendPromise.debt).toBe(50);
     await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(-50);
   });
-  it.each([0, -5, 1.5])(
+  it.each([0, -5, 1.5, 2 ** 53])(
     'points %s -> rejects (table-driven with it.each)',
     async (points) => {
       await expect(

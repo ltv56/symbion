@@ -12,6 +12,7 @@ describe('ledger', () => {
 
   it('earn adds to the balance', async () => {
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -27,6 +28,7 @@ describe('ledger', () => {
       memberId: 'member1',
       points: 100,
       idempotencyKey: 'key1',
+      now,
     };
 
     const first = await ledger.earn(tx, input);
@@ -40,12 +42,14 @@ describe('ledger', () => {
 
   it('allows different merchants to use the same key', async () => {
     const first = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 10,
       idempotencyKey: 'same-key',
     });
     const second = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant2',
       memberId: 'member1',
       points: 20,
@@ -64,25 +68,31 @@ describe('ledger', () => {
     );
   });
 
-  it.each([0, -5, 1.5])('rejects invalid points: %s', async (points) => {
-    await expect(
-      ledger.earn(tx, {
-        merchantId: 'merchant1',
-        memberId: 'member1',
-        points,
-        idempotencyKey: 'key1',
-      }),
-    ).rejects.toThrow('Points must be a positive integer');
-  });
+  it.each([0, -5, 1.5, 2 ** 53])(
+    'rejects invalid points: %s',
+    async (points) => {
+      await expect(
+        ledger.earn(tx, {
+          now,
+          merchantId: 'merchant1',
+          memberId: 'member1',
+          points,
+          idempotencyKey: 'key1',
+        }),
+      ).rejects.toThrow('Points must be a positive integer');
+    },
+  );
 
   it('keeps keys apart when ids contain the separator', async () => {
     const base = { memberId: 'member1', points: 10 };
     const first = await ledger.earn(tx, {
+      now,
       ...base,
       merchantId: '1:2',
       idempotencyKey: '3',
     });
     const second = await ledger.earn(tx, {
+      now,
       ...base,
       merchantId: '1',
       idempotencyKey: '2:3',
@@ -98,6 +108,7 @@ describe('ledger', () => {
       memberId: 'member1',
       points: 100,
       idempotencyKey: 'key1',
+      now,
     };
     const first = await ledger.earn(tx, input);
     first.lot.remaining = 0;
@@ -114,6 +125,7 @@ describe('ledger', () => {
 
     await expect(
       broken.earn(tx, {
+        now,
         merchantId: 'merchant1',
         memberId: 'member1',
         points: 10,

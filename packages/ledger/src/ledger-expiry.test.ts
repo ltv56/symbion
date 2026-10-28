@@ -13,6 +13,7 @@ describe('balance with expiry', () => {
   it('counts a lot whose expiresAt is in the future', async () => {
     const future = new Date(now.getTime() + oneDayMs);
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -26,6 +27,7 @@ describe('balance with expiry', () => {
   it('ignores a lot whose expiresAt is in the past', async () => {
     const past = new Date(now.getTime() - oneDayMs);
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -39,6 +41,7 @@ describe('balance with expiry', () => {
   it('treats expiresAt === now as expired', async () => {
     const atNow = new Date(now.getTime());
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -51,6 +54,7 @@ describe('balance with expiry', () => {
 
   it('never expires a lot with expiresAt null', async () => {
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,

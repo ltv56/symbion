@@ -14,6 +14,7 @@ describe('Ledger.spend with debt', () => {
 
   it('spend more than the balance -> lots drained, debt = shortfall, balance negative', async () => {
     const lot = await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -46,6 +47,7 @@ describe('Ledger.spend with debt', () => {
 
   it('spend exactly the balance -> debt is 0 and no debt lot is created', async () => {
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -67,6 +69,7 @@ describe('Ledger.spend with debt', () => {
 
   it('expired lot does not count: only expired lot + spend 50 -> debt 50', async () => {
     await ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points: 100,
@@ -99,5 +102,26 @@ describe('Ledger.spend with debt', () => {
 
     await expect(ledger.spend(tx, input)).rejects.toThrow(DuplicateKeyError);
     await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(-50);
+  });
+
+  it('same idempotencyKey twice on a spend the lots cover -> second spend rejects and points are taken once', async () => {
+    await ledger.earn(tx, {
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 100,
+      idempotencyKey: 'key1',
+      now,
+    });
+    const input = {
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 30,
+      now,
+      idempotencyKey: 'spend-key',
+    };
+    await ledger.spend(tx, input);
+
+    await expect(ledger.spend(tx, input)).rejects.toThrow(DuplicateKeyError);
+    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(70);
   });
 });

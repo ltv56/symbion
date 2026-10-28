@@ -22,6 +22,7 @@ describe('Ledger.earn with existing debt', () => {
     });
   const earn = (points: number, idempotencyKey: string) =>
     ledger.earn(tx, {
+      now,
       merchantId: 'merchant1',
       memberId: 'member1',
       points,
@@ -86,5 +87,23 @@ describe('Ledger.earn with existing debt', () => {
     expect(result.consumed).toEqual([{ lotId: lot.id, points: 60 }]);
     expect(result.debt).toBe(10);
     await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(-10);
+  });
+
+  it('an earn that is already expired does not pay debt: debt 40, earn 100 expiring now -> debt stays, balance -40', async () => {
+    await spend(40, 'spend-1');
+
+    const { lot } = await ledger.earn(tx, {
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 100,
+      idempotencyKey: 'earn-1',
+      expiresAt: now,
+      now,
+    });
+
+    expect(lot.remaining).toBe(100);
+    const debtLots = await storage.findDebtLots(tx, 'member1');
+    expect(debtLots.map((debtLot) => debtLot.remaining)).toEqual([-40]);
+    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(-40);
   });
 });
