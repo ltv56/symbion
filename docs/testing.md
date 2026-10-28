@@ -77,6 +77,7 @@ set -a; . infra/.env; set +a; export DB_HOST=127.0.0.1
 
 pnpm db:migrate                          # build, then apply pending migrations
 pnpm --filter @symbion/api migration:revert   # undo the last migration
+pnpm db:seed                              # build, then upsert the default tiers (Bronze, Silver, Gold); safe to re-run
 
 docker exec symbion-mysql-1 mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SHOW CREATE TABLE members\G"
 ```

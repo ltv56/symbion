@@ -58,6 +58,18 @@ describe('Members', () => {
     expect(rows[0].name).toBe('Bronze');
   });
 
+  it('returns 503 with a clear message when no tiers are configured', async () => {
+    await dataSource.query('DELETE FROM tiers');
+
+    const res = await request(app.getHttpServer())
+      .post('/members')
+      .set('x-api-key', apiKey)
+      .send({ name: 'John Doe', email: 'john@example.com' })
+      .expect(503);
+
+    expect(res.body.message).toBe('No tiers configured');
+  });
+
   it('returns 409 for a duplicate email', async () => {
     const body = { name: 'John Doe', email: 'john@example.com' };
     await request(app.getHttpServer())
