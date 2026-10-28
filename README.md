@@ -11,9 +11,11 @@ A points programme shared by many merchants. Members earn points at any partner 
 
 ```bash
 pnpm install
-pnpm build       # all workspaces
-pnpm typecheck   # all workspaces
-pnpm test        # all workspaces
+pnpm build:ledger # api imports packages/ledger/dist; build it before typecheck, test or lint
+pnpm build        # all workspaces
+pnpm typecheck    # all workspaces
+pnpm test         # all workspaces
+pnpm check        # everything CI runs
 
 pnpm --filter @symbion/api start:dev   # API on http://localhost:3000
 # Swagger UI on http://localhost:3000/docs while the API runs
@@ -32,7 +34,7 @@ packages/
 
 ## CI and Docker
 
-GitHub Actions (`.github/workflows/ci.yml`) runs lint, format check, typecheck, tests and build on every PR and on pushes to `dev` and `master`. Run the same checks locally with `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build`.
+GitHub Actions (`.github/workflows/ci.yml`) builds the ledger package, then runs lint, format check, typecheck, migrations, tests and build on every PR and on pushes to `dev` and `master`. Run the same checks locally with `pnpm check` (the e2e tests need MySQL, see below).
 
 Build and run the API image from the repo root:
 
