@@ -2,7 +2,7 @@
 
 Point ledger made of lots. Internal package, not published.
 
-Each `earn` adds a lot of points. Lots are append-only: only `remaining` (points not spent yet) changes, when a `spend` or a debt-paying `earn` lowers it. The balance is the sum of `remaining` over the lots that are not expired.
+Lots are append-only; only `remaining` (points not spent yet) changes, through `spend` or an `earn` that pays debt. Balance: sum of `remaining` over the lots not expired.
 
 ## Usage
 
@@ -49,7 +49,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 
 ## Storage
 
-`LedgerStorage<Tx>` is everything the ledger needs. Every method takes the caller's `tx` first.
+`LedgerStorage<Tx>`: every method takes the caller's `tx` first.
 
 - `lockMember(tx, memberId)`: `earn` and `spend` call it first. After it returns, no other earn or spend of that member runs until the transaction ends.
 - `findSpendableLots`, `findDebtLots`, `findLotByKey`: in a real database these must be locking reads.
@@ -58,7 +58,6 @@ await ledger.balance(tx, '42', new Date()); // 70
 Adapters:
 
 - `InMemoryLedgerStorage` (this package), for tests. It ignores `tx`, and `lockMember` does nothing.
-- MySQL adapter, in `apps/api`: `lockMember` is `SELECT ... FOR UPDATE` on the member row.
 
 ## Scripts
 
