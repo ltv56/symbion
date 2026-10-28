@@ -67,6 +67,16 @@ curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-
   -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5}'
 ```
 
+## Health and logs
+
+```sh
+# 200 {"status":"ok"}; 503 {"message":"Database unavailable",...} when MySQL is down (`pnpm db:down`)
+curl -s -i localhost:3000/health
+
+# JSON logs: one object per line, every line of a request has its requestId (DB_* exported, see Migrations)
+cd apps/api && NODE_ENV=production PORT=3000 node dist/main
+```
+
 E2E tests (`pnpm check`) delete all rows in `ledger_lots`, `orders`, `members`, `tiers` and `merchants`. Use a throwaway database only.
 
 Ledger MySQL tests require applied migrations (`pnpm db:migrate`). Run only these: `pnpm --filter @symbion/api test ledger-mysql`.
