@@ -1,25 +1,38 @@
 import type { LedgerStorage } from './storage';
-import type { EarnInput, EarnResult, SpendInput, SpendResult } from './types';
+import type {
+  EarnInput,
+  EarnResult,
+  Lot,
+  SpendInput,
+  SpendResult,
+} from './types';
 import { DuplicateKeyError } from './storage';
 
 export class Ledger<Tx> {
   constructor(private readonly storage: LedgerStorage<Tx>) {}
 
+  // Old debt is paid first, so the member never has a debt lot and a positive lot at the same time
+  // (spend drains the positive lots before it creates debt).
   // Insert first, then catch the duplicate. A check-then-insert would race.
+  // The debt lots are written only after a successful insert, so a retry can't pay the debt twice.
   async earn(tx: Tx, input: EarnInput): Promise<EarnResult> {
     if (!Number.isInteger(input.points) || input.points <= 0) {
       throw new Error('Points must be a positive integer');
     }
 
+    const debtLots = await this.storage.findDebtLots(tx, input.memberId);
+    const oldDebt = debtLots.reduce((sum, lot) => sum - lot.remaining, 0);
+    const pay = Math.min(input.points, oldDebt);
+
     const lotToInsert = {
       ...input,
-      remaining: input.points,
+      remaining: input.points - pay,
       expiresAt: input.expiresAt ?? null,
     };
 
+    let insertedLot: Lot;
     try {
-      const insertedLot = await this.storage.insertLot(tx, lotToInsert);
-      return { lot: insertedLot, duplicate: false };
+      insertedLot = await this.storage.insertLot(tx, lotToInsert);
     } catch (error) {
       if (!(error instanceof DuplicateKeyError)) {
         throw error;
@@ -40,6 +53,22 @@ export class Ledger<Tx> {
       }
       return { lot: existingLot, duplicate: true };
     }
+
+    let payLeft = pay;
+    for (const debtLot of debtLots) {
+      if (payLeft <= 0) {
+        break;
+      }
+      const taken = Math.min(-debtLot.remaining, payLeft);
+      await this.storage.setRemaining(
+        tx,
+        debtLot.id,
+        debtLot.remaining + taken,
+      );
+      payLeft -= taken;
+    }
+
+    return { lot: insertedLot, duplicate: false };
   }
 
   async spend(tx: Tx, input: SpendInput): Promise<SpendResult> {

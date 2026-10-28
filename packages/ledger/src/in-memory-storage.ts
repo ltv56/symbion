@@ -76,6 +76,7 @@ export class InMemoryLedgerStorage<Tx> implements LedgerStorage<Tx> {
     return [...this.lots.values()]
       .filter((lot) => lot.memberId === memberId)
       .filter((lot) => lot.remaining < 0)
+      .sort((a, b) => Number(a.id) - Number(b.id))
       .map((lot) => this.copy(lot));
   }
 

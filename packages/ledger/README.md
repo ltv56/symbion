@@ -28,7 +28,7 @@ await ledger.balance(tx, '42'); // 100
 
 Known limit: only the debt lot carries the spend's `idempotencyKey`. Sending the same short spend again throws `DuplicateKeyError`, but a spend fully covered by the lots is not idempotent in the ledger yet. The caller keeps its own unique key for that (like `orders`). Spend and earn keys share one `(merchantId, idempotencyKey)` space, so use different keys.
 
-Not done yet: old debt is not paid by `earn` yet.
+- **Debt is paid by `earn`:** a new `earn` first pays the oldest debt lots, so the new lot has `remaining = points - paid` (`points` stays the full amount). A member never has a debt lot and a positive lot at the same time. A repeated `earn` key returns the original lot and does not pay the debt again.
 
 ```bash
 pnpm --filter @symbion/ledger test
