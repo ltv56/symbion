@@ -18,8 +18,10 @@ describe('Ledger.spend', () => {
     });
 
     const spendResult = await ledger.spend(tx, {
+      merchantId: 'merchant1',
       memberId: 'member1',
       points: 30,
+      idempotencyKey: 'spend-key',
       now,
     });
 
@@ -42,9 +44,11 @@ describe('Ledger.spend', () => {
       expiresAt: new Date(now.getTime() + 2 * oneDayMs), // expires in 2 days
     });
     const spendResult = await ledger.spend(tx, {
+      merchantId: 'merchant1',
       memberId: 'member1',
       points: 150,
       now,
+      idempotencyKey: 'spend-key',
     });
     expect(spendResult.consumed).toEqual([
       { lotId: lot1.lot.id, points: 100 },
@@ -68,8 +72,10 @@ describe('Ledger.spend', () => {
       expiresAt: null, // never expires
     });
     const spendResult = await ledger.spend(tx, {
+      merchantId: 'merchant1',
       memberId: 'member1',
       points: 150,
+      idempotencyKey: 'spend-key',
       now,
     });
     expect(spendResult.consumed).toEqual([
@@ -94,8 +100,10 @@ describe('Ledger.spend', () => {
       expiresAt: new Date(now.getTime() + oneDayMs),
     });
     const spendResult = await ledger.spend(tx, {
+      merchantId: 'merchant1',
       memberId: 'member1',
       points: 150,
+      idempotencyKey: 'spend-key',
       now,
     });
     expect(spendResult.consumed).toEqual([
@@ -127,8 +135,10 @@ describe('Ledger.spend', () => {
       expiresAt: new Date(now.getTime() + 2 * oneDayMs),
     });
     const spendResult = await ledger.spend(tx, {
+      merchantId: 'merchant1',
       memberId: 'member1',
       points: 150,
+      idempotencyKey: 'spend-key',
       now,
     });
     expect(spendResult.consumed).toEqual([
@@ -145,25 +155,17 @@ describe('Ledger.spend', () => {
       idempotencyKey: 'key1',
       expiresAt: new Date(now.getTime() + oneDayMs),
     });
-    // No await before spend: expect needs the promise itself to check the rejection.
-    const spendPromise = ledger.spend(tx, {
+    const spendPromise = await ledger.spend(tx, {
+      merchantId: 'merchant1',
       memberId: 'member1',
       points: 150,
+      idempotencyKey: 'spend-key',
       now,
     });
-    await expect(spendPromise).rejects.toThrow(
-      'Not enough points to spend: requested 150, available 100',
-    );
-    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(100);
+    expect(spendPromise.debt).toBe(50);
+    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(-50);
   });
-  it('no lots at all -> spend rejects with "no available lots"', async () => {
-    await expect(
-      ledger.spend(tx, { memberId: 'member1', points: 50, now }),
-    ).rejects.toThrow(
-      'Not enough points to spend: requested 50, no available lots',
-    );
-  });
-  it('only an expired lot -> spend rejects with "no available lots"', async () => {
+  it('only an expired lot', async () => {
     await ledger.earn(tx, {
       merchantId: 'merchant1',
       memberId: 'member1',
@@ -171,17 +173,27 @@ describe('Ledger.spend', () => {
       idempotencyKey: 'key1',
       expiresAt: new Date(now.getTime() - oneDayMs),
     });
-    await expect(
-      ledger.spend(tx, { memberId: 'member1', points: 50, now }),
-    ).rejects.toThrow(
-      'Not enough points to spend: requested 50, no available lots',
-    );
+    const spendPromise = await ledger.spend(tx, {
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 50,
+      idempotencyKey: 'spend-key',
+      now,
+    });
+    expect(spendPromise.debt).toBe(50);
+    await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(-50);
   });
   it.each([0, -5, 1.5])(
     'points %s -> rejects (table-driven with it.each)',
     async (points) => {
       await expect(
-        ledger.spend(tx, { memberId: 'member1', points, now }),
+        ledger.spend(tx, {
+          merchantId: 'merchant1',
+          memberId: 'member1',
+          points,
+          idempotencyKey: 'spend-key',
+          now,
+        }),
       ).rejects.toThrow('Points must be a positive integer');
     },
   );

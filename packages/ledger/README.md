@@ -23,9 +23,12 @@ await ledger.balance(tx, '42'); // 100
 - **Transaction from the caller:** `tx` is passed to every storage call. The ledger never opens or commits a transaction, so the caller can put earning and other writes in one transaction.
 - **Storage:** `LedgerStorage<Tx>` is the only thing the ledger needs. `InMemoryLedgerStorage` is for tests. The MySQL adapter lives in the app.
 - **Expiry:** a lot with `expiresAt` at or before `now` is ignored by `balance` and `spend`. `expiresAt: null` never expires.
-- **FIFO spend:** `spend(tx, { memberId, points, now })` takes points from the lot that expires first (no expiry last, then lower id). It returns `consumed`, the points taken per lot. If the member does not have enough points it throws and changes nothing.
+- **FIFO spend:** `spend(tx, { merchantId, memberId, points, idempotencyKey, now })` takes points from the lot that expires first (no expiry last, then lower id). It returns `consumed` (points taken per lot) and `debt`.
+- **Negative balance:** if the member has too few points, `spend` does not throw. It drains the lots and adds one debt lot (`points` and `remaining` = minus the shortfall), so `balance` goes below 0. `debt` is the shortfall of that call (0 if none).
 
-Not done yet: negative balance (debt lot), spend idempotency.
+Known limit: only the debt lot carries the spend's `idempotencyKey`. Sending the same short spend again throws `DuplicateKeyError`, but a spend fully covered by the lots is not idempotent in the ledger yet. The caller keeps its own unique key for that (like `orders`). Spend and earn keys share one `(merchantId, idempotencyKey)` space, so use different keys.
+
+Not done yet: old debt is not paid by `earn` yet.
 
 ```bash
 pnpm --filter @symbion/ledger test

@@ -22,4 +22,7 @@ export type LedgerStorage<Tx> = {
   // The MySQL adapter must use a locking read (FOR UPDATE) so parallel spends can't double spend.
   findSpendableLots(tx: Tx, memberId: string, now: Date): Promise<Lot[]>;
   setRemaining(tx: Tx, lotId: string, remaining: number): Promise<void>;
+  // Debt lots: remaining < 0. Expiry does not apply to debt.
+  // The MySQL adapter must also use a locking read (FOR UPDATE), so two parallel spends can't pay the same debt twice.
+  findDebtLots(tx: Tx, memberId: string): Promise<Lot[]>;
 };

@@ -20,13 +20,16 @@ export type EarnInput = {
 };
 
 export type SpendInput = {
+  merchantId: string;
   memberId: string;
   points: number;
   now: Date;
+  idempotencyKey: string;
 };
 
 export type SpendResult = {
   consumed: { lotId: string; points: number }[];
+  debt: number;
 };
 
 // `duplicate` is true when the key was already used and `lot` is the original one.

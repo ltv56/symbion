@@ -42,7 +42,6 @@ export class Ledger<Tx> {
     }
   }
 
-  // Check the total before changing any lot: in-memory has no rollback, so a half spend would stay.
   async spend(tx: Tx, input: SpendInput): Promise<SpendResult> {
     if (!Number.isInteger(input.points) || input.points <= 0) {
       throw new Error('Points must be a positive integer');
@@ -54,18 +53,19 @@ export class Ledger<Tx> {
       input.now,
     );
 
-    // Narrow case first: with no lots the total is 0 and would hit the broader check below.
-    if (lots.length === 0) {
-      throw new Error(
-        `Not enough points to spend: requested ${input.points}, no available lots`,
-      );
-    }
+    const available = lots.reduce((sum, lot) => sum + lot.remaining, 0);
+    const shortfall = Math.max(0, input.points - available);
 
-    const totalRemaining = lots.reduce((sum, lot) => sum + lot.remaining, 0);
-    if (totalRemaining < input.points) {
-      throw new Error(
-        `Not enough points to spend: requested ${input.points}, available ${totalRemaining}`,
-      );
+    // Insert first: if the key is a duplicate nothing else was changed yet.
+    if (shortfall > 0) {
+      await this.storage.insertLot(tx, {
+        merchantId: input.merchantId,
+        memberId: input.memberId,
+        points: -shortfall,
+        remaining: -shortfall,
+        expiresAt: null,
+        idempotencyKey: input.idempotencyKey,
+      });
     }
 
     let left = input.points;
@@ -80,7 +80,7 @@ export class Ledger<Tx> {
       left -= take;
     }
 
-    return { consumed };
+    return { consumed, debt: shortfall };
   }
 
   balance(tx: Tx, memberId: string, now: Date): Promise<number> {
