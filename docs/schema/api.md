@@ -35,6 +35,10 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 - `POST /merchants` is unauthenticated until admin auth is added.
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
 
+## Request id and logs
+
+Every response carries an `x-request-id` header. If the client sends one (1-64 chars of `A-Z a-z 0-9 . _ -`) it is echoed, otherwise the api generates a UUID. Each request logs one access line (`METHOD /path status Nms`, no query string, no headers), and every log line written during the request carries the same id. With `NODE_ENV=production` logs are one JSON object per line (`time`, `level`, `context`, `message`, `requestId`, `stack` for errors); in dev and test they stay in Nest's console format.
+
 ## GET /health
 
 Liveness plus a MySQL check (`SELECT 1`). Responses: `200` with `{ "status": "ok" }`, `503` in the common error shape (`"message": "Database unavailable"`) when MySQL does not answer. The cause is logged server-side only.

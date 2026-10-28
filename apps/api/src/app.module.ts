@@ -1,9 +1,15 @@
-import { Module, ValidationPipe } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { RedactedSqlLogger } from './common/redacted-sql.logger';
+import { requestIdMiddleware } from './common/request-id.middleware';
 import { HealthModule } from './health/health.module';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
@@ -48,4 +54,8 @@ import { OrdersModule } from './orders/orders.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(requestIdMiddleware).forRoutes('*path');
+  }
+}
