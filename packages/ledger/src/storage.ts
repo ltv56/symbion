@@ -17,5 +17,12 @@ export type LedgerStorage<Tx> = {
     merchantId: string,
     idempotencyKey: string,
   ): Promise<Lot | undefined>;
-  sumRemaining(tx: Tx, memberId: string): Promise<number>;
+  sumRemaining(tx: Tx, memberId: string, now: Date): Promise<number>;
+  // Not expired, remaining > 0. Order: expiresAt asc (null last), then id.
+  // The MySQL adapter must use a locking read (FOR UPDATE) so parallel spends can't double spend.
+  findSpendableLots(tx: Tx, memberId: string, now: Date): Promise<Lot[]>;
+  setRemaining(tx: Tx, lotId: string, remaining: number): Promise<void>;
+  // Debt lots: remaining < 0, oldest first (id asc), because earn pays the oldest debt first. Expiry does not apply to debt.
+  // The MySQL adapter must also use a locking read (FOR UPDATE), so two parallel spends can't pay the same debt twice.
+  findDebtLots(tx: Tx, memberId: string): Promise<Lot[]>;
 };
