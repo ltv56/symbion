@@ -22,8 +22,7 @@ export class CreateLedgerLots1793201263201 implements MigrationInterface {
         CONSTRAINT chk_ledger_lots_points_nonzero CHECK (points <> 0),
         CONSTRAINT fk_ledger_lots_merchant FOREIGN KEY (merchant_id) REFERENCES merchants(id),
         CONSTRAINT fk_ledger_lots_member FOREIGN KEY (member_id) REFERENCES members(id),
-        INDEX idx_ledger_lots_member_expires (member_id, expires_at, id),
-        INDEX idx_ledger_lots_member_remaining (member_id, remaining, id)
+        INDEX idx_ledger_lots_member_expires (member_id, expires_at, id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
   }

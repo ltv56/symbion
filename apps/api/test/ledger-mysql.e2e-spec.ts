@@ -398,13 +398,5 @@ describe('MysqlLedgerStorage', () => {
         await dataSource.query('ALTER TABLE ledger_lots AUTO_INCREMENT = 1');
       }
     });
-
-    it('has an index for debt reads', async () => {
-      const rows: { Key_name: string }[] = await dataSource.query(
-        `SHOW INDEX FROM ledger_lots WHERE Key_name = 'idx_ledger_lots_member_remaining'`,
-      );
-
-      expect(rows.length).toBeGreaterThan(0);
-    });
   });
 });
