@@ -467,6 +467,25 @@ describe('MysqlLedgerStorage', () => {
       });
     });
 
+    it.each([
+      ['earn', -10],
+      ['spend', 10],
+    ])(
+      'rejects a %s lot with %i points (CHECK constraint)',
+      async (type, points) => {
+        await expect(
+          dataSource.query(
+            `INSERT INTO ledger_lots
+            (merchant_id, member_id, points, remaining, idempotency_key, type)
+            VALUES (?, ?, ?, ?, 'bad-sign', ?)`,
+            [merchantId, memberId, points, points, type],
+          ),
+        ).rejects.toMatchObject({
+          driverError: { code: 'ER_CHECK_CONSTRAINT_VIOLATED' },
+        });
+      },
+    );
+
     it('stores the spend type with no ref', async () => {
       await insertLot(100, 'lot');
 

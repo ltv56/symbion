@@ -11,6 +11,7 @@ import {
   EARNING_STRATEGY,
   type EarningStrategy,
 } from '../earning/earning.strategy';
+import { addMonths } from '../common/add-months';
 import { Order } from './order.entity';
 import { MAX_POINTS_PER_ORDER } from './orders.config';
 
@@ -64,8 +65,7 @@ export class OrdersService {
         const points = Math.min(calculatedPoints, this.maxPointsPerOrder);
         if (points > 0) {
           const now = new Date();
-          const expiresAt = new Date(now);
-          expiresAt.setUTCMonth(expiresAt.getUTCMonth() + 12);
+          const expiresAt = addMonths(now, 12);
           await this.ledger.earn(tx, {
             merchantId: String(merchantId),
             memberId: String(memberId),

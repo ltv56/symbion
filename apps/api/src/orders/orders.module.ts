@@ -6,7 +6,7 @@ import { TierEarningStrategy } from '../earning/tier-earning.strategy';
 import { LedgerModule } from '../ledger/ledger.module';
 import { MerchantsModule } from '../merchants/merchants.module';
 import { Order } from './order.entity';
-import { MAX_POINTS_PER_ORDER } from './orders.config';
+import { MAX_POINTS_PER_ORDER, parseMaxPointsPerOrder } from './orders.config';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 
@@ -21,7 +21,9 @@ import { OrdersService } from './orders.service';
       provide: MAX_POINTS_PER_ORDER,
       inject: [ConfigService],
       useFactory: (config: ConfigService) =>
-        Number(config.get<string>('MAX_POINTS_PER_ORDER', '10000')),
+        parseMaxPointsPerOrder(
+          config.get<string>('MAX_POINTS_PER_ORDER', '10000'),
+        ),
     },
   ],
 })

@@ -61,7 +61,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 Adapters:
 
 - `InMemoryLedgerStorage` (this package), for tests. It ignores `tx`, and `lockMember` does nothing, so concurrent calls for one member are not serialised.
-- `MysqlLedgerStorage` (`apps/api/src/ledger/mysql-ledger.storage.ts`), table `ledger_lots` with `BIGINT` points, `UNIQUE (merchant_id, idempotency_key)`, `CHECK (points <> 0)` and `ref` as `ref_type` + `ref_id` columns. `tx` is a TypeORM `EntityManager`. `lockMember` is `SELECT ... FOR UPDATE` on the member row; `findLotByKey`, `findSpendableLots` and `findDebtLots` are `FOR UPDATE` reads. Tested against MySQL in `apps/api/test/ledger-mysql.e2e-spec.ts`, including parallel earns and spends.
+- `MysqlLedgerStorage` (`apps/api/src/ledger/mysql-ledger.storage.ts`), table `ledger_lots` with `BIGINT` points, `UNIQUE (merchant_id, idempotency_key)`, `CHECK (points <> 0)` and `ref` as `ref_type` + `ref_id` columns; `ref.id` must be a numeric id (`ref_id` is `BIGINT UNSIGNED`). `tx` is a TypeORM `EntityManager`. `lockMember` is `SELECT ... FOR UPDATE` on the member row; `findLotByKey`, `findSpendableLots` and `findDebtLots` are `FOR UPDATE` reads. Tested against MySQL in `apps/api/test/ledger-mysql.e2e-spec.ts`, including parallel earns and spends.
 
 ## Scripts
 

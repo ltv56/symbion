@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { addMonths } from '../src/common/add-months';
 
 describe('Orders', () => {
   let app: INestApplication;
@@ -204,11 +205,13 @@ describe('Orders', () => {
     const setEarnRate = (rate: string) =>
       dataSource.query('UPDATE tiers SET earn_rate = ?', [rate]);
 
-    const monthsFromNow = (months: number) => {
-      const date = new Date();
-      date.setUTCMonth(date.getUTCMonth() + months);
-      return date;
-    };
+    const monthsFromNow = (months: number) => addMonths(new Date(), months);
+
+    it('rejects a negative earn rate (CHECK constraint)', async () => {
+      await expect(setEarnRate('-1.25')).rejects.toMatchObject({
+        driverError: { code: 'ER_CHECK_CONSTRAINT_VIOLATED' },
+      });
+    });
 
     it.each([
       [250_000, '1.00', 25],
