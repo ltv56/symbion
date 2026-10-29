@@ -1,5 +1,22 @@
 # Manual testing
 
+## Admin login
+
+Needs `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` and `JWT_SECRET` in the api environment (see `infra/.env.example`).
+
+```sh
+# create the value for ADMIN_PASSWORD_HASH (the password is read from stdin)
+printf '%s' 'my-password' | pnpm --silent --filter @symbion/api hash-password
+
+# login -> 200 {"accessToken":"<jwt>"}
+TOKEN=$(curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
+  -d '{"email":"admin@example.com","password":"my-password"}' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+
+# error path -> 401 {"message":"Invalid credentials",...}
+curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
+  -d '{"email":"admin@example.com","password":"wrong"}'
+```
+
 ## Merchants (MySQL)
 
 ```sh

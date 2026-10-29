@@ -35,6 +35,23 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 - `POST /merchants` is unauthenticated until admin auth is added.
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
 
+## POST /auth/login
+
+Logs in the admin account configured in the environment. Body: `email`, `password` (1-200 characters). Responses: `200` with `{ "accessToken": "<jwt>" }`, `400` validation, `401` `Invalid credentials` (same body for a wrong email and a wrong password).
+
+The token is a JWT (HS256) with payload `{ "sub": "admin", "role": "admin" }` that expires after `JWT_EXPIRES_IN`. Admin endpoints answer `401` for a missing, malformed, expired or wrongly signed token, and for a token without `role: admin`.
+
+| Variable              | Notes                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `ADMIN_EMAIL`         | required; compared case-insensitively                                                    |
+| `ADMIN_PASSWORD_HASH` | required; `scrypt$<salt hex>$<hash hex>`, create with `pnpm hash-password` (see testing) |
+| `JWT_SECRET`          | required, at least 32 characters                                                         |
+| `JWT_EXPIRES_IN`      | optional, default `1h`                                                                   |
+
+The api does not start when a required variable is missing or `JWT_SECRET` is too short.
+
+Known limitations: no refresh token, no logout, no rate limit on login, a single admin account.
+
 ## Request id and logs
 
 - Every response has an `x-request-id` header: the client's value (1-64 chars of `A-Z a-z 0-9 . _ -`) or a generated UUID.
