@@ -7,14 +7,19 @@ Single host, Docker Compose with `nginx`, `api` and `mysql`. Nginx terminates TL
 - A Linux host with Docker and the Compose plugin.
 - A DNS record pointing the domain at the host.
 - Inbound ports 80 and 443 only. `mysql` and `api` are published on `127.0.0.1` and must not be opened.
-- `infra/.env` (see `infra/.env.example`) with strong values for `DB_PASSWORD` and `DB_ROOT_PASSWORD`.
+- `infra/.env` (see `infra/.env.example`) with strong values for `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `ADMIN_PASSWORD_HASH` and `JWT_SECRET`.
 
 ## Environment
 
-| Variable | Used by | Notes                                                      |
-| -------- | ------- | ---------------------------------------------------------- |
-| `DOMAIN` | nginx   | public host name; selects `/etc/letsencrypt/live/$DOMAIN/` |
-| `DB_*`   | api     | see `infra/.env.example`                                   |
+| Variable               | Used by | Notes                                                                           |
+| ---------------------- | ------- | ------------------------------------------------------------------------------- |
+| `DOMAIN`               | nginx   | public host name; selects `/etc/letsencrypt/live/$DOMAIN/`                      |
+| `DB_*`                 | api     | see `infra/.env.example`                                                        |
+| `ADMIN_EMAIL`          | api     | admin login                                                                     |
+| `ADMIN_PASSWORD_HASH`  | api     | `printf '%s' '<password>' \| pnpm --silent --filter @symbion/api hash-password` |
+| `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                  |
+| `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                          |
+| `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                       |
 
 ## First deploy
 
@@ -24,7 +29,6 @@ sudo certbot certonly --standalone -d "$DOMAIN"
 
 # 2. database and migrations
 docker compose -f infra/compose.yaml up -d --wait mysql
-set -a; . infra/.env; set +a; export DB_HOST=127.0.0.1
 pnpm install --frozen-lockfile
 pnpm db:migrate
 pnpm db:seed
