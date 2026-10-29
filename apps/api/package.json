@@ -13,7 +13,7 @@
     "migration:revert": "pnpm build && pnpm typeorm migration:revert",
     "seed": "pnpm build && node --env-file-if-exists=../../infra/.env dist/seed.js",
     "test": "node --env-file-if-exists=../../infra/.env --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --passWithNoTests",
-    "hash-password": "pnpm build && node dist/hash-password.js"
+    "hash-password": "pnpm --silent build && node dist/hash-password.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.2.0",
