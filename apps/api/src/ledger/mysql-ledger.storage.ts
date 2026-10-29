@@ -127,19 +127,36 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
   }
 
   async findSpendableLots(
-    _tx: EntityManager,
-    _memberId: string,
-    _now: Date,
+    tx: EntityManager,
+    memberId: string,
+    now: Date,
   ): Promise<Lot[]> {
-    throw new Error('Not implemented yet');
+    // FIFO: lots that expire first, lots without expiry last, lower id first on a tie.
+    const rows: LotRow[] = await tx.query(
+      `SELECT *
+      FROM ledger_lots
+      WHERE member_id = ?
+      AND remaining > 0
+      AND (expires_at IS NULL OR expires_at > ?)
+      ORDER BY expires_at IS NULL, expires_at, id
+      FOR UPDATE`,
+      [memberId, now],
+    );
+    return rows.map((row: LotRow) => this.toLot(row));
   }
 
   async setRemaining(
-    _tx: EntityManager,
-    _lotId: string,
-    _remaining: number,
+    tx: EntityManager,
+    lotId: string,
+    remaining: number,
   ): Promise<void> {
-    throw new Error('Not implemented yet');
+    const result: { affectedRows: number } = await tx.query(
+      `UPDATE ledger_lots SET remaining = ? WHERE id = ?`,
+      [remaining, lotId],
+    );
+    if (result.affectedRows === 0) {
+      throw new Error(`Lot with id ${lotId} not found`);
+    }
   }
 
   async findDebtLots(tx: EntityManager, memberId: string): Promise<Lot[]> {

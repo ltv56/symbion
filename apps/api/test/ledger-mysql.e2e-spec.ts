@@ -53,6 +53,8 @@ describe('MysqlLedgerStorage', () => {
   const inTx = <T>(fn: (tx: EntityManager) => Promise<T>) =>
     dataSource.transaction(fn);
 
+  const balance = () => inTx((tx) => ledger.balance(tx, String(memberId), now));
+
   const insertLot = (
     points: number,
     idempotencyKey: string,
@@ -92,8 +94,6 @@ describe('MysqlLedgerStorage', () => {
       idempotencyKey: 'key-A',
       ...overrides,
     });
-    const balance = () =>
-      inTx((tx) => ledger.balance(tx, String(memberId), now));
 
     it('earn adds a lot and balance returns it', async () => {
       const result = await inTx((tx) => ledger.earn(tx, earnInput()));
@@ -133,6 +133,85 @@ describe('MysqlLedgerStorage', () => {
       );
 
       await expect(balance()).resolves.toBe(0);
+    });
+  });
+
+  describe('slice 3: FIFO spend', () => {
+    const spend = (points: number, idempotencyKey = 'spend-1') =>
+      inTx((tx) =>
+        ledger.spend(tx, {
+          now,
+          merchantId: String(merchantId),
+          memberId: String(memberId),
+          points,
+          idempotencyKey,
+        }),
+      );
+    const lotId = async (key: string) => {
+      const rows = await dataSource.query(
+        `SELECT id FROM ledger_lots WHERE idempotency_key = ?`,
+        [key],
+      );
+      return String(rows[0].id);
+    };
+    const remainingOf = async (key: string) => {
+      const rows = await dataSource.query(
+        `SELECT remaining FROM ledger_lots WHERE idempotency_key = ?`,
+        [key],
+      );
+      return Number(rows[0].remaining);
+    };
+
+    it('spends the lot that expires first', async () => {
+      await insertLot(100, 'late', 100, new Date('2026-03-01T00:00:00Z'));
+      await insertLot(100, 'early', 100, new Date('2026-02-01T00:00:00Z'));
+
+      const result = await spend(50);
+
+      expect(result.consumed).toEqual([
+        { lotId: await lotId('early'), points: 50 },
+      ]);
+      expect(result.debt).toBe(0);
+      await expect(remainingOf('early')).resolves.toBe(50);
+      await expect(remainingOf('late')).resolves.toBe(100);
+    });
+
+    it('spends lots with no expiry last, and the lower id first on a tie', async () => {
+      await insertLot(30, 'none');
+      await insertLot(10, 'a', 10, new Date('2026-02-01T00:00:00Z'));
+      await insertLot(20, 'b', 20, new Date('2026-02-01T00:00:00Z'));
+
+      const result = await spend(60);
+
+      expect(result.consumed).toEqual([
+        { lotId: await lotId('a'), points: 10 },
+        { lotId: await lotId('b'), points: 20 },
+        { lotId: await lotId('none'), points: 30 },
+      ]);
+      await expect(balance()).resolves.toBe(0);
+    });
+
+    it('skips expired lots and lots with remaining = 0', async () => {
+      await insertLot(100, 'expired', 100, new Date('2026-01-01T00:00:00Z'));
+      await insertLot(100, 'empty', 0);
+      await insertLot(100, 'valid', 100, new Date('2026-02-01T00:00:00Z'));
+
+      const result = await spend(30);
+
+      expect(result.consumed).toEqual([
+        { lotId: await lotId('valid'), points: 30 },
+      ]);
+      await expect(remainingOf('expired')).resolves.toBe(100);
+      await expect(remainingOf('empty')).resolves.toBe(0);
+      await expect(remainingOf('valid')).resolves.toBe(70);
+    });
+
+    it('lowers the balance by the amount spent', async () => {
+      await insertLot(100, 'lot');
+
+      await spend(30);
+
+      await expect(balance()).resolves.toBe(70);
     });
   });
 });
