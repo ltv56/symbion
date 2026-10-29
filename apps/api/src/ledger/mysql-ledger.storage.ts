@@ -15,6 +15,9 @@ type LotRow = {
   expires_at: Date | null;
   idempotency_key: string;
   created_at: Date;
+  type: 'earn' | 'spend';
+  ref_type: string | null;
+  ref_id: string | number | null;
 };
 function toSafeInt(value: unknown, field: string): number {
   const numberValue = Number(value);
@@ -38,6 +41,14 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
       expiresAt: row.expires_at,
       idempotencyKey: String(row.idempotency_key),
       createdAt: row.created_at,
+      type: row.type,
+      ref:
+        row.ref_type != null && row.ref_id != null
+          ? {
+              type: row.ref_type,
+              id: String(toSafeInt(row.ref_id, 'ref_id')),
+            }
+          : null,
     };
   }
 
@@ -60,8 +71,8 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
     try {
       result = await tx.query(
         `
-        INSERT INTO ledger_lots (merchant_id, member_id, points, remaining, expires_at, idempotency_key)
-        VALUES (?, ?, ?, ?, ?, ?)`,
+        INSERT INTO ledger_lots (merchant_id, member_id, points, remaining, expires_at, idempotency_key, type, ref_type, ref_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           lot.merchantId,
           lot.memberId,
@@ -69,6 +80,9 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
           lot.remaining,
           lot.expiresAt,
           lot.idempotencyKey,
+          lot.type,
+          lot.ref?.type ?? null,
+          lot.ref?.id ?? null,
         ],
       );
     } catch (error) {

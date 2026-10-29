@@ -52,19 +52,19 @@ Requires a merchant (`$KEY`) and a member `an@x.com` (see Members).
 ```sh
 # create an order -> 201
 curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
-  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":99.9}'
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":250000}'
 
 # same key again -> 200 with the same order id, no second row
 curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
-  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":99.9}'
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":250000}'
 
 # error path -> 400 (missing Idempotency-Key)
 curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
-  -d '{"memberEmail":"an@x.com","amount":5}'
+  -d '{"memberEmail":"an@x.com","amount":5000}'
 
 # error path -> 404 (unknown member)
 curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
-  -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5}'
+  -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5000}'
 ```
 
 ## Health and logs
@@ -85,11 +85,10 @@ Ledger MySQL tests require applied migrations (`pnpm db:migrate`). Run only thes
 
 ```sh
 pnpm db:up
-set -a; . infra/.env; set +a; export DB_HOST=127.0.0.1
 
-pnpm db:migrate                          # build, then apply pending migrations
-pnpm --filter @symbion/api migration:revert   # undo the last migration
-pnpm db:seed                              # build, then upsert the default tiers (Bronze, Silver, Gold); safe to re-run
+pnpm db:migrate          # build, then apply pending migrations
+pnpm db:migrate:revert   # undo the last migration
+pnpm db:seed             # build, then upsert the default tiers (Bronze, Silver, Gold); safe to re-run
 
-docker exec symbion-mysql-1 mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SHOW CREATE TABLE members\G"
+docker compose -f infra/compose.yaml exec mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW CREATE TABLE members\G"'
 ```

@@ -42,10 +42,12 @@ export class Ledger<Tx> {
     const alreadyExpired = !!input.expiresAt && input.expiresAt <= now;
     const pay = alreadyExpired ? 0 : Math.min(input.points, oldDebt);
 
-    const lotToInsert = {
+    const lotToInsert: Omit<Lot, 'id' | 'createdAt'> = {
       ...lotFields,
       remaining: input.points - pay,
       expiresAt: input.expiresAt ?? null,
+      type: 'earn',
+      ref: input.ref ?? null,
     };
 
     let insertedLot: Lot;
@@ -116,6 +118,8 @@ export class Ledger<Tx> {
       remaining: -shortfall,
       expiresAt: null,
       idempotencyKey: input.idempotencyKey,
+      type: 'spend',
+      ref: null,
     });
 
     let left = input.points;

@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { addMonths } from '../src/common/add-months';
 
 describe('Orders', () => {
   let app: INestApplication;
@@ -60,12 +61,11 @@ describe('Orders', () => {
   };
 
   it('creates an order for a member', async () => {
-    const res = await post('order-1', { memberEmail, amount: 120.5 }).expect(
+    const res = await post('order-1', { memberEmail, amount: 250_000 }).expect(
       201,
     );
 
-    expect(res.body).toMatchObject({ merchantId, memberId });
-    expect(res.body.amount).toBe('120.50');
+    expect(res.body).toMatchObject({ merchantId, memberId, amount: 250_000 });
     const rows = await dataSource.query(
       'SELECT idempotency_key FROM orders WHERE id = ?',
       [res.body.id],
@@ -74,11 +74,16 @@ describe('Orders', () => {
   });
 
   it.each([
-    ['one cent', 0.01, '0.01'],
-    ['the column maximum', 9_999_999_999.99, '9999999999.99'],
-  ])('accepts %s', async (_label, amount, stored) => {
+    ['1 VND', 1],
+    ['the maximum', 9_999_999_999],
+  ])('accepts %s', async (_label, amount) => {
     const res = await post('k1', { memberEmail, amount }).expect(201);
-    expect(res.body.amount).toBe(stored);
+    expect(res.body.amount).toBe(amount);
+    const rows = await dataSource.query(
+      'SELECT amount FROM orders WHERE id = ?',
+      [res.body.id],
+    );
+    expect(Number(rows[0].amount)).toBe(amount);
   });
 
   it.each([
@@ -86,10 +91,10 @@ describe('Orders', () => {
     ['a missing amount', 'k1', { memberEmail }],
     ['a zero amount', 'k1', { memberEmail, amount: 0 }],
     ['a negative amount', 'k1', { memberEmail, amount: -5 }],
-    ['an amount below one cent', 'k1', { memberEmail, amount: 0.004 }],
-    ['an amount with three decimals', 'k1', { memberEmail, amount: 10.005 }],
-    ['an exponent amount below one cent', 'k1', { memberEmail, amount: 1e-9 }],
-    ['an amount over the column limit', 'k1', { memberEmail, amount: 1e10 }],
+    ['a fractional amount', 'k1', { memberEmail, amount: 120.5 }],
+    ['an exponent amount below 1 VND', 'k1', { memberEmail, amount: 1e-9 }],
+    ['an amount as a string', 'k1', { memberEmail, amount: '100' }],
+    ['an amount over the maximum', 'k1', { memberEmail, amount: 1e10 }],
     ['an invalid email', 'k1', { memberEmail: 'nope', amount: 10 }],
     [
       'a merchantId in the body',
@@ -129,10 +134,10 @@ describe('Orders', () => {
   it('keeps the original values when a repeated key has a different body', async () => {
     await post('k1', { memberEmail, amount: 10 }).expect(201);
     const res2 = await post('k1', { memberEmail, amount: 99 }).expect(200);
-    expect(res2.body.amount).toBe('10.00');
+    expect(res2.body.amount).toBe(10);
     const rows = await dataSource.query('SELECT amount FROM orders');
     expect(rows).toHaveLength(1);
-    expect(rows[0].amount).toBe('10.00');
+    expect(Number(rows[0].amount)).toBe(10);
   });
 
   it('treats idempotency keys that differ only by case as different', async () => {
@@ -176,5 +181,134 @@ describe('Orders', () => {
 
     const rows = await dataSource.query('SELECT COUNT(*) as count FROM orders');
     expect(Number(rows[0].count)).toBe(2);
+  });
+
+  describe('earning points', () => {
+    type LotRow = {
+      merchant_id: number;
+      member_id: number;
+      points: number;
+      remaining: number;
+      expires_at: Date;
+      idempotency_key: string;
+      type: string;
+      ref_type: string | null;
+      ref_id: string | null;
+    };
+
+    const lots = (): Promise<LotRow[]> =>
+      dataSource.query(
+        'SELECT * FROM ledger_lots WHERE member_id = ? ORDER BY id',
+        [memberId],
+      );
+
+    const setEarnRate = (rate: string) =>
+      dataSource.query('UPDATE tiers SET earn_rate = ?', [rate]);
+
+    const monthsFromNow = (months: number) => addMonths(new Date(), months);
+
+    it('rejects a negative earn rate (CHECK constraint)', async () => {
+      await expect(setEarnRate('-1.25')).rejects.toMatchObject({
+        driverError: { code: 'ER_CHECK_CONSTRAINT_VIOLATED' },
+      });
+    });
+
+    it.each([
+      [250_000, '1.00', 25],
+      [250_000, '1.25', 31],
+      [250_000, '1.50', 37],
+      [9_999, '1.50', 1],
+    ])(
+      'awards points for %i VND at earn rate %s',
+      async (amount, rate, points) => {
+        await setEarnRate(rate);
+        const expectedExpiry = monthsFromNow(12);
+
+        const res = await post('k1', { memberEmail, amount }).expect(201);
+
+        const rows = await lots();
+        expect(rows).toHaveLength(1);
+        const lot = rows[0]!;
+        expect(lot).toMatchObject({
+          points,
+          remaining: points,
+          idempotency_key: `order:${res.body.id}`,
+        });
+        expect(Number(lot.merchant_id)).toBe(merchantId);
+        expect(Number(lot.member_id)).toBe(memberId);
+        expect(
+          Math.abs(
+            new Date(lot.expires_at).getTime() - expectedExpiry.getTime(),
+          ),
+        ).toBeLessThan(60_000);
+      },
+    );
+
+    it.each([
+      [100_000_000, '1.00'],
+      [250_000_000, '1.00'],
+      [9_999_999_999, '1.50'],
+    ])('caps %i VND at earn rate %s to 10,000 points', async (amount, rate) => {
+      await setEarnRate(rate);
+
+      await post('k1', { memberEmail, amount }).expect(201);
+
+      const rows = await lots();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ points: 10_000, remaining: 10_000 });
+    });
+
+    it('links the lot to its order', async () => {
+      const res = await post('k1', { memberEmail, amount: 250_000 }).expect(
+        201,
+      );
+
+      const rows = await lots();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ type: 'earn', ref_type: 'order' });
+      expect(Number(rows[0]!.ref_id)).toBe(res.body.id);
+    });
+
+    it('creates no lot for a 0-point order', async () => {
+      await post('k1', { memberEmail, amount: 5_000 }).expect(201);
+
+      expect(await lots()).toHaveLength(0);
+    });
+
+    it('awards points once when the same key is sent again', async () => {
+      await post('k1', { memberEmail, amount: 250_000 }).expect(201);
+      await post('k1', { memberEmail, amount: 250_000 }).expect(200);
+
+      expect(await lots()).toHaveLength(1);
+    });
+
+    it('awards every parallel order for one member', async () => {
+      const n = 10;
+
+      const responses = await Promise.all(
+        Array.from({ length: n }, (_, i) =>
+          post(`k${i}`, { memberEmail, amount: 100_000 }),
+        ),
+      );
+
+      expect(responses.map((res) => res.status)).toEqual(Array(n).fill(201));
+      const rows = await lots();
+      expect(rows).toHaveLength(n);
+      expect(rows.reduce((sum, lot) => sum + Number(lot.points), 0)).toBe(
+        n * 10,
+      );
+    });
+
+    it('awards points once when the same key arrives in parallel', async () => {
+      const [res1, res2] = await Promise.all([
+        post('k1', { memberEmail, amount: 250_000 }),
+        post('k1', { memberEmail, amount: 250_000 }),
+      ]);
+
+      expect([res1.status, res2.status].sort((a, b) => a - b)).toEqual([
+        200, 201,
+      ]);
+      expect(await lots()).toHaveLength(1);
+    });
   });
 });

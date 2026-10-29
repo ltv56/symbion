@@ -8,4 +8,5 @@ export type {
   Lot,
   SpendInput,
   SpendResult,
+  LotRef,
 } from './types';

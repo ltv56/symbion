@@ -53,11 +53,13 @@ Creates a member on the lowest tier (smallest `min_points`). Responses: `201`, `
 
 A merchant reports an order for a member. `merchant_id` comes from the API key, never from the body.
 
-| Input             | Notes                                                           |
-| ----------------- | --------------------------------------------------------------- |
-| `x-api-key`       | header, required                                                |
-| `Idempotency-Key` | header, required, 1-255 characters; unique per merchant         |
-| `memberEmail`     | body, email of an existing member                               |
-| `amount`          | body, number from 0.01 to 9999999999.99 with at most 2 decimals |
+| Input             | Notes                                                                            |
+| ----------------- | -------------------------------------------------------------------------------- |
+| `x-api-key`       | header, required                                                                 |
+| `Idempotency-Key` | header, required, 1-255 characters; unique per merchant                          |
+| `memberEmail`     | body, email of an existing member                                                |
+| `amount`          | body, integer VND from 1 to 9999999999; what the member paid (after any voucher) |
 
-Responses: `201` with the created order (`amount` is a string such as `"99.90"`), `200` with the original order when the same `Idempotency-Key` was already used by this merchant (no second order is created), `400` invalid input (amount outside 0.01 to 9999999999.99, more than 2 decimals) or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member.
+A new order awards points to the member in the same transaction (see `docs/rules.md`). The response body is the order; points are not included.
+
+Responses: `201` with the created order (`amount` is a number), `200` with the original order when the same `Idempotency-Key` was already used by this merchant (no second order, no extra points), `400` invalid input (amount not an integer or outside 1 to 9999999999) or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member.

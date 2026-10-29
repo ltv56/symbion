@@ -27,6 +27,7 @@ docs/       development, testing, API and database reference
 
 ## Docs
 
+- [Programme rules](docs/rules.md)
 - [Development](docs/development.md)
 - [Manual testing](docs/testing.md)
 - [API conventions](docs/schema/api.md)

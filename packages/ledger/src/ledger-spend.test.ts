@@ -2,13 +2,36 @@ import { InMemoryLedgerStorage } from './in-memory-storage';
 import { Ledger } from './ledger';
 
 describe('Ledger.spend', () => {
+  let storage: InMemoryLedgerStorage<undefined>;
   let ledger: Ledger<undefined>;
   const tx = undefined;
   const now = new Date('2026-01-10T00:00:00Z');
   const oneDayMs = 24 * 60 * 60 * 1000;
   beforeEach(() => {
-    ledger = new Ledger(new InMemoryLedgerStorage<undefined>());
+    storage = new InMemoryLedgerStorage<undefined>();
+    ledger = new Ledger(storage);
   });
+  it('writes the spend entry with type spend and no ref', async () => {
+    await ledger.earn(tx, {
+      now,
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 100,
+      idempotencyKey: 'key1',
+    });
+
+    await ledger.spend(tx, {
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 30,
+      idempotencyKey: 'spend-key',
+      now,
+    });
+
+    const entry = await storage.findLotByKey(tx, 'merchant1', 'spend-key');
+    expect(entry).toMatchObject({ type: 'spend', ref: null, points: -30 });
+  });
+
   it('spends less than one lot -> consumed has one entry, balance goes down by that amount', async () => {
     const lot = await ledger.earn(tx, {
       now,
