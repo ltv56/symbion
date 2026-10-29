@@ -31,7 +31,9 @@ TypeORM on MySQL 8.4. `synchronize` off. Schema changes: hand-written SQL migrat
 
 Required variables: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`. Startup fails if one is missing. Example values: `infra/.env.example`.
 
-E2E tests require a running MySQL: `pnpm db:up`, then export the variables with `DB_HOST=127.0.0.1`. See `testing.md`.
+`start`, `start:dev`, `test`, `seed` and the migration scripts of `apps/api` load `infra/.env`; variables already set in the shell take precedence. `start:prod` does not load it.
+
+E2E tests require a running MySQL (`pnpm db:up`). See `testing.md`.
 
 ## Docker Compose
 

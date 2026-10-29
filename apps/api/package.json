@@ -4,15 +4,15 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start": "nest start --env-file ../../infra/.env",
+    "start:dev": "nest start --watch --env-file ../../infra/.env",
     "start:prod": "node dist/main",
     "typecheck": "tsc --noEmit",
-    "typeorm": "typeorm -d dist/data-source.js",
+    "typeorm": "node --env-file-if-exists=../../infra/.env node_modules/typeorm/cli.js -d dist/data-source.js",
     "migration:run": "pnpm build && pnpm typeorm migration:run",
     "migration:revert": "pnpm build && pnpm typeorm migration:revert",
-    "seed": "pnpm build && node dist/seed.js",
-    "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --passWithNoTests"
+    "seed": "pnpm build && node --env-file-if-exists=../../infra/.env dist/seed.js",
+    "test": "node --env-file-if-exists=../../infra/.env --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --passWithNoTests"
   },
   "dependencies": {
     "@nestjs/common": "^12.2.0",
