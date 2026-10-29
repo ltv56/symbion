@@ -23,7 +23,7 @@ How points are earned and used. Each section covers what is implemented.
 - At most 10,000 points per order (`MAX_POINTS_PER_ORDER`), applied after the multiplier.
 
 - Awarded by `POST /orders`, in the same transaction as the order, at the member's tier when the order is received.
-- One lot per order (ledger key `order:<order id>`). Repeating the `Idempotency-Key` awards nothing.
+- One lot per order (ledger key `order:<order id>`). Repeating the `Idempotency-Key` awards nothing. Reusing it with a different member or amount is rejected (`422`).
 - An order that earns 0 points creates no lot.
 - Points expire 12 months after the order.
 

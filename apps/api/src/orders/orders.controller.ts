@@ -13,6 +13,7 @@ import {
   ApiHeader,
   ApiOkResponse,
   ApiSecurity,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ApiKeyGuard } from '../merchants/api-key.guard';
@@ -34,6 +35,9 @@ export class OrdersController {
   @ApiOkResponse({
     type: Order,
     description: 'Idempotency-Key already used: the original order',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Idempotency-Key already used with a different request',
   })
   async create(
     @Body() body: CreateOrderDto,

@@ -131,13 +131,101 @@ describe('Orders', () => {
     expect(Number(rows[0].count)).toBe(1);
   });
 
-  it('keeps the original values when a repeated key has a different body', async () => {
-    await post('k1', { memberEmail, amount: 10 }).expect(201);
-    const res2 = await post('k1', { memberEmail, amount: 99 }).expect(200);
-    expect(res2.body.amount).toBe(10);
-    const rows = await dataSource.query('SELECT amount FROM orders');
-    expect(rows).toHaveLength(1);
-    expect(Number(rows[0].amount)).toBe(10);
+  describe('a reused idempotency key', () => {
+    const otherEmail = 'jane@example.com';
+    const reusedMessage =
+      'Idempotency-Key was already used with a different request';
+
+    beforeEach(async () => {
+      const [tier] = await dataSource.query('SELECT id FROM tiers LIMIT 1');
+      await dataSource.query(
+        `INSERT INTO members (merchant_id, tier_id, email, name) VALUES (?, ?, ?, 'Jane Doe')`,
+        [merchantId, tier.id, otherEmail],
+      );
+    });
+
+    const expectOnlyTheFirstOrder = async () => {
+      const rows = await dataSource.query(
+        'SELECT amount, member_id FROM orders',
+      );
+      expect(rows).toHaveLength(1);
+      expect(Number(rows[0].amount)).toBe(10);
+      expect(Number(rows[0].member_id)).toBe(memberId);
+    };
+
+    it('returns 422 when the amount differs', async () => {
+      await post('k1', { memberEmail, amount: 10 }).expect(201);
+      const res = await post('k1', { memberEmail, amount: 99 }).expect(422);
+      expect(res.body).toEqual({
+        statusCode: 422,
+        error: 'Unprocessable Entity',
+        message: reusedMessage,
+      });
+      await expectOnlyTheFirstOrder();
+    });
+
+    it('awards no points for a rejected request', async () => {
+      await post('k1', { memberEmail, amount: 250_000 }).expect(201);
+      await post('k1', { memberEmail, amount: 500_000 }).expect(422);
+
+      const rows = await dataSource.query(
+        'SELECT points FROM ledger_lots WHERE member_id = ?',
+        [memberId],
+      );
+      expect(rows).toHaveLength(1);
+      expect(Number(rows[0].points)).toBe(25);
+    });
+
+    it('returns 422 when the member differs', async () => {
+      await post('k1', { memberEmail, amount: 10 }).expect(201);
+      await post('k1', { memberEmail: otherEmail, amount: 10 }).expect(422);
+      await expectOnlyTheFirstOrder();
+    });
+
+    it('returns the original order when only the email case differs', async () => {
+      const res1 = await post('k1', { memberEmail, amount: 10 }).expect(201);
+      const res2 = await post('k1', {
+        memberEmail: memberEmail.toUpperCase(),
+        amount: 10,
+      }).expect(200);
+      expect(res2.body.id).toBe(res1.body.id);
+    });
+
+    it('returns one 201 and one 422 when different bodies arrive in parallel', async () => {
+      const [res1, res2] = await Promise.all([
+        post('k1', { memberEmail, amount: 10 }),
+        post('k1', { memberEmail, amount: 20 }),
+      ]);
+      expect([res1.status, res2.status].sort((a, b) => a - b)).toEqual([
+        201, 422,
+      ]);
+      const rows = await dataSource.query('SELECT id FROM orders');
+      expect(rows).toHaveLength(1);
+    });
+
+    it('does not check an order stored without a hash', async () => {
+      const legacy = await dataSource.query(
+        `INSERT INTO orders (merchant_id, member_id, idempotency_key, amount, request_hash) VALUES (?, ?, 'old-1', 10, NULL)`,
+        [merchantId, memberId],
+      );
+
+      const res = await post('old-1', { memberEmail, amount: 99 }).expect(200);
+
+      expect(res.body.id).toBe(Number(legacy.insertId));
+      expect(res.body.amount).toBe(10);
+    });
+  });
+
+  it('stores the request hash and never returns it', async () => {
+    const res = await post('k1', { memberEmail, amount: 10 }).expect(201);
+    expect(res.body).not.toHaveProperty('requestHash');
+    expect(res.body).not.toHaveProperty('request_hash');
+
+    const again = await post('k1', { memberEmail, amount: 10 }).expect(200);
+    expect(again.body).not.toHaveProperty('requestHash');
+
+    const rows = await dataSource.query('SELECT request_hash FROM orders');
+    expect(rows[0].request_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('treats idempotency keys that differ only by case as different', async () => {

@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ledger } from '@symbion/ledger';
 import {
@@ -13,6 +18,7 @@ import {
 } from '../earning/earning.strategy';
 import { addMonths } from '../common/add-months';
 import { Order } from './order.entity';
+import { orderRequestHash } from './order-request-hash';
 import { MAX_POINTS_PER_ORDER } from './orders.config';
 
 @Injectable()
@@ -32,6 +38,7 @@ export class OrdersService {
     memberEmail: string,
     amount: number,
   ): Promise<{ order: Order; created: boolean }> {
+    const requestHash = orderRequestHash(memberEmail, amount);
     try {
       const order = await this.dataSource.transaction(async (tx) => {
         // Lock the member before the order insert, or parallel orders deadlock.
@@ -51,12 +58,16 @@ export class OrdersService {
         const memberId = Number(row.id);
 
         // Insert the order, don't look it up by key first: parallel retries would both see "not found".
-        const order = await tx.save(Order, {
-          merchantId,
-          memberId,
-          idempotencyKey,
-          amount,
-        });
+        const order = await tx.save(
+          tx.create(Order, {
+            merchantId,
+            memberId,
+            idempotencyKey,
+            amount,
+            requestHash,
+          }),
+        );
+        order.requestHash = undefined;
 
         const calculatedPoints = this.earning.calculate({
           amountVnd: amount,
@@ -84,10 +95,18 @@ export class OrdersService {
         error instanceof QueryFailedError &&
         (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
       ) {
-        const order = await this.orders.findOneByOrFail({
-          merchantId,
-          idempotencyKey,
-        });
+        const order = await this.orders
+          .createQueryBuilder('o')
+          .addSelect('o.requestHash')
+          .where({ merchantId, idempotencyKey })
+          .getOneOrFail();
+        // NULL: order from before the hash column, not compared.
+        if (order.requestHash && order.requestHash !== requestHash) {
+          throw new UnprocessableEntityException(
+            'Idempotency-Key was already used with a different request',
+          );
+        }
+        order.requestHash = undefined;
         return { order, created: false };
       }
       throw error;
