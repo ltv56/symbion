@@ -30,9 +30,9 @@ function toSafeInt(value: unknown, field: string): number {
 export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
   private toLot(row: LotRow): Lot {
     return {
-      id: String(row.id),
-      merchantId: String(row.merchant_id),
-      memberId: String(row.member_id),
+      id: String(toSafeInt(row.id, 'id')),
+      merchantId: String(toSafeInt(row.merchant_id, 'merchant_id')),
+      memberId: String(toSafeInt(row.member_id, 'member_id')),
       points: toSafeInt(row.points, 'points'),
       remaining: toSafeInt(row.remaining, 'remaining'),
       expiresAt: row.expires_at,
@@ -81,7 +81,7 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
       throw error;
     }
 
-    const id = Number(result.insertId);
+    const id = toSafeInt(result.insertId, 'insertId');
     const rows = await tx.query(`SELECT * FROM ledger_lots WHERE id = ?`, [id]);
 
     if (rows.length === 0) {

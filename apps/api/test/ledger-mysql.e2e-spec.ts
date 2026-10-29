@@ -336,4 +336,75 @@ describe('MysqlLedgerStorage', () => {
       await expect(balance()).resolves.toBe(-10);
     });
   });
+
+  describe('6. storage precision and limits', () => {
+    const earnWith = (key: string, expiresAt?: Date) =>
+      inTx((tx) =>
+        ledger.earn(tx, {
+          now,
+          merchantId: String(merchantId),
+          memberId: String(memberId),
+          points: 100,
+          idempotencyKey: key,
+          expiresAt,
+        }),
+      );
+
+    it('keeps the milliseconds of expires_at', async () => {
+      await earnWith('ms', new Date('2026-01-10T00:00:00.500Z'));
+
+      await expect(
+        inTx((tx) =>
+          ledger.balance(
+            tx,
+            String(memberId),
+            new Date('2026-01-10T00:00:00.300Z'),
+          ),
+        ),
+      ).resolves.toBe(100);
+      await expect(
+        inTx((tx) =>
+          ledger.balance(
+            tx,
+            String(memberId),
+            new Date('2026-01-10T00:00:00.700Z'),
+          ),
+        ),
+      ).resolves.toBe(0);
+    });
+
+    it('treats keys that differ only by trailing spaces as different keys', async () => {
+      const first = await earnWith('key');
+      const second = await earnWith('key ');
+
+      expect(first.duplicate).toBe(false);
+      expect(second.duplicate).toBe(false);
+      await expect(balance()).resolves.toBe(200);
+    });
+
+    it('fails loudly when a lot id is above the safe integer range', async () => {
+      await dataSource.query(
+        `INSERT INTO ledger_lots
+        (id, merchant_id, member_id, points, remaining, idempotency_key)
+        VALUES (9007199254740993, ?, ?, 10, 10, 'big-id')`,
+        [merchantId, memberId],
+      );
+
+      try {
+        await expect(earnWith('big-id')).rejects.toThrow('not a safe integer');
+      } finally {
+        // The explicit id moved AUTO_INCREMENT past 2^53; reset it or later tests get unsafe ids.
+        await dataSource.query('DELETE FROM ledger_lots');
+        await dataSource.query('ALTER TABLE ledger_lots AUTO_INCREMENT = 1');
+      }
+    });
+
+    it('has an index for debt reads', async () => {
+      const rows: { Key_name: string }[] = await dataSource.query(
+        `SHOW INDEX FROM ledger_lots WHERE Key_name = 'idx_ledger_lots_member_remaining'`,
+      );
+
+      expect(rows.length).toBeGreaterThan(0);
+    });
+  });
 });

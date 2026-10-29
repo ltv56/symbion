@@ -41,6 +41,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 ## Rules
 
 - **Idempotency:** `(merchantId, idempotencyKey)` is unique. Repeating an `earn` returns the original lot with `duplicate: true`. Repeating a `spend` throws `DuplicateKeyError` and changes nothing. Earn and spend keys share one key space.
+- **Idempotency key:** 1-255 characters; `earn` and `spend` throw otherwise. Keys are compared exactly (case and trailing spaces count).
 - **Points** must be safe integers (`Number.isSafeInteger`); `earn` and `spend` need a positive amount.
 - **Expiry:** a lot with `expiresAt` at or before `now` is ignored by `balance` and `spend`. `expiresAt: null` never expires.
 - **FIFO:** `spend` takes from the lot that expires first, then lots without expiry, ties by lower id.
@@ -53,11 +54,11 @@ await ledger.balance(tx, '42', new Date()); // 70
 
 - `lockMember(tx, memberId)`: `earn` and `spend` call it first. After it returns, no other earn or spend of that member runs until the transaction ends.
 - `findSpendableLots`, `findDebtLots`, `findLotByKey`: in a real database these must be locking reads.
-- Lot `points` and `remaining` should be `BIGINT`; reading a value outside the safe integer range should throw.
+- Lot `points`, `remaining` and ids should be `BIGINT`; reading a value outside the safe integer range should throw. `expiresAt` keeps milliseconds.
 
 Adapters:
 
-- `InMemoryLedgerStorage` (this package), for tests. It ignores `tx`, and `lockMember` does nothing.
+- `InMemoryLedgerStorage` (this package), for tests. It ignores `tx`, and `lockMember` does nothing, so concurrent calls for one member are not serialised.
 - `MysqlLedgerStorage` (`apps/api/src/ledger/mysql-ledger.storage.ts`), table `ledger_lots` with `BIGINT` points, `UNIQUE (merchant_id, idempotency_key)` and `CHECK (points <> 0)`. `tx` is a TypeORM `EntityManager`. `lockMember` is `SELECT ... FOR UPDATE` on the member row; `findLotByKey`, `findSpendableLots` and `findDebtLots` are `FOR UPDATE` reads. Tested against MySQL in `apps/api/test/ledger-mysql.e2e-spec.ts`, including parallel earns and spends.
 
 ## Scripts

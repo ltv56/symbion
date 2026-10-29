@@ -8,6 +8,17 @@ import type {
 } from './types';
 import { DuplicateKeyError } from './storage';
 
+const MAX_IDEMPOTENCY_KEY_LENGTH = 255;
+
+// Same limit as the VARCHAR(255) column, so every adapter accepts and rejects the same keys.
+function assertValidKey(key: string): void {
+  if (key.length < 1 || key.length > MAX_IDEMPOTENCY_KEY_LENGTH) {
+    throw new Error(
+      `Idempotency key must be 1-${MAX_IDEMPOTENCY_KEY_LENGTH} characters`,
+    );
+  }
+}
+
 export class Ledger<Tx> {
   constructor(private readonly storage: LedgerStorage<Tx>) {}
 
@@ -19,6 +30,7 @@ export class Ledger<Tx> {
     if (!Number.isSafeInteger(input.points) || input.points <= 0) {
       throw new Error('Points must be a positive integer');
     }
+    assertValidKey(input.idempotencyKey);
 
     // Lock first, so every read below sees the latest committed data.
     await this.storage.lockMember(tx, input.memberId);
@@ -81,6 +93,7 @@ export class Ledger<Tx> {
     if (!Number.isSafeInteger(input.points) || input.points <= 0) {
       throw new Error('Points must be a positive integer');
     }
+    assertValidKey(input.idempotencyKey);
 
     await this.storage.lockMember(tx, input.memberId);
 
