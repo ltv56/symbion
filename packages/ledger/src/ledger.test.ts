@@ -118,6 +118,53 @@ describe('ledger', () => {
     await expect(ledger.balance(tx, 'member1', now)).resolves.toBe(100);
   });
 
+  it('stores the earn type and the caller ref', async () => {
+    const result = await ledger.earn(tx, {
+      now,
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 100,
+      idempotencyKey: 'key1',
+      ref: { type: 'order', id: '12' },
+    });
+
+    expect(result.lot).toMatchObject({
+      type: 'earn',
+      ref: { type: 'order', id: '12' },
+    });
+  });
+
+  it('stores a null ref when the caller passes none', async () => {
+    const result = await ledger.earn(tx, {
+      now,
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 100,
+      idempotencyKey: 'key1',
+    });
+
+    expect(result.lot.type).toBe('earn');
+    expect(result.lot.ref).toBeNull();
+  });
+
+  it('does not let callers change a stored ref', async () => {
+    const input = {
+      now,
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 100,
+      idempotencyKey: 'key1',
+      ref: { type: 'order', id: '12' },
+    };
+    const first = await ledger.earn(tx, input);
+    first.lot.ref!.id = '99';
+    input.ref.id = '98';
+
+    const second = await ledger.earn(tx, input);
+
+    expect(second.lot.ref).toEqual({ type: 'order', id: '12' });
+  });
+
   it('throws when storage reports a duplicate but finds no lot', async () => {
     const storage = new InMemoryLedgerStorage<undefined>();
     jest.spyOn(storage, 'insertLot').mockRejectedValue(new DuplicateKeyError());

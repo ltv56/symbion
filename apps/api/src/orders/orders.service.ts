@@ -46,7 +46,7 @@ export class OrdersService {
         }
         const memberId = Number(row.id);
 
-        // Insert first, don't SELECT first: parallel retries would both see "not found".
+        // Insert the order, don't look it up by key first: parallel retries would both see "not found".
         const order = await tx.save(Order, {
           merchantId,
           memberId,
@@ -67,6 +67,7 @@ export class OrdersService {
             memberId: String(memberId),
             points,
             idempotencyKey: `order:${order.id}`,
+            ref: { type: 'order', id: String(order.id) },
             now,
             expiresAt,
           });

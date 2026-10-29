@@ -63,8 +63,8 @@ describe('MysqlLedgerStorage', () => {
   ) =>
     dataSource.query(
       `INSERT INTO ledger_lots
-      (merchant_id, member_id, points, remaining, expires_at, idempotency_key)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+      (merchant_id, member_id, points, remaining, expires_at, idempotency_key, type)
+     VALUES (?, ?, ?, ?, ?, ?, 'earn')`,
       [merchantId, memberId, points, remaining, expiresAt, idempotencyKey],
     );
 
@@ -385,8 +385,8 @@ describe('MysqlLedgerStorage', () => {
     it('fails loudly when a lot id is above the safe integer range', async () => {
       await dataSource.query(
         `INSERT INTO ledger_lots
-        (id, merchant_id, member_id, points, remaining, idempotency_key)
-        VALUES (9007199254740993, ?, ?, 10, 10, 'big-id')`,
+        (id, merchant_id, member_id, points, remaining, idempotency_key, type)
+        VALUES (9007199254740993, ?, ?, 10, 10, 'big-id', 'earn')`,
         [merchantId, memberId],
       );
 
@@ -397,6 +397,86 @@ describe('MysqlLedgerStorage', () => {
         await dataSource.query('DELETE FROM ledger_lots');
         await dataSource.query('ALTER TABLE ledger_lots AUTO_INCREMENT = 1');
       }
+    });
+  });
+
+  describe('7. lot type and ref', () => {
+    const typeAndRefOf = async (key: string) => {
+      const rows: {
+        type: string;
+        ref_type: string | null;
+        ref_id: string | null;
+      }[] = await dataSource.query(
+        `SELECT type, ref_type, ref_id FROM ledger_lots WHERE idempotency_key = ?`,
+        [key],
+      );
+      return rows[0];
+    };
+
+    it('stores the earn type and the caller ref', async () => {
+      const result = await inTx((tx) =>
+        ledger.earn(tx, {
+          now,
+          merchantId: String(merchantId),
+          memberId: String(memberId),
+          points: 100,
+          idempotencyKey: 'key-ref',
+          ref: { type: 'order', id: '12' },
+        }),
+      );
+
+      expect(result.lot).toMatchObject({
+        type: 'earn',
+        ref: { type: 'order', id: '12' },
+      });
+      const row = await typeAndRefOf('key-ref');
+      expect(row).toMatchObject({ type: 'earn', ref_type: 'order' });
+      expect(Number(row?.ref_id)).toBe(12);
+    });
+
+    it('returns a null ref for a lot without one', async () => {
+      const { lot } = await earn(100);
+
+      expect(lot.type).toBe('earn');
+      expect(lot.ref).toBeNull();
+    });
+
+    it('rejects a ref_type without a ref_id (CHECK constraint)', async () => {
+      await expect(
+        dataSource.query(
+          `INSERT INTO ledger_lots
+          (merchant_id, member_id, points, remaining, idempotency_key, type, ref_type)
+          VALUES (?, ?, 10, 10, 'half-ref', 'earn', 'order')`,
+          [merchantId, memberId],
+        ),
+      ).rejects.toMatchObject({
+        driverError: { code: 'ER_CHECK_CONSTRAINT_VIOLATED' },
+      });
+    });
+
+    it('rejects an unknown type (CHECK constraint)', async () => {
+      await expect(
+        dataSource.query(
+          `INSERT INTO ledger_lots
+          (merchant_id, member_id, points, remaining, idempotency_key, type)
+          VALUES (?, ?, 10, 10, 'bad-type', 'gift')`,
+          [merchantId, memberId],
+        ),
+      ).rejects.toMatchObject({
+        driverError: { code: 'ER_CHECK_CONSTRAINT_VIOLATED' },
+      });
+    });
+
+    it('stores the spend type with no ref', async () => {
+      await insertLot(100, 'lot');
+
+      await spend(30);
+
+      await expect(typeAndRefOf('spend-1')).resolves.toMatchObject({
+        type: 'spend',
+        ref_type: null,
+        ref_id: null,
+      });
     });
   });
 });

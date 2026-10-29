@@ -9,6 +9,14 @@ export type Lot = {
   expiresAt: Date | null;
   idempotencyKey: string;
   createdAt: Date;
+  type: 'earn' | 'spend';
+  ref: LotRef | null;
+};
+
+// What the lot came from, e.g. { type: 'order', id: '12' }. Opaque to the ledger.
+export type LotRef = {
+  type: string;
+  id: string;
 };
 
 export type EarnInput = {
@@ -18,6 +26,7 @@ export type EarnInput = {
   idempotencyKey: string;
   expiresAt?: Date | null;
   now: Date;
+  ref?: LotRef;
 };
 
 export type SpendInput = {

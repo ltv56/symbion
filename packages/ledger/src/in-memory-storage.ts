@@ -98,6 +98,7 @@ export class InMemoryLedgerStorage<Tx> implements LedgerStorage<Tx> {
       ...lot,
       expiresAt: lot.expiresAt && new Date(lot.expiresAt),
       createdAt: new Date(lot.createdAt),
+      ref: lot.ref && { ...lot.ref },
     };
   }
 

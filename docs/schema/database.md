@@ -66,5 +66,8 @@ One row per lot (see `packages/ledger`). Rows are never deleted; only `remaining
 | `expires_at`      | DATETIME, NULL              | NULL never expires; debt lots ignore it                          |
 | `idempotency_key` | VARCHAR(255), `utf8mb4_bin` | case sensitive; earn and spend keys share one space per merchant |
 | `created_at`      | TIMESTAMP                   | defaults to now                                                  |
+| `type`            | VARCHAR(16)                 | `earn` or `spend`; `CHECK`                                       |
+| `ref_type`        | VARCHAR(32), NULL           | source of the lot, e.g. `order`                                  |
+| `ref_id`          | BIGINT UNSIGNED, NULL       | id of the source row; NULL together with `ref_type` (`CHECK`)    |
 
-`UNIQUE (merchant_id, idempotency_key)` is the last line of defence for a repeated earn or spend. Index `(member_id, expires_at, id)` serves the FIFO read.
+`UNIQUE (merchant_id, idempotency_key)` is the last line of defence for a repeated earn or spend. Index `(member_id, expires_at, id)` serves the FIFO read. Lots awarded for an order have `ref_type = 'order'`, `ref_id = orders.id`.

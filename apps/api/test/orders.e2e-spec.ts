@@ -190,6 +190,9 @@ describe('Orders', () => {
       remaining: number;
       expires_at: Date;
       idempotency_key: string;
+      type: string;
+      ref_type: string | null;
+      ref_id: string | null;
     };
 
     const lots = (): Promise<LotRow[]> =>
@@ -237,6 +240,17 @@ describe('Orders', () => {
         ).toBeLessThan(60_000);
       },
     );
+
+    it('links the lot to its order', async () => {
+      const res = await post('k1', { memberEmail, amount: 250_000 }).expect(
+        201,
+      );
+
+      const rows = await lots();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ type: 'earn', ref_type: 'order' });
+      expect(Number(rows[0]!.ref_id)).toBe(res.body.id);
+    });
 
     it('creates no lot for a 0-point order', async () => {
       await post('k1', { memberEmail, amount: 5_000 }).expect(201);

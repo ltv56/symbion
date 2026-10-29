@@ -14,6 +14,7 @@ const { lot, duplicate } = await ledger.earn(tx, {
   memberId: '42',
   points: 100,
   idempotencyKey: 'order-7',
+  ref: { type: 'order', id: '7' }, // optional
   now: new Date(),
 });
 
@@ -46,6 +47,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 - **Expiry:** a lot with `expiresAt` at or before `now` is ignored by `balance` and `spend`. `expiresAt: null` never expires.
 - **FIFO:** `spend` takes from the lot that expires first, then lots without expiry, ties by lower id.
 - **Negative balance:** `spend` does not throw when points are short. It writes an entry whose `remaining` is minus the shortfall (a debt lot), so the balance can go below 0. `debt` is the shortfall of that call.
+- **Type and ref:** every lot has `type` (`earn` or `spend`), set by the ledger from the operation. `ref` (`{ type, id }` or `null`) is the caller's source of the lot, stored as given; only `earn` takes one.
 - **Debt:** `earn` pays the oldest debt lots first, so the new lot has `remaining = points - paid`. A member never has a debt lot next to a spendable lot. An `earn` that is already expired at `now` is stored but pays no debt.
 
 ## Storage
@@ -59,7 +61,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 Adapters:
 
 - `InMemoryLedgerStorage` (this package), for tests. It ignores `tx`, and `lockMember` does nothing, so concurrent calls for one member are not serialised.
-- `MysqlLedgerStorage` (`apps/api/src/ledger/mysql-ledger.storage.ts`), table `ledger_lots` with `BIGINT` points, `UNIQUE (merchant_id, idempotency_key)` and `CHECK (points <> 0)`. `tx` is a TypeORM `EntityManager`. `lockMember` is `SELECT ... FOR UPDATE` on the member row; `findLotByKey`, `findSpendableLots` and `findDebtLots` are `FOR UPDATE` reads. Tested against MySQL in `apps/api/test/ledger-mysql.e2e-spec.ts`, including parallel earns and spends.
+- `MysqlLedgerStorage` (`apps/api/src/ledger/mysql-ledger.storage.ts`), table `ledger_lots` with `BIGINT` points, `UNIQUE (merchant_id, idempotency_key)`, `CHECK (points <> 0)` and `ref` as `ref_type` + `ref_id` columns. `tx` is a TypeORM `EntityManager`. `lockMember` is `SELECT ... FOR UPDATE` on the member row; `findLotByKey`, `findSpendableLots` and `findDebtLots` are `FOR UPDATE` reads. Tested against MySQL in `apps/api/test/ledger-mysql.e2e-spec.ts`, including parallel earns and spends.
 
 ## Scripts
 
