@@ -1,14 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
-import { Member } from '../members/member.entity';
+import { Ledger } from '@symbion/ledger';
+import {
+  DataSource,
+  EntityManager,
+  QueryFailedError,
+  Repository,
+} from 'typeorm';
+import {
+  EARNING_STRATEGY,
+  type EarningStrategy,
+} from '../earning/earning.strategy';
 import { Order } from './order.entity';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectRepository(Order) private readonly orders: Repository<Order>,
-    @InjectRepository(Member) private readonly members: Repository<Member>,
+    private readonly dataSource: DataSource,
+    private readonly ledger: Ledger<EntityManager>,
+    @Inject(EARNING_STRATEGY) private readonly earning: EarningStrategy,
   ) {}
 
   async create(
@@ -17,21 +28,51 @@ export class OrdersService {
     memberEmail: string,
     amount: number,
   ): Promise<{ order: Order; created: boolean }> {
-    const member = await this.members.findOneBy({ email: memberEmail });
-    if (!member) {
-      throw new NotFoundException(`Member ${memberEmail} not found`);
-    }
-
-    // Insert first, don't SELECT first: parallel retries would both see "not found".
     try {
-      const order = await this.orders.save(
-        this.orders.create({
+      const order = await this.dataSource.transaction(async (tx) => {
+        // Lock the member before the order insert, or parallel orders deadlock.
+        const rows: { id: number; multiplier_percent: number }[] =
+          await tx.query(
+            `SELECT m.id, CAST(t.earn_rate * 100 AS UNSIGNED) AS multiplier_percent
+            FROM members m
+            JOIN tiers t ON m.tier_id = t.id
+            WHERE m.email = ?
+            FOR UPDATE OF m`,
+            [memberEmail],
+          );
+        const row = rows[0];
+        if (!row) {
+          throw new NotFoundException(`Member ${memberEmail} not found`);
+        }
+        const memberId = Number(row.id);
+
+        // Insert first, don't SELECT first: parallel retries would both see "not found".
+        const order = await tx.save(Order, {
           merchantId,
-          memberId: member.id,
+          memberId,
           idempotencyKey,
           amount,
-        }),
-      );
+        });
+
+        const points = this.earning.calculate({
+          amountVnd: amount,
+          tierMultiplierPercent: Number(row.multiplier_percent),
+        });
+        if (points > 0) {
+          const now = new Date();
+          const expiresAt = new Date(now);
+          expiresAt.setUTCMonth(expiresAt.getUTCMonth() + 12);
+          await this.ledger.earn(tx, {
+            merchantId: String(merchantId),
+            memberId: String(memberId),
+            points,
+            idempotencyKey: `order:${order.id}`,
+            now,
+            expiresAt,
+          });
+        }
+        return order;
+      });
       return { order, created: true };
     } catch (error) {
       if (

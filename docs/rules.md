@@ -19,4 +19,9 @@ How points are earned and used. Each section covers what is implemented.
 | 9,999        | Gold   | 1      |
 | 5,000        | Bronze | 0      |
 
-Implemented in `apps/api/src/earning/` as `TierEarningStrategy`. `POST /orders` does not award points yet.
+- Awarded by `POST /orders`, in the same transaction as the order, at the member's tier when the order is received.
+- One lot per order (ledger key `order:<order id>`). Repeating the `Idempotency-Key` awards nothing.
+- An order that earns 0 points creates no lot.
+- Points expire 12 months after the order.
+
+Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
