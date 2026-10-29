@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { adminToken } from './helpers/admin-token';
 import { ADMIN_TEST_EMAIL, ADMIN_TEST_PASSWORD } from './setup-env';
 
 describe('Auth', () => {
@@ -66,5 +67,48 @@ describe('Auth', () => {
     ],
   ])('returns 400 for %s', async (_label, body) => {
     await login(body).expect(400);
+  });
+
+  describe('AdminGuard on POST /merchants', () => {
+    const create = () =>
+      request(app.getHttpServer()).post('/merchants').send({ name: 'Shop A' });
+
+    it('returns 401 without a token', async () => {
+      await create().expect(401);
+    });
+
+    it('returns 401 for a malformed token', async () => {
+      await create().set('Authorization', 'Bearer not-a-jwt').expect(401);
+    });
+
+    it('returns 401 for a scheme other than Bearer', async () => {
+      const token = await adminToken(app);
+      await create().set('Authorization', `Basic ${token}`).expect(401);
+    });
+
+    it('returns 401 for a token signed with another secret', async () => {
+      const forged = await new JwtService({ secret: 'x'.repeat(40) }).signAsync(
+        { sub: 'admin', role: 'admin' },
+      );
+      await create().set('Authorization', `Bearer ${forged}`).expect(401);
+    });
+
+    it('returns 401 for an expired token', async () => {
+      const expired = await jwt.signAsync(
+        { sub: 'admin', role: 'admin' },
+        { expiresIn: -10 },
+      );
+      await create().set('Authorization', `Bearer ${expired}`).expect(401);
+    });
+
+    it('returns 401 for a valid token without the admin role', async () => {
+      const member = await jwt.signAsync({ sub: '1', role: 'member' });
+      await create().set('Authorization', `Bearer ${member}`).expect(401);
+    });
+
+    it('lets an admin token through', async () => {
+      const token = await adminToken(app);
+      await create().set('Authorization', `Bearer ${token}`).expect(201);
+    });
   });
 });

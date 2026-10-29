@@ -19,17 +19,22 @@ curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
 
 ## Merchants (MySQL)
 
+All `/merchants*` calls need the admin token (`$TOKEN`, see Admin login).
+
 ```sh
 # create a merchant -> 201 {"id":1,"name":"Shop A","apiKey":"<64 hex chars>"}; the key is shown only once
-curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' \
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"Shop A"}'
 
 # list / get never include the key or its hash
-curl -s localhost:3000/merchants
-curl -s localhost:3000/merchants/1
+curl -s localhost:3000/merchants -H "Authorization: Bearer $TOKEN"
+curl -s localhost:3000/merchants/1 -H "Authorization: Bearer $TOKEN"
+
+# error path -> 401 (no token)
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d '{"name":"Shop A"}'
 
 # error path -> 400 (blank name)
-curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d '{"name":" "}'
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"name":" "}'
 ```
 
 ## Members (MySQL)

@@ -4,10 +4,12 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { adminToken } from './helpers/admin-token';
 
 describe('Merchants', () => {
   let app: INestApplication;
   let dataSource: DataSource;
+  let token: string;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -16,6 +18,7 @@ describe('Merchants', () => {
     app = moduleRef.createNestApplication();
     await app.init();
     dataSource = app.get(DataSource);
+    token = await adminToken(app);
   });
 
   beforeEach(async () => {
@@ -32,6 +35,7 @@ describe('Merchants', () => {
   it('creates a merchant and returns the api key once', async () => {
     const res = await request(app.getHttpServer())
       .post('/merchants')
+      .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Shop A' })
       .expect(201);
 
@@ -43,6 +47,7 @@ describe('Merchants', () => {
   it('stores only the sha-256 hash of the key', async () => {
     const res = await request(app.getHttpServer())
       .post('/merchants')
+      .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Shop A' })
       .expect(201);
 
@@ -58,11 +63,13 @@ describe('Merchants', () => {
   it('never exposes the key or hash when reading', async () => {
     const created = await request(app.getHttpServer())
       .post('/merchants')
+      .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Shop A' })
       .expect(201);
 
     const one = await request(app.getHttpServer())
       .get(`/merchants/${created.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(200);
     expect(one.body.name).toBe('Shop A');
     expect(one.body).not.toHaveProperty('apiKey');
@@ -70,6 +77,7 @@ describe('Merchants', () => {
 
     const list = await request(app.getHttpServer())
       .get('/merchants')
+      .set('Authorization', `Bearer ${token}`)
       .expect(200);
     expect(list.body).toHaveLength(1);
     expect(list.body[0]).not.toHaveProperty('apiKey');
@@ -83,11 +91,22 @@ describe('Merchants', () => {
   ])('returns 400 for %s', async (_label, body) => {
     await request(app.getHttpServer())
       .post('/merchants')
+      .set('Authorization', `Bearer ${token}`)
       .send(body)
       .expect(400);
   });
 
   it('returns 404 for an unknown id', async () => {
-    await request(app.getHttpServer()).get('/merchants/999999').expect(404);
+    await request(app.getHttpServer())
+      .get('/merchants/999999')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
   });
+
+  it.each(['/merchants', '/merchants/1'])(
+    'returns 401 for GET %s without a token',
+    async (path) => {
+      await request(app.getHttpServer()).get(path).expect(401);
+    },
+  );
 });
