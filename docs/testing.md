@@ -17,7 +17,7 @@ curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d 
 
 ## Members (MySQL)
 
-Needs MySQL with migrations applied (see Migrations) and at least one merchant and one tier row. Start the api: `pnpm start` (listens on `PORT`, default 3000). New members get the tier with the lowest `min_points`.
+Requires applied migrations (see Migrations), one merchant and one tier. Start the API with `pnpm start` (`PORT`, default 3000). New members get the tier with the smallest `min_points`.
 
 ```sh
 # create a member -> 201; the same email again -> 409
@@ -47,7 +47,7 @@ curl -s -X POST localhost:3000/members -H 'content-type: application/json' -H "x
 
 ## Orders (MySQL)
 
-Needs a merchant (`$KEY`) and a member with email `an@x.com` (see Members).
+Requires a merchant (`$KEY`) and a member `an@x.com` (see Members).
 
 ```sh
 # create an order -> 201
@@ -67,7 +67,19 @@ curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-
   -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5}'
 ```
 
-The e2e tests (`pnpm check`) delete all rows in `orders`, `members`, `tiers` and `merchants`, so run them against a throwaway database only.
+## Health and logs
+
+```sh
+# 200 {"status":"ok"}; 503 {"message":"Database unavailable",...} when MySQL is down (`pnpm db:down`)
+curl -s -i localhost:3000/health
+
+# JSON logs: one object per line, every line of a request has its requestId (DB_* exported, see Migrations)
+cd apps/api && NODE_ENV=production PORT=3000 node dist/main
+```
+
+E2E tests (`pnpm check`) delete all rows in `ledger_lots`, `orders`, `members`, `tiers` and `merchants`. Use a throwaway database only.
+
+Ledger MySQL tests require applied migrations (`pnpm db:migrate`). Run only these: `pnpm --filter @symbion/api test ledger-mysql`.
 
 ## Migrations
 
