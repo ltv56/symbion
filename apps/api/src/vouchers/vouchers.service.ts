@@ -4,11 +4,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
 import { MerchantsService } from '../merchants/merchants.service';
 import { ProgramSettings } from '../settings/program-settings.entity';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { Voucher } from './voucher.entity';
+
+export interface VoucherPage {
+  items: Voucher[];
+  nextCursor: number | null;
+}
 
 @Injectable()
 export class VouchersService {
@@ -39,5 +44,32 @@ export class VouchersService {
     // save() keeps the insertId as the driver returns it (a string)
     saved.id = Number(saved.id);
     return saved;
+  }
+
+  // Keyset pagination; one extra row tells whether another page exists
+  async list(limit: number, after?: number): Promise<VoucherPage> {
+    const rows = await this.vouchers.find({
+      where: {
+        ...this.redeemable(),
+        ...(after ? { id: LessThan(after) } : {}),
+      },
+      order: { id: 'DESC' },
+      take: limit + 1,
+    });
+
+    const items = rows.slice(0, limit);
+    const last = items[items.length - 1];
+    return {
+      items,
+      nextCursor: rows.length > limit && last ? last.id : null,
+    };
+  }
+
+  findActive(id: number): Promise<Voucher | null> {
+    return this.vouchers.findOneBy({ id, ...this.redeemable() });
+  }
+
+  private redeemable(): FindOptionsWhere<Voucher> {
+    return { status: 'active', validUntil: MoreThan(new Date()) };
   }
 }

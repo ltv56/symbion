@@ -78,6 +78,21 @@ curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "
 # error path -> 404 (unknown merchant)
 curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"merchantId":999999,"title":"X","faceValue":50000,"pointsPrice":500,"stock":1,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# list (public), newest id first -> {"items":[...],"nextCursor":<id|null>}
+curl -s 'localhost:3000/vouchers?limit=2'
+
+# next page: pass nextCursor as after
+curl -s 'localhost:3000/vouchers?limit=2&after=<nextCursor>'
+
+# get one -> 200
+curl -s localhost:3000/vouchers/1
+
+# error path -> 400 (limit out of range)
+curl -s 'localhost:3000/vouchers?limit=101'
+
+# error path -> 404 (unknown, expired or past validUntil)
+curl -s localhost:3000/vouchers/999999
 ```
 
 ## Members (MySQL)

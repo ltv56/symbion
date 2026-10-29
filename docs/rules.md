@@ -43,3 +43,4 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 
 - Created by the app admin on behalf of a merchant (`POST /vouchers`), `active` from creation.
 - Existing vouchers are not re-checked when the point value changes.
+- Listed (`GET /vouchers`) while `status` is `active` and `valid_until` is in the future. A voucher with stock 0 stays listed.

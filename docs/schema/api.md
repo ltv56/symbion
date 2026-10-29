@@ -33,6 +33,7 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 - `POST /members` and `POST /orders` require the `x-api-key` header of a merchant.
 - `GET /members*` is unauthenticated until member auth is added.
 - `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
+- `GET /tiers*` and `GET /vouchers*` are public.
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
 
 ## POST /auth/login
@@ -115,3 +116,18 @@ Admin only. Creates a voucher on behalf of a merchant. Body:
 A voucher is `{ "id", "merchantId", "title", "faceValue", "pointsPrice", "stock", "validUntil", "status", "createdAt" }`; `status` is `active`.
 
 Responses: `201` with the voucher, `400` validation (unknown fields included) or `faceValue` below the floor (`"message": "faceValue 49999 is below the floor 50000 (500 points x 100 VND)"`), `401` no or invalid admin token, `404` unknown merchant.
+
+## GET /vouchers, GET /vouchers/:id
+
+Public. Only vouchers with `status` `active` and `validUntil` in the future.
+
+`GET /vouchers` lists by `id` descending (keyset pagination). Query:
+
+| Field   | Rule                                                  |
+| ------- | ----------------------------------------------------- |
+| `limit` | integer from 1 to 100, default 20                     |
+| `after` | integer from 1; the `nextCursor` of the previous page |
+
+Response: `200` with `{ "items": [<voucher>], "nextCursor": <id | null> }`; `nextCursor` is `null` on the last page. `400` for an invalid or unknown query field.
+
+`GET /vouchers/:id`: `200` with the voucher, `404` (`"message": "Voucher with id 1 not found"`) when unknown, `expired` or past `validUntil`, `400` when the id is not an integer.
