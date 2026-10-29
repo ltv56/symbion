@@ -102,14 +102,14 @@ Responses: `201` with the created order (`amount` is a number), `200` with the o
 
 Admin only. Creates a voucher on behalf of a merchant. Body:
 
-| Field         | Rule                                   |
-| ------------- | -------------------------------------- |
-| `merchantId`  | integer, an existing merchant          |
-| `title`       | string, trimmed, 1-255 characters      |
-| `faceValue`   | integer VND from 1 to 9007199254740991 |
-| `pointsPrice` | integer from 1 to 9007199254740991     |
-| `stock`       | integer from 0 to 4294967295           |
-| `validUntil`  | ISO 8601 date-time in the future       |
+| Field         | Rule                                            |
+| ------------- | ----------------------------------------------- |
+| `merchantId`  | integer, an existing merchant                   |
+| `title`       | string, trimmed, 1-255 characters               |
+| `faceValue`   | integer VND from 1 to 9007199254740991          |
+| `pointsPrice` | integer from 1 to 9007199254740991              |
+| `stock`       | integer from 0 to 4294967295                    |
+| `validUntil`  | ISO 8601 date-time in the future, whole seconds |
 
 `faceValue` must be at least `pointsPrice × point value` (`program_settings.point_value_vnd`).
 

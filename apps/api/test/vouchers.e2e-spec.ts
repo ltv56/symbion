@@ -132,7 +132,15 @@ describe('Vouchers', () => {
     ['a validUntil that is not a date', { validUntil: 'soon' }],
     [
       'a validUntil in the past',
-      { validUntil: new Date(Date.now() - 1000).toISOString() },
+      {
+        validUntil: new Date(
+          Math.floor((Date.now() - 1000) / 1000) * 1000,
+        ).toISOString(),
+      },
+    ],
+    [
+      'a validUntil with fractional seconds',
+      { validUntil: new Date(Date.parse(validUntil) + 500).toISOString() },
     ],
     ['a status field', { status: 'expired' }],
   ])('returns 400 for %s', async (_label, overrides) => {
