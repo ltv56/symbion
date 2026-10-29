@@ -60,12 +60,11 @@ describe('Orders', () => {
   };
 
   it('creates an order for a member', async () => {
-    const res = await post('order-1', { memberEmail, amount: 120.5 }).expect(
+    const res = await post('order-1', { memberEmail, amount: 250_000 }).expect(
       201,
     );
 
-    expect(res.body).toMatchObject({ merchantId, memberId });
-    expect(res.body.amount).toBe('120.50');
+    expect(res.body).toMatchObject({ merchantId, memberId, amount: 250_000 });
     const rows = await dataSource.query(
       'SELECT idempotency_key FROM orders WHERE id = ?',
       [res.body.id],
@@ -74,11 +73,16 @@ describe('Orders', () => {
   });
 
   it.each([
-    ['one cent', 0.01, '0.01'],
-    ['the column maximum', 9_999_999_999.99, '9999999999.99'],
-  ])('accepts %s', async (_label, amount, stored) => {
+    ['1 VND', 1],
+    ['the maximum', 9_999_999_999],
+  ])('accepts %s', async (_label, amount) => {
     const res = await post('k1', { memberEmail, amount }).expect(201);
-    expect(res.body.amount).toBe(stored);
+    expect(res.body.amount).toBe(amount);
+    const rows = await dataSource.query(
+      'SELECT amount FROM orders WHERE id = ?',
+      [res.body.id],
+    );
+    expect(Number(rows[0].amount)).toBe(amount);
   });
 
   it.each([
@@ -86,10 +90,10 @@ describe('Orders', () => {
     ['a missing amount', 'k1', { memberEmail }],
     ['a zero amount', 'k1', { memberEmail, amount: 0 }],
     ['a negative amount', 'k1', { memberEmail, amount: -5 }],
-    ['an amount below one cent', 'k1', { memberEmail, amount: 0.004 }],
-    ['an amount with three decimals', 'k1', { memberEmail, amount: 10.005 }],
-    ['an exponent amount below one cent', 'k1', { memberEmail, amount: 1e-9 }],
-    ['an amount over the column limit', 'k1', { memberEmail, amount: 1e10 }],
+    ['a fractional amount', 'k1', { memberEmail, amount: 120.5 }],
+    ['an exponent amount below 1 VND', 'k1', { memberEmail, amount: 1e-9 }],
+    ['an amount as a string', 'k1', { memberEmail, amount: '100' }],
+    ['an amount over the maximum', 'k1', { memberEmail, amount: 1e10 }],
     ['an invalid email', 'k1', { memberEmail: 'nope', amount: 10 }],
     [
       'a merchantId in the body',
@@ -129,10 +133,10 @@ describe('Orders', () => {
   it('keeps the original values when a repeated key has a different body', async () => {
     await post('k1', { memberEmail, amount: 10 }).expect(201);
     const res2 = await post('k1', { memberEmail, amount: 99 }).expect(200);
-    expect(res2.body.amount).toBe('10.00');
+    expect(res2.body.amount).toBe(10);
     const rows = await dataSource.query('SELECT amount FROM orders');
     expect(rows).toHaveLength(1);
-    expect(rows[0].amount).toBe('10.00');
+    expect(Number(rows[0].amount)).toBe(10);
   });
 
   it('treats idempotency keys that differ only by case as different', async () => {

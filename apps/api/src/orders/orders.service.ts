@@ -29,7 +29,7 @@ export class OrdersService {
           merchantId,
           memberId: member.id,
           idempotencyKey,
-          amount: amount.toFixed(2),
+          amount,
         }),
       );
       return { order, created: true };

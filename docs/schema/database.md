@@ -47,7 +47,7 @@ No auth columns; members are identified by email. `merchant_id` is the merchant 
 | `merchant_id`     | BIGINT UNSIGNED, FK | `merchants(id)`; set from the API key |
 | `member_id`       | BIGINT UNSIGNED, FK | `members(id)`                         |
 | `idempotency_key` | VARCHAR(255)        | chosen by the merchant per order      |
-| `amount`          | DECIMAL(12,2)       |                                       |
+| `amount`          | BIGINT UNSIGNED     | whole VND                             |
 | `created_at`      | TIMESTAMP           | defaults to now                       |
 
 `UNIQUE (merchant_id, idempotency_key)` (`uq_orders_merchant_idempotency_key`) is the last line of defence against duplicate orders. `idempotency_key` is `utf8mb4_bin` (case sensitive) and unique per merchant only.

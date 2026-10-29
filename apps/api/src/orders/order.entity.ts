@@ -19,8 +19,8 @@ export class Order {
   @Column({ name: 'idempotency_key', type: 'varchar' })
   idempotencyKey!: string;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2 })
-  amount!: string;
+  @Column({ type: 'bigint', unsigned: true })
+  amount!: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
