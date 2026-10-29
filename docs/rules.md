@@ -18,6 +18,9 @@ How points are earned and used. Each section covers what is implemented.
 | 250,000      | Gold   | 37     |
 | 9,999        | Gold   | 1      |
 | 5,000        | Bronze | 0      |
+| 250,000,000  | Bronze | 10,000 |
+
+- At most 10,000 points per order (`MAX_POINTS_PER_ORDER`), applied after the multiplier.
 
 - Awarded by `POST /orders`, in the same transaction as the order, at the member's tier when the order is received.
 - One lot per order (ledger key `order:<order id>`). Repeating the `Idempotency-Key` awards nothing.

@@ -241,6 +241,20 @@ describe('Orders', () => {
       },
     );
 
+    it.each([
+      [100_000_000, '1.00'],
+      [250_000_000, '1.00'],
+      [9_999_999_999, '1.50'],
+    ])('caps %i VND at earn rate %s to 10,000 points', async (amount, rate) => {
+      await setEarnRate(rate);
+
+      await post('k1', { memberEmail, amount }).expect(201);
+
+      const rows = await lots();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ points: 10_000, remaining: 10_000 });
+    });
+
     it('links the lot to its order', async () => {
       const res = await post('k1', { memberEmail, amount: 250_000 }).expect(
         201,

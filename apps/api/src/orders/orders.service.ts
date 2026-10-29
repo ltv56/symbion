@@ -12,6 +12,7 @@ import {
   type EarningStrategy,
 } from '../earning/earning.strategy';
 import { Order } from './order.entity';
+import { MAX_POINTS_PER_ORDER } from './orders.config';
 
 @Injectable()
 export class OrdersService {
@@ -20,6 +21,8 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     private readonly ledger: Ledger<EntityManager>,
     @Inject(EARNING_STRATEGY) private readonly earning: EarningStrategy,
+    @Inject(MAX_POINTS_PER_ORDER)
+    private readonly maxPointsPerOrder: number,
   ) {}
 
   async create(
@@ -54,10 +57,11 @@ export class OrdersService {
           amount,
         });
 
-        const points = this.earning.calculate({
+        const calculatedPoints = this.earning.calculate({
           amountVnd: amount,
           tierMultiplierPercent: Number(row.multiplier_percent),
         });
+        const points = Math.min(calculatedPoints, this.maxPointsPerOrder);
         if (points > 0) {
           const now = new Date();
           const expiresAt = new Date(now);
