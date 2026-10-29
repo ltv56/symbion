@@ -15,6 +15,7 @@ import { HealthModule } from './health/health.module';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { OrdersModule } from './orders/orders.module';
+import { TiersModule } from './tiers/tiers.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { OrdersModule } from './orders/orders.module';
     MembersModule,
     MerchantsModule,
     OrdersModule,
+    TiersModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

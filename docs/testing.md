@@ -37,6 +37,31 @@ curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d 
 curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"name":" "}'
 ```
 
+## Tiers (MySQL)
+
+```sh
+# list (public) -> tiers by min_points ascending
+curl -s localhost:3000/tiers
+
+# create (admin) -> 201 {"id":4,"name":"Platinum","minPoints":10000,"earnRate":2}
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Platinum","minPoints":10000,"earnRate":2}'
+
+# error path -> 409 (same name, or same minPoints)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Platinum","minPoints":20000,"earnRate":2}'
+
+# error path -> 401 (no token)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -d '{"name":"X","minPoints":1,"earnRate":1}'
+
+# error path -> 400 (earnRate has 3 decimals)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"X","minPoints":1,"earnRate":1.234}'
+
+# error path -> 404
+curl -s localhost:3000/tiers/999999
+```
+
 ## Members (MySQL)
 
 Requires applied migrations (see Migrations), one merchant and one tier. Start the API with `pnpm start` (`PORT`, default 3000). New members get the tier with the smallest `min_points`.

@@ -62,6 +62,22 @@ Known limitations: no refresh token, no logout, no rate limit on login, a single
 
 Liveness plus a MySQL check (`SELECT 1`). Responses: `200` with `{ "status": "ok" }`, `503` in the common error shape (`"message": "Database unavailable"`) when MySQL does not answer. The cause is logged server-side only.
 
+## GET /tiers, GET /tiers/:id
+
+Public. `GET /tiers` lists tiers by `min_points` ascending; `GET /tiers/:id` returns `404` for an unknown id and `400` when the id is not an integer. A tier is `{ "id", "name", "minPoints", "earnRate" }`; `earnRate` is a number.
+
+## POST /tiers
+
+Admin only. Body:
+
+| Field       | Rule                                           |
+| ----------- | ---------------------------------------------- |
+| `name`      | string, trimmed, 1-255 characters, unique      |
+| `minPoints` | integer from 0 to 4294967295, unique           |
+| `earnRate`  | number from 0.01 to 999.99, at most 2 decimals |
+
+Responses: `201` with the tier, `400` validation (unknown fields included), `401` no or invalid admin token, `409` name or `min_points` already used. There is no update or delete.
+
 ## POST /members
 
 Creates a member on the lowest tier (smallest `min_points`). Responses: `201`, `400` validation, `401` bad key, `409` email already registered, `503` (`"message": "No tiers configured"`) when the `tiers` table is empty.
