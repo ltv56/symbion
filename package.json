@@ -21,7 +21,8 @@
     "db:migrate": "pnpm --filter @symbion/api migration:run",
     "db:migrate:revert": "pnpm --filter @symbion/api migration:revert",
     "db:seed": "pnpm --filter @symbion/api seed",
-    "db:down": "docker compose -f infra/compose.yaml down"
+    "db:down": "docker compose -f infra/compose.yaml down",
+    "seed:demo": "pnpm --filter @symbion/api seed:demo"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

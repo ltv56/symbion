@@ -140,6 +140,8 @@ pnpm db:up
 pnpm db:migrate          # build, then apply pending migrations
 pnpm db:migrate:revert   # undo the last migration
 pnpm db:seed             # build, then upsert the default tiers (Bronze, Silver, Gold); safe to re-run
+DEMO_API_KEY=demo-key-demo-key-1234 pnpm seed:demo   # tiers, merchant "Demo Shop" (key from DEMO_API_KEY, 16+ chars), 3 members; safe to re-run
+NODE_ENV=production DEMO_API_KEY=... pnpm seed:demo  # refused: add --allow-production to the script arguments to run it
 
 docker compose -f infra/compose.yaml exec mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW CREATE TABLE members\G"'
 ```
