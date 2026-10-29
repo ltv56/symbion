@@ -68,7 +68,47 @@ describe('MysqlLedgerStorage', () => {
       [merchantId, memberId, points, remaining, expiresAt, idempotencyKey],
     );
 
-  describe('slice 1: table and unique key', () => {
+  const spend = (points: number, idempotencyKey = 'spend-1') =>
+    inTx((tx) =>
+      ledger.spend(tx, {
+        now,
+        merchantId: String(merchantId),
+        memberId: String(memberId),
+        points,
+        idempotencyKey,
+      }),
+    );
+
+  const earn = (points: number, idempotencyKey = 'earn-1') =>
+    inTx((tx) =>
+      ledger.earn(tx, {
+        now,
+        merchantId: String(merchantId),
+        memberId: String(memberId),
+        points,
+        idempotencyKey,
+      }),
+    );
+
+  const remainingOf = async (key: string) => {
+    const rows = await dataSource.query(
+      `SELECT remaining FROM ledger_lots WHERE idempotency_key = ?`,
+      [key],
+    );
+    return Number(rows[0].remaining);
+  };
+
+  const debtRemainings = async () => {
+    const rows: { remaining: string }[] = await dataSource.query(
+      `SELECT remaining FROM ledger_lots
+      WHERE member_id = ? AND remaining < 0
+      ORDER BY id`,
+      [memberId],
+    );
+    return rows.map((row) => Number(row.remaining));
+  };
+
+  describe('1. table and unique key', () => {
     it('rejects a second lot with the same (merchant, key) with ER_DUP_ENTRY', async () => {
       await insertLot(100, 'key-A');
       await expect(insertLot(200, 'key-A')).rejects.toMatchObject({
@@ -83,7 +123,7 @@ describe('MysqlLedgerStorage', () => {
     });
   });
 
-  describe('slice 2: earn + balance', () => {
+  describe('2. earn + balance', () => {
     const earnInput = (
       overrides: { expiresAt?: Date; points?: number } = {},
     ) => ({
@@ -136,30 +176,13 @@ describe('MysqlLedgerStorage', () => {
     });
   });
 
-  describe('slice 3: FIFO spend', () => {
-    const spend = (points: number, idempotencyKey = 'spend-1') =>
-      inTx((tx) =>
-        ledger.spend(tx, {
-          now,
-          merchantId: String(merchantId),
-          memberId: String(memberId),
-          points,
-          idempotencyKey,
-        }),
-      );
+  describe('3. FIFO spend', () => {
     const lotId = async (key: string) => {
       const rows = await dataSource.query(
         `SELECT id FROM ledger_lots WHERE idempotency_key = ?`,
         [key],
       );
       return String(rows[0].id);
-    };
-    const remainingOf = async (key: string) => {
-      const rows = await dataSource.query(
-        `SELECT remaining FROM ledger_lots WHERE idempotency_key = ?`,
-        [key],
-      );
-      return Number(rows[0].remaining);
     };
 
     it('spends the lot that expires first', async () => {
@@ -212,6 +235,63 @@ describe('MysqlLedgerStorage', () => {
       await spend(30);
 
       await expect(balance()).resolves.toBe(70);
+    });
+  });
+
+  describe('4. debt lots', () => {
+    it('spend more than the balance: shortfall becomes debt, balance goes negative', async () => {
+      await insertLot(20, 'lot');
+
+      const result = await spend(50);
+
+      expect(result.debt).toBe(30);
+      await expect(debtRemainings()).resolves.toEqual([-30]);
+      await expect(remainingOf('lot')).resolves.toBe(0);
+      await expect(balance()).resolves.toBe(-30);
+    });
+
+    it('earn smaller than the debt: new lot has remaining 0, debt lot shrinks', async () => {
+      await spend(150, 'spend-1');
+
+      const { lot } = await earn(100);
+
+      expect(lot.points).toBe(100);
+      expect(lot.remaining).toBe(0);
+      await expect(debtRemainings()).resolves.toEqual([-50]);
+      await expect(balance()).resolves.toBe(-50);
+    });
+
+    it('earn bigger than the debt: debt is cleared, the rest stays in the new lot', async () => {
+      await spend(40, 'spend-1');
+
+      const { lot } = await earn(100);
+
+      expect(lot.remaining).toBe(60);
+      await expect(debtRemainings()).resolves.toEqual([]);
+      await expect(balance()).resolves.toBe(60);
+    });
+
+    it('two debt lots are paid oldest first', async () => {
+      await spend(30, 'spend-1');
+      await spend(20, 'spend-2');
+      await expect(debtRemainings()).resolves.toEqual([-30, -20]);
+
+      await earn(40);
+
+      await expect(remainingOf('spend-1')).resolves.toBe(0);
+      await expect(remainingOf('spend-2')).resolves.toBe(-10);
+      await expect(balance()).resolves.toBe(-10);
+    });
+
+    it('same earn key twice does not pay the debt twice', async () => {
+      await spend(40, 'spend-1');
+
+      const first = await earn(100);
+      const second = await earn(100);
+
+      expect(first.duplicate).toBe(false);
+      expect(second.duplicate).toBe(true);
+      await expect(balance()).resolves.toBe(60);
     });
   });
 });
