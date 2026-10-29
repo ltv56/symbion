@@ -32,7 +32,7 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 
 - `POST /members` and `POST /orders` require the `x-api-key` header of a merchant.
 - `GET /members*` is unauthenticated until member auth is added.
-- `/merchants*` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
+- `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
 
 ## POST /auth/login
@@ -96,3 +96,22 @@ A merchant reports an order for a member. `merchant_id` comes from the API key, 
 A new order awards points to the member in the same transaction (see `docs/rules.md`). The response body is the order; points are not included.
 
 Responses: `201` with the created order (`amount` is a number), `200` with the original order when the same `Idempotency-Key` was already used by this merchant with the same `memberEmail` and `amount` (no second order, no extra points), `400` invalid input (amount not an integer or outside 1 to 9999999999) or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member, `422` the `Idempotency-Key` was already used for another member or `amount` (`"message": "Idempotency-Key was already used with a different request"`). `memberEmail` is compared after it resolves to a member, so emails that match the same member are equal; an unknown member returns `404` before the key is checked.
+
+## POST /vouchers
+
+Admin only. Creates a voucher on behalf of a merchant. Body:
+
+| Field         | Rule                                   |
+| ------------- | -------------------------------------- |
+| `merchantId`  | integer, an existing merchant          |
+| `title`       | string, trimmed, 1-255 characters      |
+| `faceValue`   | integer VND from 1 to 9007199254740991 |
+| `pointsPrice` | integer from 1 to 9007199254740991     |
+| `stock`       | integer from 0 to 4294967295           |
+| `validUntil`  | ISO 8601 date-time in the future       |
+
+`faceValue` must be at least `pointsPrice × point value` (`program_settings.point_value_vnd`).
+
+A voucher is `{ "id", "merchantId", "title", "faceValue", "pointsPrice", "stock", "validUntil", "status", "createdAt" }`; `status` is `active`.
+
+Responses: `201` with the voucher, `400` validation (unknown fields included) or `faceValue` below the floor (`"message": "faceValue 49999 is below the floor 50000 (500 points x 100 VND)"`), `401` no or invalid admin token, `404` unknown merchant.

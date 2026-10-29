@@ -28,3 +28,18 @@ How points are earned and used. Each section covers what is implemented.
 - Points expire 12 months after the order.
 
 Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
+
+## Vouchers
+
+- Point value: 100 VND per point (`program_settings.point_value_vnd`). Changed only by SQL; no endpoint yet.
+- The app pays the merchant `points_price × point value` for each redeemed voucher.
+- Floor: `face_value ≥ points_price × point value`. A discount above the floor is paid by the merchant.
+
+| `points_price` | `face_value` | Accepted |
+| -------------- | ------------ | -------- |
+| 500            | 50,000       | yes      |
+| 500            | 70,000       | yes      |
+| 500            | 49,999       | no       |
+
+- Created by the app admin on behalf of a merchant (`POST /vouchers`), `active` from creation.
+- Existing vouchers are not re-checked when the point value changes.

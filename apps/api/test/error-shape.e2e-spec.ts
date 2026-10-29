@@ -31,6 +31,7 @@ describe('Error shape', () => {
   });
 
   beforeEach(async () => {
+    await dataSource.query('DELETE FROM vouchers');
     await dataSource.query('DELETE FROM orders');
     await dataSource.query('DELETE FROM ledger_lots');
     await dataSource.query('DELETE FROM members');

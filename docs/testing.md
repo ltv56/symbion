@@ -62,6 +62,24 @@ curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Aut
 curl -s localhost:3000/tiers/999999
 ```
 
+## Vouchers (MySQL)
+
+Point value: `SELECT point_value_vnd FROM program_settings` (default 100).
+
+```sh
+# create (admin) -> 201, faceValue at the floor (500 x 100)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":1,"title":"50k off","faceValue":50000,"pointsPrice":500,"stock":100,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# error path -> 400 (faceValue below the floor)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":1,"title":"10k off","faceValue":10000,"pointsPrice":500,"stock":100,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# error path -> 404 (unknown merchant)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":999999,"title":"X","faceValue":50000,"pointsPrice":500,"stock":1,"validUntil":"2030-12-31T00:00:00Z"}'
+```
+
 ## Members (MySQL)
 
 Requires applied migrations (see Migrations), one merchant and one tier. Start the API with `pnpm start` (`PORT`, default 3000). New members get the tier with the smallest `min_points`.
@@ -128,7 +146,7 @@ curl -s -i localhost:3000/health
 cd apps/api && NODE_ENV=production PORT=3000 node dist/main
 ```
 
-E2E tests (`pnpm check`) delete all rows in `ledger_lots`, `orders`, `members`, `tiers` and `merchants`. Use a throwaway database only.
+E2E tests (`pnpm check`) delete all rows in `vouchers`, `ledger_lots`, `orders`, `members`, `tiers` and `merchants`. Use a throwaway database only.
 
 Ledger MySQL tests require applied migrations (`pnpm db:migrate`). Run only these: `pnpm --filter @symbion/api test ledger-mysql`.
 
