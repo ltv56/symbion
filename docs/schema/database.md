@@ -48,12 +48,9 @@ No auth columns; members are identified by email. `merchant_id` is the merchant 
 | `member_id`       | BIGINT UNSIGNED, FK | `members(id)`                         |
 | `idempotency_key` | VARCHAR(255)        | chosen by the merchant per order      |
 | `amount`          | BIGINT UNSIGNED     | whole VND                             |
-| `request_hash`    | CHAR(64), NULL      | SHA-256 hex of the order body         |
 | `created_at`      | TIMESTAMP           | defaults to now                       |
 
 `UNIQUE (merchant_id, idempotency_key)` (`uq_orders_merchant_idempotency_key`) is the last line of defence against duplicate orders. `idempotency_key` is `utf8mb4_bin` (case sensitive) and unique per merchant only.
-
-`request_hash` covers `{ memberEmail (lowercase), amount }`, not the idempotency key. A repeated key with another hash is rejected with `422`. NULL (orders created before the column) skips the check.
 
 ## ledger_lots
 

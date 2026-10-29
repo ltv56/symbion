@@ -203,29 +203,21 @@ describe('Orders', () => {
       expect(rows).toHaveLength(1);
     });
 
-    it('does not check an order stored without a hash', async () => {
-      const legacy = await dataSource.query(
-        `INSERT INTO orders (merchant_id, member_id, idempotency_key, amount, request_hash) VALUES (?, ?, 'old-1', 10, NULL)`,
-        [merchantId, memberId],
-      );
-
-      const res = await post('old-1', { memberEmail, amount: 99 }).expect(200);
-
-      expect(res.body.id).toBe(Number(legacy.insertId));
-      expect(res.body.amount).toBe(10);
+    it('returns the original order when the email resolves to the same member', async () => {
+      await dataSource.query('UPDATE members SET email = ? WHERE id = ?', [
+        'josé@example.com',
+        memberId,
+      ]);
+      const res1 = await post('k1', {
+        memberEmail: 'josé@example.com',
+        amount: 10,
+      }).expect(201);
+      const res2 = await post('k1', {
+        memberEmail: 'jose@example.com',
+        amount: 10,
+      }).expect(200);
+      expect(res2.body.id).toBe(res1.body.id);
     });
-  });
-
-  it('stores the request hash and never returns it', async () => {
-    const res = await post('k1', { memberEmail, amount: 10 }).expect(201);
-    expect(res.body).not.toHaveProperty('requestHash');
-    expect(res.body).not.toHaveProperty('request_hash');
-
-    const again = await post('k1', { memberEmail, amount: 10 }).expect(200);
-    expect(again.body).not.toHaveProperty('requestHash');
-
-    const rows = await dataSource.query('SELECT request_hash FROM orders');
-    expect(rows[0].request_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('treats idempotency keys that differ only by case as different', async () => {

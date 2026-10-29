@@ -22,15 +22,6 @@ export class Order {
   @Column({ type: 'bigint', unsigned: true })
   amount!: number;
 
-  @Column({
-    name: 'request_hash',
-    type: 'char',
-    length: 64,
-    nullable: true,
-    select: false,
-  })
-  requestHash?: string | null;
-
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

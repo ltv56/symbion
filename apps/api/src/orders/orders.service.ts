@@ -18,7 +18,6 @@ import {
 } from '../earning/earning.strategy';
 import { addMonths } from '../common/add-months';
 import { Order } from './order.entity';
-import { orderRequestHash } from './order-request-hash';
 import { MAX_POINTS_PER_ORDER } from './orders.config';
 
 @Injectable()
@@ -38,7 +37,7 @@ export class OrdersService {
     memberEmail: string,
     amount: number,
   ): Promise<{ order: Order; created: boolean }> {
-    const requestHash = orderRequestHash(memberEmail, amount);
+    let memberId: number | undefined;
     try {
       const order = await this.dataSource.transaction(async (tx) => {
         // Lock the member before the order insert, or parallel orders deadlock.
@@ -55,19 +54,15 @@ export class OrdersService {
         if (!row) {
           throw new NotFoundException(`Member ${memberEmail} not found`);
         }
-        const memberId = Number(row.id);
+        memberId = Number(row.id);
 
         // Insert the order, don't look it up by key first: parallel retries would both see "not found".
-        const order = await tx.save(
-          tx.create(Order, {
-            merchantId,
-            memberId,
-            idempotencyKey,
-            amount,
-            requestHash,
-          }),
-        );
-        order.requestHash = undefined;
+        const order = await tx.save(Order, {
+          merchantId,
+          memberId,
+          idempotencyKey,
+          amount,
+        });
 
         const calculatedPoints = this.earning.calculate({
           amountVnd: amount,
@@ -91,25 +86,35 @@ export class OrdersService {
       });
       return { order, created: true };
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
-      ) {
-        const order = await this.orders
-          .createQueryBuilder('o')
-          .addSelect('o.requestHash')
-          .where({ merchantId, idempotencyKey })
-          .getOneOrFail();
-        // NULL: order from before the hash column, not compared.
-        if (order.requestHash && order.requestHash !== requestHash) {
+      if (isDuplicateOrderKey(error)) {
+        const order = await this.orders.findOneByOrFail({
+          merchantId,
+          idempotencyKey,
+        });
+        if (
+          Number(order.memberId) !== memberId ||
+          Number(order.amount) !== amount
+        ) {
           throw new UnprocessableEntityException(
             'Idempotency-Key was already used with a different request',
           );
         }
-        order.requestHash = undefined;
         return { order, created: false };
       }
       throw error;
     }
   }
+}
+
+function isDuplicateOrderKey(error: unknown): boolean {
+  if (!(error instanceof QueryFailedError)) return false;
+  const driverError = error.driverError as {
+    code?: string;
+    sqlMessage?: string;
+  };
+  return (
+    driverError.code === 'ER_DUP_ENTRY' &&
+    (driverError.sqlMessage?.includes('uq_orders_merchant_idempotency_key') ??
+      false)
+  );
 }
