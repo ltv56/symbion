@@ -58,6 +58,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 Adapters:
 
 - `InMemoryLedgerStorage` (this package), for tests. It ignores `tx`, and `lockMember` does nothing.
+- `MysqlLedgerStorage` (`apps/api/src/ledger/mysql-ledger.storage.ts`), table `ledger_lots` with `BIGINT` points, `UNIQUE (merchant_id, idempotency_key)` and `CHECK (points <> 0)`. `tx` is a TypeORM `EntityManager`. `lockMember` is `SELECT ... FOR UPDATE` on the member row; `findLotByKey`, `findSpendableLots` and `findDebtLots` are `FOR UPDATE` reads. Tested against MySQL in `apps/api/test/ledger-mysql.e2e-spec.ts`, including parallel earns and spends.
 
 ## Scripts
 
