@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ledger } from '@symbion/ledger';
 import {
@@ -32,6 +37,7 @@ export class OrdersService {
     memberEmail: string,
     amount: number,
   ): Promise<{ order: Order; created: boolean }> {
+    let memberId: number | undefined;
     try {
       const order = await this.dataSource.transaction(async (tx) => {
         // Lock the member before the order insert, or parallel orders deadlock.
@@ -48,7 +54,7 @@ export class OrdersService {
         if (!row) {
           throw new NotFoundException(`Member ${memberEmail} not found`);
         }
-        const memberId = Number(row.id);
+        memberId = Number(row.id);
 
         // Insert the order, don't look it up by key first: parallel retries would both see "not found".
         const order = await tx.save(Order, {
@@ -80,17 +86,35 @@ export class OrdersService {
       });
       return { order, created: true };
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
-      ) {
+      if (isDuplicateOrderKey(error)) {
         const order = await this.orders.findOneByOrFail({
           merchantId,
           idempotencyKey,
         });
+        if (
+          Number(order.memberId) !== memberId ||
+          Number(order.amount) !== amount
+        ) {
+          throw new UnprocessableEntityException(
+            'Idempotency-Key was already used with a different request',
+          );
+        }
         return { order, created: false };
       }
       throw error;
     }
   }
+}
+
+function isDuplicateOrderKey(error: unknown): boolean {
+  if (!(error instanceof QueryFailedError)) return false;
+  const driverError = error.driverError as {
+    code?: string;
+    sqlMessage?: string;
+  };
+  return (
+    driverError.code === 'ER_DUP_ENTRY' &&
+    (driverError.sqlMessage?.includes('uq_orders_merchant_idempotency_key') ??
+      false)
+  );
 }

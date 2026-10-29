@@ -58,6 +58,10 @@ curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: a
 curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
   -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":250000}'
 
+# same key, different amount -> 422
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":5}'
+
 # error path -> 400 (missing Idempotency-Key)
 curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
   -d '{"memberEmail":"an@x.com","amount":5000}'
