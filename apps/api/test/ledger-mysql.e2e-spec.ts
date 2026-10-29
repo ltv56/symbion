@@ -108,6 +108,16 @@ describe('MysqlLedgerStorage', () => {
     return rows.map((row) => Number(row.remaining));
   };
 
+  const positiveRemainings = async () => {
+    const rows: { remaining: string }[] = await dataSource.query(
+      `SELECT remaining FROM ledger_lots
+      WHERE member_id = ? AND remaining > 0
+      ORDER BY id`,
+      [memberId],
+    );
+    return rows.map((row) => Number(row.remaining));
+  };
+
   describe('1. table and unique key', () => {
     it('rejects a second lot with the same (merchant, key) with ER_DUP_ENTRY', async () => {
       await insertLot(100, 'key-A');
@@ -292,6 +302,38 @@ describe('MysqlLedgerStorage', () => {
       expect(first.duplicate).toBe(false);
       expect(second.duplicate).toBe(true);
       await expect(balance()).resolves.toBe(60);
+    });
+  });
+
+  describe('5. parallel spend', () => {
+    it('10 parallel spends of 10 on one lot of 50: no lot goes negative, balance is exact', async () => {
+      await insertLot(50, 'lot');
+
+      const results = await Promise.all(
+        Array.from({ length: 10 }, (_, i) => spend(10, `spend-${i}`)),
+      );
+
+      const consumed = results
+        .flatMap((result) => result.consumed)
+        .reduce((sum, item) => sum + item.points, 0);
+      const debt = results.reduce((sum, result) => sum + result.debt, 0);
+      expect(consumed).toBe(50);
+      expect(debt).toBe(50);
+      await expect(remainingOf('lot')).resolves.toBe(0);
+      await expect(balance()).resolves.toBe(-50);
+    });
+
+    it('parallel earn and spend with an existing debt: debt lot and positive lot never coexist', async () => {
+      await spend(40, 'spend-1');
+
+      await Promise.all([earn(100, 'earn-1'), spend(70, 'spend-2')]);
+
+      // earn first: lot 60 is taken by the spend, debt 10 left.
+      // spend first: debt 110, earn pays 100, debt 10 left.
+      const debts = await debtRemainings();
+      const positives = await positiveRemainings();
+      expect(debts.length === 0 || positives.length === 0).toBe(true);
+      await expect(balance()).resolves.toBe(-10);
     });
   });
 });
