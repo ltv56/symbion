@@ -269,6 +269,28 @@ describe('Refunds', () => {
     expect(await balance()).toBe(25);
   });
 
+  it('never refunds or deducts more than the order for 10 parallel refunds', async () => {
+    const orderId = await placeOrder(250_000);
+
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, () => refund(orderId, { amount: 30_000 })),
+    );
+
+    const statuses = responses.map((r) => r.status).sort((a, b) => a - b);
+    expect(statuses).toEqual([...Array(8).fill(201), 422, 422]);
+    const [totals] = await dataSource.query(
+      `SELECT SUM(amount) AS refunded, SUM(points_deducted) AS deducted
+      FROM refunds WHERE order_id = ?`,
+      [orderId],
+    );
+    expect(Number(totals.refunded)).toBe(240_000);
+    // ceil(25 × 240,000 ÷ 250,000) = 24
+    expect(Number(totals.deducted)).toBe(24);
+    const lots = await refundLots();
+    expect(lots.reduce((sum, lot) => sum + Number(lot.points), 0)).toBe(-24);
+    expect(await balance()).toBe(1);
+  });
+
   it.each([
     { name: 'no Idempotency-Key', body: { amount: 1 }, key: null },
     { name: 'amount 0', body: { amount: 0 }, key: 'k' },

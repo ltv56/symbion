@@ -26,14 +26,14 @@ export class RefundsService {
     try {
       return await this.dataSource.transaction(async (tx) => {
         // Lock order: member first, as in orders and redemptions.
-        // Locking read, so no snapshot is taken before the lock.
+        // Lock both rows: `OF m` reads `o` plainly and takes the snapshot before the lock.
         const [orderRow]: { member_id: number; amount: number }[] =
           await tx.query(
             `SELECT o.member_id, o.amount
             FROM orders o
             JOIN members m ON m.id = o.member_id
             WHERE o.id = ? AND o.merchant_id = ?
-            FOR UPDATE OF m`,
+            FOR UPDATE`,
             [orderId, merchantId],
           );
         if (!orderRow) {
