@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { adminToken } from './helpers/admin-token';
+import { resetDatabase, insertMerchant } from './helpers/database';
 
 describe('Vouchers', () => {
   let app: INestApplication;
@@ -27,22 +27,11 @@ describe('Vouchers', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM refunds');
-    await dataSource.query('DELETE FROM redemptions');
-    await dataSource.query('DELETE FROM vouchers');
-    await dataSource.query('DELETE FROM orders');
-    await dataSource.query('DELETE FROM ledger_lots');
-    await dataSource.query('DELETE FROM members');
-    await dataSource.query('DELETE FROM merchants');
-    const merchant = await dataSource.query(
-      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop A', ?)`,
-      [createHash('sha256').update('test-api-key').digest('hex')],
-    );
-    merchantId = Number(merchant.insertId);
+    await resetDatabase(dataSource);
+    merchantId = await insertMerchant(dataSource, 'test-api-key');
   });
 
   afterAll(async () => {
-    await dataSource.query('DELETE FROM vouchers');
     await app.close();
   });
 

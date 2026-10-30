@@ -1,9 +1,9 @@
-import { createHash } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { resetDatabase, insertMerchant } from './helpers/database';
 
 describe('Refunds', () => {
   let app: INestApplication;
@@ -24,23 +24,9 @@ describe('Refunds', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM refunds');
-    await dataSource.query('DELETE FROM redemptions');
-    await dataSource.query('DELETE FROM vouchers');
-    await dataSource.query('DELETE FROM orders');
-    await dataSource.query('DELETE FROM ledger_lots');
-    await dataSource.query('DELETE FROM members');
-    await dataSource.query('DELETE FROM tiers');
-    await dataSource.query('DELETE FROM merchants');
-    const merchant = await dataSource.query(
-      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop A', ?)`,
-      [createHash('sha256').update(apiKey).digest('hex')],
-    );
-    merchantId = Number(merchant.insertId);
-    await dataSource.query(
-      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop B', ?)`,
-      [createHash('sha256').update(otherApiKey).digest('hex')],
-    );
+    await resetDatabase(dataSource);
+    merchantId = await insertMerchant(dataSource, apiKey);
+    await insertMerchant(dataSource, otherApiKey, 'Shop B');
     const tier = await dataSource.query(
       `INSERT INTO tiers (name, min_points, earn_rate) VALUES ('Bronze', 0, 1.00)`,
     );

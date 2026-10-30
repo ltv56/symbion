@@ -1,9 +1,9 @@
-import { createHash } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { resetDatabase, insertMerchant } from './helpers/database';
 
 describe('Members', () => {
   let app: INestApplication;
@@ -21,19 +21,8 @@ describe('Members', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM refunds');
-    await dataSource.query('DELETE FROM redemptions');
-    await dataSource.query('DELETE FROM vouchers');
-    await dataSource.query('DELETE FROM orders');
-    await dataSource.query('DELETE FROM ledger_lots');
-    await dataSource.query('DELETE FROM members');
-    await dataSource.query('DELETE FROM tiers');
-    await dataSource.query('DELETE FROM merchants');
-    const merchant = await dataSource.query(
-      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop A', ?)`,
-      [createHash('sha256').update(apiKey).digest('hex')],
-    );
-    merchantId = Number(merchant.insertId);
+    await resetDatabase(dataSource);
+    merchantId = await insertMerchant(dataSource, apiKey);
     await dataSource.query(
       `INSERT INTO tiers (name, min_points, earn_rate) VALUES ('Silver', 1000, 1.50), ('Bronze', 0, 1.00)`,
     );
@@ -142,10 +131,7 @@ describe('Members', () => {
     };
 
     beforeEach(async () => {
-      await dataSource.query(
-        `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop B', ?)`,
-        [createHash('sha256').update(otherKey).digest('hex')],
-      );
+      await insertMerchant(dataSource, otherKey, 'Shop B');
     });
 
     it('returns 404 for an unknown id', async () => {

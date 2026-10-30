@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { addMonths } from '../src/common/add-months';
+import { resetDatabase, insertMerchant } from './helpers/database';
 
 describe('Orders', () => {
   let app: INestApplication;
@@ -24,19 +24,8 @@ describe('Orders', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM refunds');
-    await dataSource.query('DELETE FROM redemptions');
-    await dataSource.query('DELETE FROM vouchers');
-    await dataSource.query('DELETE FROM orders');
-    await dataSource.query('DELETE FROM ledger_lots');
-    await dataSource.query('DELETE FROM members');
-    await dataSource.query('DELETE FROM tiers');
-    await dataSource.query('DELETE FROM merchants');
-    const merchant = await dataSource.query(
-      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop A', ?)`,
-      [createHash('sha256').update(apiKey).digest('hex')],
-    );
-    merchantId = Number(merchant.insertId);
+    await resetDatabase(dataSource);
+    merchantId = await insertMerchant(dataSource, apiKey);
     const tier = await dataSource.query(
       `INSERT INTO tiers (name, min_points, earn_rate) VALUES ('Bronze', 0, 1.00)`,
     );
@@ -246,11 +235,11 @@ describe('Orders', () => {
 
   it('allows two merchants to reuse the same key', async () => {
     const secondApiKey = 'test-api-key-2';
-    const secondMerchant = await dataSource.query(
-      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop B', ?)`,
-      [createHash('sha256').update(secondApiKey).digest('hex')],
+    const secondMerchantId = await insertMerchant(
+      dataSource,
+      secondApiKey,
+      'Shop B',
     );
-    const secondMerchantId = Number(secondMerchant.insertId);
     const res1 = await post('k1', { memberEmail, amount: 10 }).expect(201);
     const res2 = await post(
       'k1',

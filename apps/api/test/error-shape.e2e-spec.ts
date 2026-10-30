@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { MembersService } from '../src/members/members.service';
+import { resetDatabase, insertMerchant } from './helpers/database';
 
 describe('Error shape', () => {
   let app: INestApplication;
@@ -31,18 +31,8 @@ describe('Error shape', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM refunds');
-    await dataSource.query('DELETE FROM redemptions');
-    await dataSource.query('DELETE FROM vouchers');
-    await dataSource.query('DELETE FROM orders');
-    await dataSource.query('DELETE FROM ledger_lots');
-    await dataSource.query('DELETE FROM members');
-    await dataSource.query('DELETE FROM tiers');
-    await dataSource.query('DELETE FROM merchants');
-    await dataSource.query(
-      `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop A', ?)`,
-      [createHash('sha256').update(apiKey).digest('hex')],
-    );
+    await resetDatabase(dataSource);
+    await insertMerchant(dataSource, apiKey);
   });
 
   afterAll(async () => {

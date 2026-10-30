@@ -5,6 +5,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { adminToken } from './helpers/admin-token';
+import { resetDatabase } from './helpers/database';
 
 describe('Merchants', () => {
   let app: INestApplication;
@@ -22,13 +23,7 @@ describe('Merchants', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM refunds');
-    await dataSource.query('DELETE FROM redemptions');
-    await dataSource.query('DELETE FROM vouchers');
-    await dataSource.query('DELETE FROM orders');
-    await dataSource.query('DELETE FROM ledger_lots');
-    await dataSource.query('DELETE FROM members');
-    await dataSource.query('DELETE FROM merchants');
+    await resetDatabase(dataSource);
   });
 
   afterAll(async () => {
