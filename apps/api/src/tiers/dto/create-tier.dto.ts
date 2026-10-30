@@ -8,7 +8,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { trim } from '../../common/dto';
+import { MAX_AMOUNT_VND, trim } from '../../common/dto';
 
 export class CreateTierDto {
   @Transform(trim)
@@ -19,8 +19,8 @@ export class CreateTierDto {
 
   @IsInt()
   @Min(0)
-  @Max(4294967295)
-  minPoints!: number;
+  @Max(MAX_AMOUNT_VND)
+  minSpend!: number;
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)

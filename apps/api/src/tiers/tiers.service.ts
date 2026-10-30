@@ -12,7 +12,7 @@ export class TiersService {
   ) {}
 
   findAll(): Promise<Tier[]> {
-    return this.tiers.find({ order: { minPoints: 'ASC' } });
+    return this.tiers.find({ order: { minSpend: 'ASC' } });
   }
 
   findOne(id: number): Promise<Tier | null> {
@@ -20,20 +20,18 @@ export class TiersService {
   }
 
   async create(dto: CreateTierDto): Promise<Tier> {
-    // min_points has no unique constraint yet, so this check can race.
-    if (await this.tiers.existsBy({ minPoints: dto.minPoints })) {
-      throw new ConflictException(
-        `A tier already starts at ${dto.minPoints} points`,
-      );
-    }
-
     try {
       const saved = await this.tiers.save(this.tiers.create(dto));
       // save() keeps the insertId as the driver returns it (a string)
       saved.id = Number(saved.id);
       return saved;
     } catch (error) {
-      if (isDuplicateEntry(error)) {
+      if (isDuplicateEntry(error, 'uq_tiers_min_spend')) {
+        throw new ConflictException(
+          `A tier already starts at ${dto.minSpend} VND`,
+        );
+      }
+      if (isDuplicateEntry(error, 'uq_tiers_name')) {
         throw new ConflictException(`Tier name ${dto.name} is already used`);
       }
       throw error;

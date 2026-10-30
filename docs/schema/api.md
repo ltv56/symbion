@@ -105,23 +105,23 @@ Responses: `200` with `{ "id", "name", "apiKey" }` (`apiKey`: 64 hex characters,
 
 ## GET /tiers, GET /tiers/:id
 
-Public. `GET /tiers` lists tiers by `min_points` ascending; `GET /tiers/:id` returns `404` for an unknown id and `400` when the id is not an integer. A tier is `{ "id", "name", "minPoints", "earnRate" }`; `earnRate` is a number.
+Public. `GET /tiers` lists tiers by `min_spend` ascending; `GET /tiers/:id` returns `404` for an unknown id and `400` when the id is not an integer. A tier is `{ "id", "name", "minSpend", "earnRate" }`; `earnRate` is a number.
 
 ## POST /tiers
 
 Admin only. Body:
 
-| Field       | Rule                                           |
-| ----------- | ---------------------------------------------- |
-| `name`      | string, trimmed, 1-255 characters, unique      |
-| `minPoints` | integer from 0 to 4294967295, unique           |
-| `earnRate`  | number from 0.01 to 999.99, at most 2 decimals |
+| Field      | Rule                                           |
+| ---------- | ---------------------------------------------- |
+| `name`     | string, trimmed, 1-255 characters, unique      |
+| `minSpend` | integer VND from 0 to 9,999,999,999, unique    |
+| `earnRate` | number from 0.01 to 999.99, at most 2 decimals |
 
-Responses: `201` with the tier, `400` validation (unknown fields included), `401` no or invalid admin token, `409` name or `min_points` already used. There is no update or delete.
+Responses: `201` with the tier, `400` validation (unknown fields included), `401` no or invalid admin token, `409` name or `minSpend` already used. There is no update or delete.
 
 ## POST /members
 
-Creates a member on the lowest tier (smallest `min_points`). Responses: `201`, `400` validation, `401` bad key, `409` email already registered, `503` (`"message": "No tiers configured"`) when the `tiers` table is empty.
+Creates a member on the lowest tier (smallest `min_spend`). Responses: `201`, `400` validation, `401` bad key, `409` email already registered, `503` (`"message": "No tiers configured"`) when the `tiers` table is empty.
 
 ## POST /orders
 

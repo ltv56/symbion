@@ -8,6 +8,7 @@ How points are earned and used. Each section covers what is implemented.
 
 - `amount`: VND the member actually paid (after any voucher).
 - Tier multipliers: Bronze 1.0, Silver 1.25, Gold 1.5 (`tiers.earn_rate`, seeded by `pnpm seed`).
+- Tier thresholds (`tiers.min_spend`, 12-month spend in VND): Bronze 0, Silver 1,000,000, Gold 5,000,000.
 - Always rounded down. An order that earns less than 1 point earns 0.
 - Integer arithmetic only: the multiplier is used as a whole percent (1.25 → 125), so no float rounding errors.
 

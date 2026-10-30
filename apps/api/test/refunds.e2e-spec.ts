@@ -28,7 +28,7 @@ describe('Refunds', () => {
     merchantId = await insertMerchant(dataSource, apiKey);
     await insertMerchant(dataSource, otherApiKey, 'Shop B');
     const tier = await dataSource.query(
-      `INSERT INTO tiers (name, min_points, earn_rate) VALUES ('Bronze', 0, 1.00)`,
+      `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Bronze', 0, 1.00)`,
     );
     const member = await dataSource.query(
       `INSERT INTO members (merchant_id, tier_id, email, name) VALUES (?, ?, ?, 'Test')`,

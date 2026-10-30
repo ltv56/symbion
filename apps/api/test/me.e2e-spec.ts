@@ -31,7 +31,7 @@ describe('Me', () => {
     merchantId = await insertMerchant(dataSource, 'key-a', 'Shop A');
     otherMerchantId = await insertMerchant(dataSource, 'key-b', 'Shop B');
     const tier = await dataSource.query(
-      `INSERT INTO tiers (name, min_points, earn_rate) VALUES ('Silver', 0, 1.25)`,
+      `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Silver', 0, 1.25)`,
     );
     const insertMember = async (memberEmail: string) => {
       const res = await dataSource.query(

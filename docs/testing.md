@@ -81,23 +81,23 @@ curl -s -X POST localhost:3000/merchants/999999/api-key -H "Authorization: Beare
 ## Tiers (MySQL)
 
 ```sh
-# list (public) -> tiers by min_points ascending
+# list (public) -> tiers by min_spend ascending
 curl -s localhost:3000/tiers
 
-# create (admin) -> 201 {"id":4,"name":"Platinum","minPoints":10000,"earnRate":2}
+# create (admin) -> 201 {"id":4,"name":"Platinum","minSpend":10000000,"earnRate":2}
 curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
-  -d '{"name":"Platinum","minPoints":10000,"earnRate":2}'
+  -d '{"name":"Platinum","minSpend":10000000,"earnRate":2}'
 
-# error path -> 409 (same name, or same minPoints)
+# error path -> 409 (same name, or same minSpend)
 curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
-  -d '{"name":"Platinum","minPoints":20000,"earnRate":2}'
+  -d '{"name":"Platinum","minSpend":20000000,"earnRate":2}'
 
 # error path -> 401 (no token)
-curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -d '{"name":"X","minPoints":1,"earnRate":1}'
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -d '{"name":"X","minSpend":1,"earnRate":1}'
 
 # error path -> 400 (earnRate has 3 decimals)
 curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
-  -d '{"name":"X","minPoints":1,"earnRate":1.234}'
+  -d '{"name":"X","minSpend":1,"earnRate":1.234}'
 
 # error path -> 404
 curl -s localhost:3000/tiers/999999
@@ -138,7 +138,7 @@ curl -s localhost:3000/vouchers/999999
 
 ## Members (MySQL)
 
-Requires applied migrations (see Migrations), one merchant and one tier. Start the API with `pnpm start` (`PORT`, default 3000). New members get the tier with the smallest `min_points`.
+Requires applied migrations (see Migrations), one merchant and one tier. Start the API with `pnpm start` (`PORT`, default 3000). New members get the tier with the smallest `min_spend`.
 
 ```sh
 # create a member -> 201; the same email again -> 409
