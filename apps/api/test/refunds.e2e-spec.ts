@@ -99,9 +99,16 @@ describe('Refunds', () => {
     return Number(rows[0].total);
   };
 
-  const refundLots = (): Promise<{ merchant_id: number; points: number }[]> =>
+  const refundLots = (): Promise<
+    {
+      merchant_id: number;
+      points: number;
+      ref_type: string | null;
+      ref_id: number | null;
+    }[]
+  > =>
     dataSource.query(
-      `SELECT merchant_id, points FROM ledger_lots
+      `SELECT merchant_id, points, ref_type, ref_id FROM ledger_lots
       WHERE idempotency_key LIKE 'refund:%'`,
     );
 
@@ -127,7 +134,12 @@ describe('Refunds', () => {
     });
     expect(await balance()).toBe(-20);
     expect(await refundLots()).toEqual([
-      { merchant_id: merchantId, points: -25 },
+      {
+        merchant_id: merchantId,
+        points: -25,
+        ref_type: 'refund',
+        ref_id: res.body.id,
+      },
     ]);
   });
 

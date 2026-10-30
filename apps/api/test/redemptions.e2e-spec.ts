@@ -101,10 +101,16 @@ describe('Redemptions', () => {
   };
 
   const redemptionSpends = (): Promise<
-    { merchant_id: string; points: string; idempotency_key: string }[]
+    {
+      merchant_id: string;
+      points: string;
+      idempotency_key: string;
+      ref_type: string | null;
+      ref_id: string | null;
+    }[]
   > =>
     dataSource.query(
-      `SELECT merchant_id, points, idempotency_key FROM ledger_lots
+      `SELECT merchant_id, points, idempotency_key, ref_type, ref_id FROM ledger_lots
       WHERE idempotency_key LIKE 'redemption:%'`,
     );
 
@@ -142,7 +148,9 @@ describe('Redemptions', () => {
     expect(spends).toHaveLength(1);
     expect(spends[0]).toMatchObject({
       idempotency_key: `redemption:${res.body.id}`,
+      ref_type: 'redemption',
     });
+    expect(Number(spends[0]?.ref_id)).toBe(res.body.id);
     expect(Number(spends[0]?.points)).toBe(-pointsPrice);
     expect(Number(spends[0]?.merchant_id)).toBe(voucherMerchantId);
   });

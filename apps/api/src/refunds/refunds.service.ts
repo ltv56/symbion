@@ -117,6 +117,7 @@ export class RefundsService {
             memberId: String(memberId),
             points: pointsDeducted,
             idempotencyKey: `refund:${refund.id}`,
+            ref: { type: 'refund', id: String(refund.id) },
             now,
           });
         }

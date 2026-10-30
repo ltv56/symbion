@@ -113,6 +113,7 @@ export class RedemptionsService {
           memberId: String(memberId),
           points,
           idempotencyKey: `redemption:${redemption.id}`,
+          ref: { type: 'redemption', id: String(redemption.id) },
           now,
         });
 

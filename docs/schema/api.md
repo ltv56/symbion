@@ -70,7 +70,7 @@ Member only (`Authorization: Bearer <member token>`). `401` for a missing, inval
 
 `GET /me`: `200` with `{ "id", "email", "name", "tier": { "id", "name" }, "balance" }`. `balance` is the sum of unexpired lots and may be negative.
 
-`GET /me/history`: `200` with the member's latest 50 ledger entries, newest first, each `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`.
+`GET /me/history`: `200` with the member's latest 50 ledger entries, newest first, each `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`; `ref.type` is `order`, `redemption` or `refund` (entries written before spends carried a `ref` have `null`).
 
 ## POST /me/redemptions
 
