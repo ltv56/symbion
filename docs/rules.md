@@ -57,10 +57,13 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 
 ## Refunds
 
-`points deducted = ceil(points earned by the order × refund amount ÷ order amount)`
+`points deducted = ceil(points earned by the order × total refunded ÷ order amount) − points deducted by earlier refunds`
 
 - Sent by the order's merchant (`POST /orders/:orderId/refunds`).
+- `total refunded` includes this refund. Rounding happens once on the total, so all refunds of an order together deduct at most the points it earned, and exactly those points when the whole amount is refunded.
 - Always rounded up. A refund of an order that earned 0 points deducts 0.
+- An order can be refunded several times; the refunds together cannot exceed the order amount (`422`).
+- Repeating the `Idempotency-Key` returns the same refund and deducts nothing. Reusing it for another order or amount is rejected (`422`).
 - Deducted in full even when the member already spent the points: the balance goes negative and blocks redemption until later orders cover it.
 
 | Order (VND) | Earned | Refund (VND) | Deducted |
@@ -70,3 +73,12 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 | 250,000     | 25     | 35,000       | 4        |
 | 250,000     | 25     | 1            | 1        |
 | 5,000       | 0      | 5,000        | 0        |
+
+Several refunds of an order of 250,000 that earned 25:
+
+| Refund (VND) | Total refunded | `ceil` on total | Deducted |
+| ------------ | -------------- | --------------- | -------- |
+| 83,333       | 83,333         | 9               | 9        |
+| 83,333       | 166,666        | 17              | 8        |
+| 83,334       | 250,000        | 25              | 8        |
+| 1            | 250,001        | —               | `422`    |

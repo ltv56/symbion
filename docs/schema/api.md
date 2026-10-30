@@ -111,7 +111,7 @@ The order's merchant refunds part or all of an order and the member loses the ma
 
 A refund is `{ "id", "merchantId", "orderId", "idempotencyKey", "amount", "pointsDeducted", "createdAt" }`.
 
-Responses: `201` with the refund, `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown order or an order of another merchant.
+Responses: `201` with the refund, `200` with the original refund when this merchant already used the `Idempotency-Key` for the same order and `amount` (nothing deducted again), `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown order or an order of another merchant, `422` the refunds of the order would exceed its amount, or the `Idempotency-Key` was already used for another order or `amount`.
 
 ## POST /vouchers
 

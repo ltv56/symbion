@@ -58,12 +58,15 @@ describe('Refunds', () => {
   let keySeq = 0;
 
   // 1 point per 10,000 VND at Bronze.
-  const placeOrder = async (amount: number): Promise<number> => {
+  const placeOrder = async (
+    amount: number,
+    email = memberEmail,
+  ): Promise<number> => {
     const res = await request(app.getHttpServer())
       .post('/orders')
       .set('x-api-key', apiKey)
       .set('Idempotency-Key', `order-${++keySeq}`)
-      .send({ memberEmail, amount })
+      .send({ memberEmail: email, amount })
       .expect(201);
     return Number(res.body.id);
   };
@@ -116,6 +119,13 @@ describe('Refunds', () => {
       WHERE idempotency_key LIKE 'refund:%'`,
     );
 
+  const refundCount = async () => {
+    const rows = await dataSource.query(
+      'SELECT COUNT(*) AS count FROM refunds',
+    );
+    return Number(rows[0].count);
+  };
+
   it('deducts all earned points on a full refund, into a negative balance', async () => {
     const orderId = await placeOrder(250_000);
     await spendPoints(20);
@@ -165,6 +175,94 @@ describe('Refunds', () => {
       expect(await balance()).toBe(25 - deducted);
     },
   );
+
+  it('deducts only the difference on a second partial refund', async () => {
+    const orderId = await placeOrder(250_000);
+    await refund(orderId, { amount: 35_000 }).expect(201);
+
+    // ceil(25 × 70,000 ÷ 250,000) = 7, minus the 4 already deducted (alone it would be 4).
+    const res = await refund(orderId, { amount: 35_000 }).expect(201);
+
+    expect(res.body.pointsDeducted).toBe(3);
+    expect(await balance()).toBe(18);
+  });
+
+  it('deducts exactly the earned points when refunds add up to the order', async () => {
+    const orderId = await placeOrder(250_000);
+
+    // Rounding each refund up alone would deduct 9 + 9 + 9 = 27.
+    const deducted: number[] = [];
+    for (const amount of [83_333, 83_333, 83_334]) {
+      const res = await refund(orderId, { amount }).expect(201);
+      deducted.push(res.body.pointsDeducted);
+    }
+
+    expect(deducted).toEqual([9, 8, 8]);
+    expect(await balance()).toBe(0);
+  });
+
+  it.each([
+    { name: 'one refund', first: undefined, second: 250_001 },
+    { name: 'the refunds in total', first: 200_000, second: 50_001 },
+  ])(
+    'returns 422 when $name exceed the order amount',
+    async ({ first, second }) => {
+      const orderId = await placeOrder(250_000);
+      if (first) await refund(orderId, { amount: first }).expect(201);
+      const before = await balance();
+
+      await refund(orderId, { amount: second }).expect(422);
+
+      expect(await balance()).toBe(before);
+      expect(await refundCount()).toBe(first ? 1 : 0);
+    },
+  );
+
+  it('returns the original refund for a repeated Idempotency-Key', async () => {
+    const orderId = await placeOrder(250_000);
+    const first = await refund(orderId, { amount: 35_000 }, { key: 'same' });
+
+    const again = await refund(orderId, { amount: 35_000 }, { key: 'same' });
+
+    expect(first.status).toBe(201);
+    expect(again.status).toBe(200);
+    expect(again.body.id).toBe(first.body.id);
+    expect(await balance()).toBe(21);
+    expect(await refundLots()).toHaveLength(1);
+  });
+
+  it('returns 422 when the Idempotency-Key was used for another refund', async () => {
+    const orderId = await placeOrder(250_000);
+    const otherOrderId = await placeOrder(100_000);
+    await refund(orderId, { amount: 35_000 }, { key: 'same' }).expect(201);
+
+    await refund(orderId, { amount: 1 }, { key: 'same' }).expect(422);
+    await refund(otherOrderId, { amount: 35_000 }, { key: 'same' }).expect(422);
+
+    expect(await refundCount()).toBe(1);
+    expect(await balance()).toBe(31);
+  });
+
+  it('answers 201 and 422, not 500, for one key sent in parallel for two members', async () => {
+    const otherEmail = 'jane@example.com';
+    await dataSource.query(
+      `INSERT INTO members (merchant_id, tier_id, email, name)
+      SELECT merchant_id, tier_id, ?, 'Other' FROM members WHERE id = ?`,
+      [otherEmail, memberId],
+    );
+    const orderId = await placeOrder(250_000);
+    const otherOrderId = await placeOrder(250_000, otherEmail);
+
+    const responses = await Promise.all([
+      refund(orderId, { amount: 35_000 }, { key: 'race' }),
+      refund(otherOrderId, { amount: 35_000 }, { key: 'race' }),
+    ]);
+
+    expect(responses.map((r) => r.status).sort((a, b) => a - b)).toEqual([
+      201, 422,
+    ]);
+    expect(await refundCount()).toBe(1);
+  });
 
   it('deducts nothing for an order that earned no points', async () => {
     const orderId = await placeOrder(5_000);
