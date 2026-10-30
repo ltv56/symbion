@@ -32,6 +32,28 @@ describe('Ledger.spend', () => {
     expect(entry).toMatchObject({ type: 'spend', ref: null, points: -30 });
   });
 
+  it('stores the caller ref on the spend entry', async () => {
+    await ledger.earn(tx, {
+      now,
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 100,
+      idempotencyKey: 'key1',
+    });
+
+    await ledger.spend(tx, {
+      merchantId: 'merchant1',
+      memberId: 'member1',
+      points: 30,
+      idempotencyKey: 'spend-key',
+      now,
+      ref: { type: 'redemption', id: '7' },
+    });
+
+    const entry = await storage.findLotByKey(tx, 'merchant1', 'spend-key');
+    expect(entry?.ref).toEqual({ type: 'redemption', id: '7' });
+  });
+
   it('spends less than one lot -> consumed has one entry, balance goes down by that amount', async () => {
     const lot = await ledger.earn(tx, {
       now,
