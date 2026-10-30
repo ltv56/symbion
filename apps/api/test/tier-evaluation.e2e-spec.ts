@@ -154,4 +154,60 @@ describe('Tier evaluation', () => {
       await expect(tierName()).resolves.toBe('Silver');
     });
   });
+
+  describe('on a refund', () => {
+    const refund = (orderId: number, amount: number) =>
+      request(app.getHttpServer())
+        .post(`/orders/${orderId}/refunds`)
+        .set('x-api-key', apiKey)
+        .set('Idempotency-Key', `r-${++keySeq}`)
+        .send({ amount });
+
+    it.each([
+      [5_000_000, [4_500_000], 'Bronze'],
+      [5_000_000, [4_000_001], 'Bronze'],
+      [5_000_000, [4_000_000], 'Silver'],
+      [6_000_000, [1_000_000], 'Gold'],
+      [6_000_000, [500_000, 600_000], 'Silver'],
+    ])(
+      'an order of %d refunded by %j leaves %s',
+      async (amount, refunds, expected) => {
+        const { body } = await order(amount).expect(201);
+        await expect(tierName()).resolves.toBe('Gold');
+
+        for (const refundAmount of refunds) {
+          await refund(body.id, refundAmount).expect(201);
+        }
+
+        await expect(tierName()).resolves.toBe(expected);
+      },
+    );
+
+    it('earns at the lower tier after a refund', async () => {
+      const { body } = await order(5_000_000).expect(201);
+      await refund(body.id, 5_000_000).expect(201);
+
+      const next = await order(100_000).expect(201);
+
+      await expect(pointsOf(next.body.id)).resolves.toBe(10);
+    });
+
+    it('counts refunds only for orders inside the window', async () => {
+      await insertOldOrder(2_000_000, 13);
+      const [old] = await dataSource.query(
+        `SELECT id FROM orders WHERE member_id = ? ORDER BY id LIMIT 1`,
+        [memberId],
+      );
+      await order(1_000_000).expect(201);
+
+      await dataSource.query(
+        `INSERT INTO refunds (merchant_id, order_id, idempotency_key, amount, points_deducted)
+        VALUES (?, ?, 'old-refund', 2000000, 0)`,
+        [merchantId, old.id],
+      );
+      await order(1).expect(201);
+
+      await expect(tierName()).resolves.toBe('Silver');
+    });
+  });
 });

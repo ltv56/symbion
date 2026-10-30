@@ -7,6 +7,7 @@ import {
 import { Ledger } from '@symbion/ledger';
 import { DataSource, EntityManager } from 'typeorm';
 import { isDuplicateEntry } from '../common/is-duplicate-entry';
+import { evaluateTier } from '../tiers/evaluate-tier';
 import { Refund } from './refund.entity';
 
 type RefundResult = { refund: Refund; created: boolean };
@@ -109,15 +110,18 @@ export class RefundsService {
         );
         refund.id = Number(refund.id);
 
+        const now = new Date();
         if (pointsDeducted > 0) {
           await this.ledger.spend(tx, {
             merchantId: String(merchantId),
             memberId: String(memberId),
             points: pointsDeducted,
             idempotencyKey: `refund:${refund.id}`,
-            now: new Date(),
+            now,
           });
         }
+        // Without this: buy 5,000,000 to reach Gold, refund it all, keep Gold.
+        await evaluateTier(tx, memberId, now);
         return { refund, created: true };
       });
     } catch (error) {

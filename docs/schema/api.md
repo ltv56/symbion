@@ -125,7 +125,7 @@ Creates a member on the lowest tier (smallest `min_spend`). Responses: `201`, `4
 
 ## POST /orders
 
-A merchant reports an order for a member. `merchant_id` comes from the API key, never from the body. A new order re-evaluates the member's tier (see [rules](../rules.md#tiers)).
+A merchant reports an order for a member. `merchant_id` comes from the API key, never from the body. A new order (and a refund, below) re-evaluates the member's tier (see [rules](../rules.md#tiers)).
 
 | Input             | Notes                                                                            |
 | ----------------- | -------------------------------------------------------------------------------- |
