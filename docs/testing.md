@@ -195,6 +195,17 @@ curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-
   -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5000}'
 ```
 
+Tier upgrade (needs `pnpm db:seed`; new member `$EMAIL` on Bronze). Two orders of 600,000 cross Silver (1,000,000): the second still earns 60 points, a third earns 75.
+
+```sh
+for k in t-1 t-2 t-3; do
+  curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
+    -H "Idempotency-Key: $k" -d "{\"memberEmail\":\"$EMAIL\",\"amount\":600000}"
+done
+# tier -> Silver
+curl -s localhost:3000/members -H "x-api-key: $KEY"
+```
+
 ## Redemptions (MySQL)
 
 Requires `$KEY`, member `an@x.com` with at least 500 points (e.g. two orders of 2,500,000) and an active voucher `$VID` with `pointsPrice` 500 (see Vouchers).

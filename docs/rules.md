@@ -30,6 +30,29 @@ How points are earned and used. Each section covers what is implemented.
 
 Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 
+## Tiers
+
+`spend = order amounts of the last 12 months − refunds of those orders`
+
+| Tier   | `min_spend` (VND) | Multiplier |
+| ------ | ----------------- | ---------- |
+| Bronze | 0                 | 1.0        |
+| Silver | 1,000,000         | 1.25       |
+| Gold   | 5,000,000         | 1.5        |
+
+- The member's tier is the highest tier whose `min_spend` is at most their spend.
+- Evaluated after every order, in the same transaction. The tier can go up or down.
+- The order that crosses a threshold earns at the tier the member had before it.
+- A repeated `Idempotency-Key` does not re-evaluate.
+- Known limitation: with no new order, a tier stays as it is after older orders leave the window (no nightly job).
+
+| Orders in the last 12 months (VND) | Tier   |
+| ---------------------------------- | ------ |
+| 999,999                            | Bronze |
+| 999,999 + 1                        | Silver |
+| 4,000,000 + 999,999                | Silver |
+| 5,000,000                          | Gold   |
+
 ## Vouchers
 
 - Point value: 100 VND per point (`program_settings.point_value_vnd`). Changed only by SQL; no endpoint yet.
