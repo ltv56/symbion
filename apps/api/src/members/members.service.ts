@@ -4,7 +4,8 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import { isDuplicateEntry } from '../common/is-duplicate-entry';
 import { Member } from './member.entity';
 
 @Injectable()
@@ -43,10 +44,7 @@ export class MembersService {
         }),
       );
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
-      ) {
+      if (isDuplicateEntry(error)) {
         throw new ConflictException(`Email ${email} is already registered`);
       }
       throw error;

@@ -1,6 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import { isDuplicateEntry } from '../common/is-duplicate-entry';
 import { CreateTierDto } from './dto/create-tier.dto';
 import { Tier } from './tier.entity';
 
@@ -32,10 +33,7 @@ export class TiersService {
       saved.id = Number(saved.id);
       return saved;
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
-      ) {
+      if (isDuplicateEntry(error)) {
         throw new ConflictException(`Tier name ${dto.name} is already used`);
       }
       throw error;

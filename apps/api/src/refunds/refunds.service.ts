@@ -4,7 +4,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { Ledger } from '@symbion/ledger';
-import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
+import { isDuplicateEntry } from '../common/is-duplicate-entry';
 import { Refund } from './refund.entity';
 
 type RefundResult = { refund: Refund; created: boolean };
@@ -108,7 +109,7 @@ export class RefundsService {
       });
     } catch (error) {
       // Same key on another member's order is not serialised by the member lock.
-      if (isDuplicateRefundKey(error)) {
+      if (isDuplicateEntry(error, 'uq_refunds_merchant_idempotency_key')) {
         const existing = await this.dataSource.manager.findOneByOrFail(Refund, {
           merchantId,
           idempotencyKey,
@@ -131,17 +132,4 @@ function sameRefundOrThrow(
     );
   }
   return { refund, created: false };
-}
-
-function isDuplicateRefundKey(error: unknown): boolean {
-  if (!(error instanceof QueryFailedError)) return false;
-  const driverError = error.driverError as {
-    code?: string;
-    sqlMessage?: string;
-  };
-  return (
-    driverError.code === 'ER_DUP_ENTRY' &&
-    (driverError.sqlMessage?.includes('uq_refunds_merchant_idempotency_key') ??
-      false)
-  );
 }
