@@ -98,6 +98,58 @@ describe('Me', () => {
         name: 'John',
         tier: { id: expect.any(Number), name: 'Silver' },
         balance: 500,
+        spend12m: 0,
+        nextTier: null,
+      });
+    });
+
+    describe('tier progress', () => {
+      let orderSeq = 0;
+      const addOrder = async (amount: number, monthsAgo = 0) => {
+        const res = await dataSource.query(
+          `INSERT INTO orders (merchant_id, member_id, idempotency_key, amount, created_at)
+          VALUES (?, ?, ?, ?, NOW() - INTERVAL ? MONTH)`,
+          [merchantId, memberId, `order-${++orderSeq}`, amount, monthsAgo],
+        );
+        return Number(res.insertId);
+      };
+      const addRefund = (orderId: number, amount: number) =>
+        dataSource.query(
+          `INSERT INTO refunds (merchant_id, order_id, idempotency_key, amount)
+          VALUES (?, ?, ?, ?)`,
+          [merchantId, orderId, `refund-${++orderSeq}`, amount],
+        );
+
+      it('returns the 12-month spend and the next tier above the current one', async () => {
+        const gold = await dataSource.query(
+          `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Gold', 5000000, 1.5)`,
+        );
+        await dataSource.query(
+          `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Platinum', 10000000, 2)`,
+        );
+        await addOrder(800_000);
+        const refunded = await addOrder(300_000);
+        await addRefund(refunded, 100_000);
+        const old = await addOrder(2_000_000, 13);
+        await addRefund(old, 500_000);
+
+        const res = await get('/me').expect(200);
+
+        expect(res.body.spend12m).toBe(1_000_000);
+        expect(res.body.nextTier).toEqual({
+          id: Number(gold.insertId),
+          name: 'Gold',
+          minSpend: 5_000_000,
+        });
+      });
+
+      it('returns no next tier on the top tier', async () => {
+        await addOrder(800_000);
+
+        const res = await get('/me').expect(200);
+
+        expect(res.body.spend12m).toBe(800_000);
+        expect(res.body.nextTier).toBeNull();
       });
     });
 

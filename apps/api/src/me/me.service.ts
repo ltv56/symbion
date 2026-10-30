@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Ledger } from '@symbion/ledger';
 import { DataSource, EntityManager } from 'typeorm';
+import { spendLast12Months } from '../tiers/spend';
 
 const HISTORY_LIMIT = 50;
 
@@ -10,6 +11,8 @@ export type Profile = {
   name: string | null;
   tier: { id: number; name: string };
   balance: number;
+  spend12m: number;
+  nextTier: { id: number; name: string; minSpend: number } | null;
 };
 
 export type HistoryEntry = {
@@ -36,8 +39,9 @@ export class MeService {
       name: string | null;
       tier_id: number;
       tier_name: string;
+      tier_min_spend: string;
     }[] = await this.dataSource.query(
-      `SELECT m.email, m.name, t.id AS tier_id, t.name AS tier_name
+      `SELECT m.email, m.name, t.id AS tier_id, t.name AS tier_name, t.min_spend AS tier_min_spend
       FROM members m JOIN tiers t ON t.id = m.tier_id
       WHERE m.id = ?`,
       [memberId],
@@ -47,17 +51,38 @@ export class MeService {
       throw new UnauthorizedException('Invalid token');
     }
 
+    const now = new Date();
     const balance = await this.ledger.balance(
       this.dataSource.manager,
       String(memberId),
-      new Date(),
+      now,
     );
+    const spend12m = await spendLast12Months(
+      this.dataSource.manager,
+      memberId,
+      now,
+    );
+    // Next above the current tier, not above the spend: the tier only changes on an order or refund
+    const [next]: { id: number; name: string; min_spend: string }[] =
+      await this.dataSource.query(
+        `SELECT id, name, min_spend FROM tiers
+        WHERE min_spend > ? ORDER BY min_spend LIMIT 1`,
+        [Number(member.tier_min_spend)],
+      );
     return {
       id: memberId,
       email: member.email,
       name: member.name,
       tier: { id: Number(member.tier_id), name: member.tier_name },
       balance,
+      spend12m,
+      nextTier: next
+        ? {
+            id: Number(next.id),
+            name: next.name,
+            minSpend: Number(next.min_spend),
+          }
+        : null,
     };
   }
 

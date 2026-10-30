@@ -32,7 +32,9 @@ export class MeController {
   ) {}
 
   @Get()
-  @ApiOkResponse({ description: 'Member, tier and point balance' })
+  @ApiOkResponse({
+    description: 'Member, tier, point balance and progress to the next tier',
+  })
   profile(@CurrentMemberId() memberId: number): Promise<Profile> {
     return this.me.profile(memberId);
   }

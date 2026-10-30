@@ -68,7 +68,7 @@ Admin endpoints reject a member token (`401`).
 
 Member only (`Authorization: Bearer <member token>`). `401` for a missing, invalid or non-member token.
 
-`GET /me`: `200` with `{ "id", "email", "name", "tier": { "id", "name" }, "balance" }`. `balance` is the sum of unexpired lots and may be negative.
+`GET /me`: `200` with `{ "id", "email", "name", "tier": { "id", "name" }, "balance", "spend12m", "nextTier" }`. `balance` is the sum of unexpired lots and may be negative. `spend12m` is the VND spend of the last 12 months (orders minus their refunds), the figure tiers are evaluated on. `nextTier` is `{ "id", "name", "minSpend" }` of the tier with the next higher `min_spend` above the member's current tier, `null` on the top tier.
 
 `GET /me/history`: `200` with the member's latest 50 ledger entries, newest first, each `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`; `ref.type` is `order`, `redemption` or `refund` (entries written before spends carried a `ref` have `null`).
 
