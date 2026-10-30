@@ -13,12 +13,12 @@ export class MembersService {
     @InjectRepository(Member) private readonly members: Repository<Member>,
   ) {}
 
-  findAll(): Promise<Member[]> {
-    return this.members.find();
+  findAll(merchantId: number): Promise<Member[]> {
+    return this.members.findBy({ merchantId });
   }
 
-  findOne(id: number): Promise<Member | null> {
-    return this.members.findOneBy({ id });
+  findOne(id: number, merchantId: number): Promise<Member | null> {
+    return this.members.findOneBy({ id, merchantId });
   }
 
   async create(
