@@ -13,6 +13,9 @@ import { generateVoucherCode } from './voucher-code';
 
 type RedeemResult = { redemption: Redemption; created: boolean };
 
+// Merchants identify the member by email, the member app by token id.
+export type MemberRef = { email: string } | { id: number };
+
 const CODE_LIFETIME_MS = 30 * 86_400_000;
 
 @Injectable()
@@ -25,7 +28,7 @@ export class RedemptionsService {
   ) {}
 
   async redeem(
-    memberEmail: string,
+    member: MemberRef,
     voucherId: number,
     clientKey: string,
   ): Promise<RedeemResult> {
@@ -33,14 +36,16 @@ export class RedemptionsService {
     try {
       return await this.dataSource.transaction(async (tx) => {
         // Lock order: member, then voucher.
-        const [member]: { id: number }[] = await tx.query(
-          `SELECT id FROM members WHERE email = ? FOR UPDATE`,
-          [memberEmail],
+        const [column, value] =
+          'id' in member ? ['id', member.id] : ['email', member.email];
+        const [row]: { id: number }[] = await tx.query(
+          `SELECT id FROM members WHERE ${column} = ? FOR UPDATE`,
+          [value],
         );
-        if (!member) {
-          throw new NotFoundException(`Member ${memberEmail} not found`);
+        if (!row) {
+          throw new NotFoundException(`Member ${value} not found`);
         }
-        memberId = Number(member.id);
+        memberId = Number(row.id);
 
         // Before the balance check: a repeated request waits on the lock and would see 409.
         // Plain read: FOR UPDATE takes a gap lock and two members deadlock on the insert.

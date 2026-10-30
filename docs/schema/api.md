@@ -72,6 +72,17 @@ Member only (`Authorization: Bearer <member token>`). `401` for a missing, inval
 
 `GET /me/history`: `200` with the member's latest 50 ledger entries, newest first, each `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`.
 
+## POST /me/redemptions
+
+Member only. The logged-in member redeems a voucher; same rules and redemption shape as `POST /redemptions`.
+
+| Input             | Notes                                                         |
+| ----------------- | ------------------------------------------------------------- |
+| `Idempotency-Key` | header, required; unique per member                           |
+| `voucherId`       | body, integer from 1; an `active` voucher before `validUntil` |
+
+Responses: `201` with the redemption, `200` with the original redemption for a repeated `Idempotency-Key`, `400` invalid input (a `memberEmail` field included) or missing `Idempotency-Key`, `401` no member token, `404` voucher unknown, `expired` or past `validUntil`, `409` not enough points (a negative balance included) or no stock left, `422` the `Idempotency-Key` was already used for another voucher.
+
 | Variable    | Notes                                                   |
 | ----------- | ------------------------------------------------------- |
 | `DEMO_MODE` | optional; `true` returns the code in the `otp` response |

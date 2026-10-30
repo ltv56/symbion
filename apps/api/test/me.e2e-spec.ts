@@ -148,6 +148,89 @@ describe('Me', () => {
     });
   });
 
+  describe('POST /me/redemptions', () => {
+    const insertVoucher = async (): Promise<number> => {
+      const res = await dataSource.query(
+        `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until)
+        VALUES (?, 'Coffee', 50000, 500, 10, ?)`,
+        [otherMerchantId, new Date(Date.now() + 86_400_000)],
+      );
+      return Number(res.insertId);
+    };
+
+    const redeem = (
+      body: object,
+      key: string | null = 'r1',
+      auth: string | null = `Bearer ${token}`,
+    ) => {
+      const req = request(app.getHttpServer()).post('/me/redemptions');
+      if (auth) req.set('Authorization', auth);
+      if (key) req.set('Idempotency-Key', key);
+      return req.send(body);
+    };
+
+    const balance = async () => (await get('/me').expect(200)).body.balance;
+
+    it('redeems a voucher for the logged-in member', async () => {
+      const voucherId = await insertVoucher();
+      await addLot(memberId, 800);
+
+      const res = await redeem({ voucherId }).expect(201);
+
+      expect(res.body).toMatchObject({
+        memberId,
+        voucherId,
+        merchantId: otherMerchantId,
+        points: 500,
+        status: 'issued',
+      });
+      await expect(balance()).resolves.toBe(300);
+    });
+
+    it('returns the same redemption when the key is repeated', async () => {
+      const voucherId = await insertVoucher();
+      await addLot(memberId, 800);
+
+      const res1 = await redeem({ voucherId }).expect(201);
+      const res2 = await redeem({ voucherId }).expect(200);
+
+      expect(res2.body.id).toBe(res1.body.id);
+      await expect(balance()).resolves.toBe(300);
+    });
+
+    it('returns 409 when the balance is too low', async () => {
+      const voucherId = await insertVoucher();
+      await addLot(memberId, 499);
+
+      await redeem({ voucherId }).expect(409);
+    });
+
+    it.each([
+      ['no Idempotency-Key', { voucherId: 1 }, null],
+      [
+        'a memberEmail field',
+        { voucherId: 1, memberEmail: 'jane@example.com' },
+        'r1',
+      ],
+      ['no voucherId', {}, 'r1'],
+    ])('returns 400 for %s', async (_label, body, key) => {
+      await redeem(body, key).expect(400);
+    });
+
+    it('returns 401 without a member token', async () => {
+      const voucherId = await insertVoucher();
+      await addLot(memberId, 800);
+
+      await redeem({ voucherId }, 'r1', null).expect(401);
+      await redeem(
+        { voucherId },
+        'r1',
+        `Bearer ${await adminToken(app)}`,
+      ).expect(401);
+      await expect(balance()).resolves.toBe(800);
+    });
+  });
+
   describe.each(['/me', '/me/history'])('%s auth', (path) => {
     it('returns 401 without a token', async () => {
       await get(path, null).expect(401);
