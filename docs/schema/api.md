@@ -33,6 +33,7 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 - `/members*`, `POST /orders`, `POST /orders/:orderId/refunds`, `POST /redemptions` and `POST /redemptions/:code/confirm` require the `x-api-key` header of a merchant.
 - `GET /members*` returns only the calling merchant's members; a member of another merchant is `404`.
 - `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
+- `/me*` requires `Authorization: Bearer <token>` from `POST /auth/member/login` (member only).
 - `GET /tiers*` and `GET /vouchers*` are public.
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
 
@@ -62,6 +63,14 @@ Member login with a one-time code.
 `POST /auth/member/login`, body `email`, `otp` (string of 6 digits): responses `200` with `{ "accessToken": "<jwt>" }`, payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
 
 Admin endpoints reject a member token (`401`).
+
+## GET /me, GET /me/history
+
+Member only (`Authorization: Bearer <member token>`). `401` for a missing, invalid or non-member token.
+
+`GET /me`: `200` with `{ "id", "email", "name", "tier": { "id", "name" }, "balance" }`. `balance` is the sum of unexpired lots and may be negative.
+
+`GET /me/history`: `200` with the member's latest 50 ledger entries, newest first, each `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`.
 
 | Variable    | Notes                                                   |
 | ----------- | ------------------------------------------------------- |

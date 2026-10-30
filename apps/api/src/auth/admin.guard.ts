@@ -1,11 +1,7 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { verifyBearer } from './bearer-token';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -13,20 +9,7 @@ export class AdminGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const [scheme, token] = (request.header('authorization') ?? '').split(' ');
-    if (scheme !== 'Bearer' || !token) {
-      throw new UnauthorizedException('Missing token');
-    }
-
-    let payload: { role?: string };
-    try {
-      payload = await this.jwt.verifyAsync(token);
-    } catch {
-      throw new UnauthorizedException('Invalid token');
-    }
-    if (payload.role !== 'admin') {
-      throw new UnauthorizedException('Invalid token');
-    }
+    await verifyBearer(this.jwt, request, 'admin');
     return true;
   }
 }

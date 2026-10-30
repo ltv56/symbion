@@ -32,6 +32,15 @@ MTOKEN=$(curl -s -X POST localhost:3000/auth/member/login -H 'content-type: appl
 # error path -> 401 {"message":"Invalid or expired code",...} (same code again)
 curl -s -X POST localhost:3000/auth/member/login -H 'content-type: application/json' \
   -d '{"email":"an@x.com","otp":"<code>"}'
+
+# profile -> 200 {"id":1,"email":"an@x.com","tier":{"id":1,"name":"Bronze"},"balance":250,...}
+curl -s localhost:3000/me -H "Authorization: Bearer $MTOKEN"
+
+# latest 50 point entries -> 200 [{"type":"earn","points":250,"merchantName":"Shop A",...}]
+curl -s localhost:3000/me/history -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 401 (admin token instead of a member token)
+curl -s localhost:3000/me -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Merchants (MySQL)

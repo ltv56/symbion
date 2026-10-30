@@ -12,6 +12,7 @@ import { RedactedSqlLogger } from './common/redacted-sql.logger';
 import { requestIdMiddleware } from './common/request-id.middleware';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { MeModule } from './me/me.module';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { OrdersModule } from './orders/orders.module';
@@ -45,6 +46,7 @@ import { VouchersModule } from './vouchers/vouchers.module';
     }),
     AuthModule,
     HealthModule,
+    MeModule,
     MembersModule,
     MerchantsModule,
     OrdersModule,
