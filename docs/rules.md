@@ -54,6 +54,7 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - The redemption stores the points and the point value at that moment; later changes to the voucher or `program_settings` don't change it.
 - Code: 10 characters, `0-9` and `A-Z` without `I`, `L`, `O`, `U`. Status `issued`.
 - Repeating the `Idempotency-Key` returns the same redemption and spends nothing. Reusing it for another voucher is rejected (`422`).
+- Only the voucher's merchant confirms the code (`issued` → `used`, records `used_at`). Other merchants get `404`. Confirming again returns the same result.
 
 ## Refunds
 

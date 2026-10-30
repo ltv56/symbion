@@ -172,6 +172,19 @@ curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-ty
   -H "x-api-key: $KEY" -H 'Idempotency-Key: r-2' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
 ```
 
+Confirm a code (`$CODE` from the redeem response). `$VKEY` is the key of the voucher's merchant, `$KEY` a different merchant.
+
+```sh
+# confirm -> 200 {"status":"used","usedAt":"<time>",...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $VKEY"
+
+# again -> 200 with the same usedAt
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $VKEY"
+
+# error path -> 404 (another merchant's key)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $KEY"
+```
+
 ## Refunds (MySQL)
 
 Requires `$KEY` and member `an@x.com` (see Members).

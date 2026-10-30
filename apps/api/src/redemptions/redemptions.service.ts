@@ -123,6 +123,30 @@ export class RedemptionsService {
       throw error;
     }
   }
+
+  // Only the voucher's merchant may confirm; a repeat returns the first result.
+  async confirm(merchantId: number, code: string): Promise<Redemption> {
+    return this.dataSource.transaction(async (tx) => {
+      const where = { code: code.toUpperCase(), merchantId };
+      const redemption = await tx.findOne(Redemption, {
+        where,
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!redemption) {
+        throw new NotFoundException(`Redemption code ${code} not found`);
+      }
+      if (redemption.status === 'used') {
+        return redemption;
+      }
+
+      await tx.update(Redemption, redemption.id, {
+        status: 'used',
+        usedAt: new Date(),
+      });
+      // Reload: TIMESTAMP drops the milliseconds, so a repeat must see the same value.
+      return tx.findOneByOrFail(Redemption, where);
+    });
+  }
 }
 
 function sameVoucherOrThrow(

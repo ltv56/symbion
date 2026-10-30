@@ -5,7 +5,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export type RedemptionStatus = 'issued';
+export type RedemptionStatus = 'issued' | 'used';
 
 @Entity('redemptions')
 export class Redemption {
@@ -35,6 +35,9 @@ export class Redemption {
 
   @Column({ name: 'client_key', type: 'varchar' })
   clientKey!: string;
+
+  @Column({ name: 'used_at', type: 'timestamp', nullable: true })
+  usedAt!: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

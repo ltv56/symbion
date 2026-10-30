@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  HttpCode,
   HttpStatus,
+  Param,
   Post,
   Res,
   UseGuards,
@@ -10,6 +12,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiHeader,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiSecurity,
   ApiUnprocessableEntityResponse,
@@ -17,6 +20,8 @@ import {
 import type { Response } from 'express';
 import { IdempotencyKey } from '../common/idempotency-key.decorator';
 import { ApiKeyGuard } from '../merchants/api-key.guard';
+import { CurrentMerchant } from '../merchants/current-merchant.decorator';
+import { Merchant } from '../merchants/merchant.entity';
 import { CreateRedemptionDto } from './dto/create-redemption.dto';
 import { Redemption } from './redemption.entity';
 import { RedemptionsService } from './redemptions.service';
@@ -50,5 +55,23 @@ export class RedemptionsController {
     );
     res.status(created ? HttpStatus.CREATED : HttpStatus.OK);
     return redemption;
+  }
+
+  @Post(':code/confirm')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ApiKeyGuard)
+  @ApiSecurity('api-key')
+  @ApiOkResponse({
+    type: Redemption,
+    description: 'Code marked used, or already used: the same redemption',
+  })
+  @ApiNotFoundResponse({
+    description: "Unknown code, or a code of another merchant's voucher",
+  })
+  confirm(
+    @Param('code') code: string,
+    @CurrentMerchant() merchant: Merchant,
+  ): Promise<Redemption> {
+    return this.redemptionsService.confirm(merchant.id, code);
   }
 }
