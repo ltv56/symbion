@@ -128,19 +128,70 @@ describe('Members', () => {
     await req.send({ name: 'John Doe', email: 'john@example.com' }).expect(401);
   });
 
-  it('returns 404 for an unknown id', async () => {
-    await request(app.getHttpServer()).get('/members/999999').expect(404);
-  });
+  describe('reads', () => {
+    const otherKey = 'other-api-key';
 
-  it('gets a created member by id', async () => {
-    const created = await request(app.getHttpServer())
-      .post('/members')
-      .set('x-api-key', apiKey)
-      .send({ name: 'John Doe', email: 'john@example.com' })
-      .expect(201);
-    const res = await request(app.getHttpServer())
-      .get(`/members/${created.body.id}`)
-      .expect(200);
-    expect(res.body.email).toBe('john@example.com');
+    const createMember = async (key: string, email: string) => {
+      const res = await request(app.getHttpServer())
+        .post('/members')
+        .set('x-api-key', key)
+        .send({ name: 'John Doe', email })
+        .expect(201);
+      return res.body;
+    };
+
+    beforeEach(async () => {
+      await dataSource.query(
+        `INSERT INTO merchants (name, api_key_hash) VALUES ('Shop B', ?)`,
+        [createHash('sha256').update(otherKey).digest('hex')],
+      );
+    });
+
+    it('returns 404 for an unknown id', async () => {
+      await request(app.getHttpServer())
+        .get('/members/999999')
+        .set('x-api-key', apiKey)
+        .expect(404);
+    });
+
+    it('gets a created member by id', async () => {
+      const created = await createMember(apiKey, 'john@example.com');
+      const res = await request(app.getHttpServer())
+        .get(`/members/${created.id}`)
+        .set('x-api-key', apiKey)
+        .expect(200);
+      expect(res.body.email).toBe('john@example.com');
+    });
+
+    it('returns 404 for a member of another merchant', async () => {
+      const created = await createMember(otherKey, 'other@example.com');
+      await request(app.getHttpServer())
+        .get(`/members/${created.id}`)
+        .set('x-api-key', apiKey)
+        .expect(404);
+    });
+
+    it('lists only the members of the calling merchant', async () => {
+      await createMember(apiKey, 'mine@example.com');
+      await createMember(otherKey, 'theirs@example.com');
+      const res = await request(app.getHttpServer())
+        .get('/members')
+        .set('x-api-key', apiKey)
+        .expect(200);
+      expect(res.body.map((m: { email: string }) => m.email)).toEqual([
+        'mine@example.com',
+      ]);
+    });
+
+    it.each([
+      ['no api key', undefined],
+      ['an unknown api key', 'wrong-key'],
+    ])('returns 401 on both reads for %s', async (_label, key) => {
+      for (const path of ['/members', '/members/1']) {
+        const req = request(app.getHttpServer()).get(path);
+        if (key) req.set('x-api-key', key);
+        await req.expect(401);
+      }
+    });
   });
 });

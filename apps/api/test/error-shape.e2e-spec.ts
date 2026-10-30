@@ -84,6 +84,7 @@ describe('Error shape', () => {
   it('returns the shape for an unknown id', async () => {
     const res = await request(app.getHttpServer())
       .get('/members/999999')
+      .set('x-api-key', apiKey)
       .expect(404);
 
     expectShape(res.body, 404);
@@ -98,6 +99,7 @@ describe('Error shape', () => {
   it('hides internals of an unexpected error', async () => {
     const res = await request(app.getHttpServer())
       .get('/members/500')
+      .set('x-api-key', apiKey)
       .expect(500);
 
     expectShape(res.body, 500);

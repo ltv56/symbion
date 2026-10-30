@@ -109,17 +109,20 @@ curl -s -X POST localhost:3000/members -H 'content-type: application/json' -H "x
 curl -s -X POST localhost:3000/members -H 'content-type: application/json' \
   -d '{"name":"An","email":"an@x.com"}'
 
-# list all members
-curl -s localhost:3000/members
+# list the merchant's members
+curl -s localhost:3000/members -H "x-api-key: $KEY"
 
 # get one member
-curl -s localhost:3000/members/1
+curl -s localhost:3000/members/1 -H "x-api-key: $KEY"
 
-# error path -> 404 {"message":"Member with id 99 not found",...}
-curl -s localhost:3000/members/99
+# error path -> 404 {"message":"Member with id 99 not found",...} (also for another merchant's member)
+curl -s localhost:3000/members/99 -H "x-api-key: $KEY"
+
+# error path -> 401 (missing x-api-key)
+curl -s localhost:3000/members
 
 # error path -> 400 (id is not an integer)
-curl -s localhost:3000/members/abc
+curl -s localhost:3000/members/abc -H "x-api-key: $KEY"
 
 # error path -> 400 (name and email are required)
 curl -s -X POST localhost:3000/members -H 'content-type: application/json' -H "x-api-key: $KEY" -d '{}'

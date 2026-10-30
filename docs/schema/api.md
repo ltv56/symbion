@@ -30,8 +30,8 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 
 ## Authentication
 
-- `POST /members` and `POST /orders` require the `x-api-key` header of a merchant.
-- `GET /members*` is unauthenticated until member auth is added.
+- `/members*`, `POST /orders` and `POST /redemptions` require the `x-api-key` header of a merchant.
+- `GET /members*` returns only the calling merchant's members; a member of another merchant is `404`.
 - `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
 - `GET /tiers*` and `GET /vouchers*` are public.
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
