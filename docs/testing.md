@@ -35,6 +35,13 @@ curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d 
 
 # error path -> 400 (blank name)
 curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"name":" "}'
+
+# new api key -> 200 {"id":1,"name":"Shop A","apiKey":"<new key>"}; the old key now gets 401
+curl -s -X POST localhost:3000/merchants/1/api-key -H "Authorization: Bearer $TOKEN"
+curl -s -o /dev/null -w '%{http_code}\n' localhost:3000/members -H "x-api-key: $OLD_KEY"
+
+# error path -> 404 (unknown merchant)
+curl -s -X POST localhost:3000/merchants/999999/api-key -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Tiers (MySQL)

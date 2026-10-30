@@ -63,6 +63,12 @@ Known limitations: no refresh token, no logout, no rate limit on login, a single
 
 Liveness plus a MySQL check (`SELECT 1`). Responses: `200` with `{ "status": "ok" }`, `503` in the common error shape (`"message": "Database unavailable"`) when MySQL does not answer. The cause is logged server-side only.
 
+## POST /merchants/:id/api-key
+
+Admin only. Replaces the merchant's API key; the old key is rejected (`401`) from then on. No body.
+
+Responses: `200` with `{ "id", "name", "apiKey" }` (`apiKey`: 64 hex characters, shown only in this response), `400` id is not an integer, `401` no or invalid admin token, `404` unknown merchant.
+
 ## GET /tiers, GET /tiers/:id
 
 Public. `GET /tiers` lists tiers by `min_points` ascending; `GET /tiers/:id` returns `404` for an unknown id and `400` when the id is not an integer. A tier is `{ "id", "name", "minPoints", "earnRate" }`; `earnRate` is a number.
