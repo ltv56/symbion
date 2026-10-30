@@ -200,6 +200,59 @@ describe('Me', () => {
     });
   });
 
+  describe('GET /me/lots', () => {
+    const day = 86_400_000;
+    const inDays = (days: number) => new Date(Date.now() + days * day);
+
+    it('returns unspent, unexpired lots by expiry, lots without expiry last', async () => {
+      await addLot(memberId, 100, { expiresAt: inDays(200) });
+      await addLot(memberId, 300, {
+        atMerchant: otherMerchantId,
+        expiresAt: inDays(30),
+      });
+      await addLot(memberId, 50);
+      await addLot(memberId, 70, { expiresAt: inDays(200) });
+
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toEqual([
+        {
+          id: expect.any(Number),
+          merchantId: otherMerchantId,
+          merchantName: 'Shop B',
+          remaining: 300,
+          expiresAt: expect.any(String),
+        },
+        expect.objectContaining({ remaining: 100, merchantName: 'Shop A' }),
+        expect.objectContaining({ remaining: 70 }),
+        expect.objectContaining({ remaining: 50, expiresAt: null }),
+      ]);
+    });
+
+    it('leaves out spent-out, expired, debt and other members lots', async () => {
+      await addLot(memberId, 100, { expiresAt: inDays(10) });
+      await addLot(memberId, 500, { expiresAt: new Date(Date.now() - 60_000) });
+      await addLot(memberId, -40);
+      await addLot(otherMemberId, 999, { expiresAt: inDays(10) });
+      await dataSource.query(
+        `UPDATE ledger_lots SET remaining = 0 WHERE member_id = ? AND points = 100`,
+        [memberId],
+      );
+      await addLot(memberId, 60, { expiresAt: inDays(20) });
+
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].remaining).toBe(60);
+    });
+
+    it('returns an empty list for a member with no points', async () => {
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toEqual([]);
+    });
+  });
+
   describe('POST /me/redemptions', () => {
     const insertVoucher = async (): Promise<number> => {
       const res = await dataSource.query(
@@ -283,7 +336,7 @@ describe('Me', () => {
     });
   });
 
-  describe.each(['/me', '/me/history'])('%s auth', (path) => {
+  describe.each(['/me', '/me/history', '/me/lots'])('%s auth', (path) => {
     it('returns 401 without a token', async () => {
       await get(path, null).expect(401);
     });

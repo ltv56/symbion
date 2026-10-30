@@ -64,11 +64,13 @@ Member login with a one-time code.
 
 Admin endpoints reject a member token (`401`).
 
-## GET /me, GET /me/history
+## GET /me, GET /me/lots, GET /me/history
 
 Member only (`Authorization: Bearer <member token>`). `401` for a missing, invalid or non-member token.
 
 `GET /me`: `200` with `{ "id", "email", "name", "tier": { "id", "name" }, "balance", "spend12m", "nextTier" }`. `balance` is the sum of unexpired lots and may be negative. `spend12m` is the VND spend of the last 12 months (orders minus their refunds), the figure tiers are evaluated on. `nextTier` is `{ "id", "name", "minSpend" }` of the tier with the next higher `min_spend` above the member's current tier, `null` on the top tier.
+
+`GET /me/lots`: `200` with the member's earned lots that still have points and have not expired, each `{ "id", "merchantId", "merchantName", "remaining", "expiresAt" }`, earliest `expiresAt` first (lots without expiry last), the order in which spending takes them. Debt lots and other members' lots are not listed.
 
 `GET /me/history`: `200` with the member's latest 50 ledger entries, newest first, each `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`; `ref.type` is `order`, `redemption` or `refund` (entries written before spends carried a `ref` have `null`).
 

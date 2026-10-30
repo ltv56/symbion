@@ -15,6 +15,14 @@ export type Profile = {
   nextTier: { id: number; name: string; minSpend: number } | null;
 };
 
+export type UnspentLot = {
+  id: number;
+  merchantId: number;
+  merchantName: string;
+  remaining: number;
+  expiresAt: Date | null;
+};
+
 export type HistoryEntry = {
   id: number;
   type: 'earn' | 'spend';
@@ -84,6 +92,31 @@ export class MeService {
           }
         : null,
     };
+  }
+
+  // Same order the ledger spends them in
+  async lots(memberId: number): Promise<UnspentLot[]> {
+    const rows: {
+      id: number;
+      merchant_id: number;
+      merchant_name: string;
+      remaining: number;
+      expires_at: Date | null;
+    }[] = await this.dataSource.query(
+      `SELECT l.id, l.merchant_id, mc.name AS merchant_name, l.remaining, l.expires_at
+      FROM ledger_lots l JOIN merchants mc ON mc.id = l.merchant_id
+      WHERE l.member_id = ? AND l.type = 'earn' AND l.remaining > 0
+        AND (l.expires_at IS NULL OR l.expires_at > ?)
+      ORDER BY l.expires_at IS NULL, l.expires_at, l.id`,
+      [memberId, new Date()],
+    );
+    return rows.map((row) => ({
+      id: Number(row.id),
+      merchantId: Number(row.merchant_id),
+      merchantName: row.merchant_name,
+      remaining: Number(row.remaining),
+      expiresAt: row.expires_at,
+    }));
   }
 
   async history(memberId: number): Promise<HistoryEntry[]> {
