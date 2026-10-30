@@ -26,6 +26,7 @@ describe('MysqlLedgerStorage', () => {
     ledger = new Ledger<EntityManager>(new MysqlLedgerStorage());
   });
   beforeEach(async () => {
+    await dataSource.query('DELETE FROM refunds');
     await dataSource.query('DELETE FROM redemptions');
     await dataSource.query('DELETE FROM ledger_lots');
     await dataSource.query('DELETE FROM vouchers');

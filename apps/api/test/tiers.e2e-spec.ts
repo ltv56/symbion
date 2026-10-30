@@ -21,6 +21,7 @@ describe('Tiers', () => {
   });
 
   beforeEach(async () => {
+    await dataSource.query('DELETE FROM refunds');
     await dataSource.query('DELETE FROM redemptions');
     await dataSource.query('DELETE FROM orders');
     await dataSource.query('DELETE FROM ledger_lots');

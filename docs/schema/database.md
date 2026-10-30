@@ -113,3 +113,17 @@ Programme-wide values. Exactly one row (`id = 1`), inserted by the migration.
 | `created_at`      | TIMESTAMP                    | defaults to now                                                 |
 
 `UNIQUE (member_id, client_key)`. The ledger spend of a redemption has key `redemption:<id>` and the voucher's `merchant_id`.
+
+## refunds
+
+| Column            | Type                      | Notes                                 |
+| ----------------- | ------------------------- | ------------------------------------- |
+| `id`              | BIGINT UNSIGNED, PK       | auto increment                        |
+| `merchant_id`     | BIGINT UNSIGNED, FK       | `merchants(id)`; the order's merchant |
+| `order_id`        | BIGINT UNSIGNED, FK       | `orders(id)`                          |
+| `idempotency_key` | VARCHAR(255), utf8mb4_bin | the request's `Idempotency-Key`       |
+| `amount`          | BIGINT UNSIGNED           | VND refunded; `CHECK (> 0)`           |
+| `points_deducted` | BIGINT UNSIGNED           | points taken back by this refund      |
+| `created_at`      | TIMESTAMP                 | defaults to now                       |
+
+`UNIQUE (merchant_id, idempotency_key)`. The ledger spend of a refund has key `refund:<id>` and the order's `merchant_id`; none is written when `points_deducted` is 0.

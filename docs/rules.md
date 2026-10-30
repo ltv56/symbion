@@ -54,3 +54,19 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - The redemption stores the points and the point value at that moment; later changes to the voucher or `program_settings` don't change it.
 - Code: 10 characters, `0-9` and `A-Z` without `I`, `L`, `O`, `U`. Status `issued`.
 - Repeating the `Idempotency-Key` returns the same redemption and spends nothing. Reusing it for another voucher is rejected (`422`).
+
+## Refunds
+
+`points deducted = ceil(points earned by the order × refund amount ÷ order amount)`
+
+- Sent by the order's merchant (`POST /orders/:orderId/refunds`).
+- Always rounded up. A refund of an order that earned 0 points deducts 0.
+- Deducted in full even when the member already spent the points: the balance goes negative and blocks redemption until later orders cover it.
+
+| Order (VND) | Earned | Refund (VND) | Deducted |
+| ----------- | ------ | ------------ | -------- |
+| 250,000     | 25     | 250,000      | 25       |
+| 250,000     | 25     | 100,000      | 10       |
+| 250,000     | 25     | 35,000       | 4        |
+| 250,000     | 25     | 1            | 1        |
+| 5,000       | 0      | 5,000        | 0        |
