@@ -1,7 +1,20 @@
+import { useTranslation } from 'react-i18next';
+import { AppHeader } from '@/components/AppHeader';
+import { LoginPage } from '@/features/login/LoginPage';
+import { useToken } from '@/lib/auth';
+
 export function App() {
+  const { t } = useTranslation();
+  const token = useToken();
+
+  if (!token) return <LoginPage />;
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50">
-      <h1 className="text-3xl font-semibold text-slate-800">Symbion</h1>
-    </main>
+    <div className="flex min-h-svh flex-col">
+      <AppHeader />
+      <main className="mx-auto w-full max-w-5xl px-4 md:px-6">
+        <p>{t('app.signedIn')}</p>
+      </main>
+    </div>
   );
 }
