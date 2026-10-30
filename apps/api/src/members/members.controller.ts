@@ -17,17 +17,22 @@ import { MembersService } from './members.service';
 import { Member } from './member.entity';
 
 @Controller('members')
+@UseGuards(ApiKeyGuard)
+@ApiSecurity('api-key')
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
   @Get()
-  findAll(): Promise<Member[]> {
-    return this.membersService.findAll();
+  findAll(@CurrentMerchant() merchant: Merchant): Promise<Member[]> {
+    return this.membersService.findAll(merchant.id);
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Member> {
-    const member = await this.membersService.findOne(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentMerchant() merchant: Merchant,
+  ): Promise<Member> {
+    const member = await this.membersService.findOne(id, merchant.id);
 
     if (!member) {
       throw new NotFoundException(`Member with id ${id} not found`);
@@ -37,8 +42,6 @@ export class MembersController {
   }
 
   @Post()
-  @UseGuards(ApiKeyGuard)
-  @ApiSecurity('api-key')
   create(
     @Body() body: CreateMemberDto,
     @CurrentMerchant() merchant: Merchant,
