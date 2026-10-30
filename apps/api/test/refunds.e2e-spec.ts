@@ -269,6 +269,40 @@ describe('Refunds', () => {
     expect(await balance()).toBe(25);
   });
 
+  const backdateOrder = (orderId: number, days: number) =>
+    dataSource.query(
+      'UPDATE orders SET created_at = NOW() - INTERVAL ? DAY WHERE id = ?',
+      [days, orderId],
+    );
+
+  it('returns 409 for an order older than 90 days', async () => {
+    const orderId = await placeOrder(250_000);
+    await backdateOrder(orderId, 91);
+
+    await refund(orderId, { amount: 1 }).expect(409);
+
+    expect(await balance()).toBe(25);
+    expect(await refundCount()).toBe(0);
+  });
+
+  it('refunds an order 89 days old', async () => {
+    const orderId = await placeOrder(250_000);
+    await backdateOrder(orderId, 89);
+
+    await refund(orderId, { amount: 35_000 }).expect(201);
+  });
+
+  it('returns the original refund for a repeated key after 90 days', async () => {
+    const orderId = await placeOrder(250_000);
+    const first = await refund(orderId, { amount: 35_000 }, { key: 'k' });
+    await backdateOrder(orderId, 91);
+
+    const again = await refund(orderId, { amount: 35_000 }, { key: 'k' });
+
+    expect(again.status).toBe(200);
+    expect(again.body.id).toBe(first.body.id);
+  });
+
   it('never refunds or deducts more than the order for 10 parallel refunds', async () => {
     const orderId = await placeOrder(250_000);
 

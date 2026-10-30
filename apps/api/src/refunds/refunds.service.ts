@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -9,6 +10,8 @@ import { isDuplicateEntry } from '../common/is-duplicate-entry';
 import { Refund } from './refund.entity';
 
 type RefundResult = { refund: Refund; created: boolean };
+
+const REFUND_WINDOW_DAYS = 90;
 
 @Injectable()
 export class RefundsService {
@@ -27,15 +30,18 @@ export class RefundsService {
       return await this.dataSource.transaction(async (tx) => {
         // Lock order: member first, as in orders and redemptions.
         // Lock both rows: `OF m` reads `o` plainly and takes the snapshot before the lock.
-        const [orderRow]: { member_id: number; amount: number }[] =
-          await tx.query(
-            `SELECT o.member_id, o.amount
-            FROM orders o
-            JOIN members m ON m.id = o.member_id
-            WHERE o.id = ? AND o.merchant_id = ?
-            FOR UPDATE`,
-            [orderId, merchantId],
-          );
+        const [orderRow]: {
+          member_id: number;
+          amount: number;
+          created_at: Date;
+        }[] = await tx.query(
+          `SELECT o.member_id, o.amount, o.created_at
+          FROM orders o
+          JOIN members m ON m.id = o.member_id
+          WHERE o.id = ? AND o.merchant_id = ?
+          FOR UPDATE`,
+          [orderId, merchantId],
+        );
         if (!orderRow) {
           throw new NotFoundException(`Order with id ${orderId} not found`);
         }
@@ -49,6 +55,13 @@ export class RefundsService {
         });
         if (existing) {
           return sameRefundOrThrow(existing, orderId, amount);
+        }
+
+        // After the key check: repeating an accepted refund stays 200 after the window.
+        const deadline =
+          orderRow.created_at.getTime() + REFUND_WINDOW_DAYS * 86_400_000;
+        if (Date.now() > deadline) {
+          throw new ConflictException('Refund window of 90 days has passed');
         }
 
         // SUM without GROUP BY always returns one row.

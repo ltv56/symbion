@@ -188,6 +188,12 @@ curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/$OID/refunds -H 'co
 # error path -> 404 (unknown order)
 curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/999999/refunds -H 'content-type: application/json' \
   -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-2' -d '{"amount":1}'
+
+# error path -> 409 (order older than 90 days)
+docker compose -f infra/compose.yaml exec mysql sh -c "mysql -u\"\$MYSQL_USER\" -p\"\$MYSQL_PASSWORD\" \"\$MYSQL_DATABASE\" \
+  -e 'UPDATE orders SET created_at = NOW() - INTERVAL 91 DAY WHERE id = $OID'"
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/$OID/refunds -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-3' -d '{"amount":1}'
 ```
 
 ## Health and logs

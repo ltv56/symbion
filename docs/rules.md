@@ -60,6 +60,7 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 `points deducted = ceil(points earned by the order × total refunded ÷ order amount) − points deducted by earlier refunds`
 
 - Sent by the order's merchant (`POST /orders/:orderId/refunds`).
+- Accepted up to 90 days after the order (`409` after that).
 - `total refunded` includes this refund. Rounding happens once on the total, so all refunds of an order together deduct at most the points it earned, and exactly those points when the whole amount is refunded.
 - Always rounded up. A refund of an order that earned 0 points deducts 0.
 - An order can be refunded several times; the refunds together cannot exceed the order amount (`422`).
