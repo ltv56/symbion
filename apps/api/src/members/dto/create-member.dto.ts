@@ -1,8 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
-
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
+import { trim } from '../../common/dto';
 
 export class CreateMemberDto {
   @Transform(trim)

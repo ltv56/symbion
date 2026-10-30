@@ -1,11 +1,9 @@
 import { IsInt, Max, Min } from 'class-validator';
-
-// Whole VND, same max as an order amount.
-const MAX_AMOUNT = 9_999_999_999;
+import { MAX_AMOUNT_VND } from '../../common/dto';
 
 export class CreateRefundDto {
   @IsInt()
   @Min(1)
-  @Max(MAX_AMOUNT)
+  @Max(MAX_AMOUNT_VND)
   amount!: number;
 }

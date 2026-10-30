@@ -1,8 +1,6 @@
 import {
-  BadRequestException,
   Body,
   Controller,
-  Headers,
   HttpStatus,
   Post,
   Res,
@@ -17,6 +15,7 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { IdempotencyKey } from '../common/idempotency-key.decorator';
 import { ApiKeyGuard } from '../merchants/api-key.guard';
 import { CreateRedemptionDto } from './dto/create-redemption.dto';
 import { Redemption } from './redemption.entity';
@@ -42,15 +41,8 @@ export class RedemptionsController {
   async create(
     @Body() body: CreateRedemptionDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('idempotency-key') idempotencyKey?: string,
+    @IdempotencyKey() key: string,
   ): Promise<Redemption> {
-    const key = idempotencyKey?.trim();
-    if (!key || key.length > 255) {
-      throw new BadRequestException(
-        'Idempotency-Key header is required (max 255 characters)',
-      );
-    }
-
     const { redemption, created } = await this.redemptionsService.redeem(
       body.memberEmail,
       body.voucherId,

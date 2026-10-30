@@ -10,9 +10,7 @@ import {
   MinDate,
   ValidateBy,
 } from 'class-validator';
-
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
+import { trim } from '../../common/dto';
 
 // TIMESTAMP column has no fraction
 const IsWholeSeconds = () =>

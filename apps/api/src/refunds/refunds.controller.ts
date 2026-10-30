@@ -1,8 +1,6 @@
 import {
-  BadRequestException,
   Body,
   Controller,
-  Headers,
   HttpStatus,
   Param,
   ParseIntPipe,
@@ -17,6 +15,7 @@ import {
   ApiSecurity,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { IdempotencyKey } from '../common/idempotency-key.decorator';
 import { ApiKeyGuard } from '../merchants/api-key.guard';
 import { CurrentMerchant } from '../merchants/current-merchant.decorator';
 import { Merchant } from '../merchants/merchant.entity';
@@ -39,15 +38,8 @@ export class RefundsController {
     @Body() body: CreateRefundDto,
     @CurrentMerchant() merchant: Merchant,
     @Res({ passthrough: true }) res: Response,
-    @Headers('idempotency-key') idempotencyKey?: string,
+    @IdempotencyKey() key: string,
   ): Promise<Refund> {
-    const key = idempotencyKey?.trim();
-    if (!key || key.length > 255) {
-      throw new BadRequestException(
-        'Idempotency-Key header is required (max 255 characters)',
-      );
-    }
-
     const { refund, created } = await this.refundsService.refund(
       merchant.id,
       orderId,
