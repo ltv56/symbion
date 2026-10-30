@@ -44,6 +44,7 @@ services:
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      DEMO_MODE: ${DEMO_MODE:-false}
     ports:
       - '${API_PORT:-3000}:3000'
     healthcheck:

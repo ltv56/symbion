@@ -37,7 +37,19 @@ Global: managed by the app admin, shared by all merchants (no `merchant_id`).
 | `name`        | VARCHAR(255), null   |                                                          |
 | `created_at`  | TIMESTAMP            | defaults to now                                          |
 
-No auth columns; members are identified by email. `merchant_id` is the merchant whose API key created the member.
+No auth columns; members are identified by email and log in with a one-time code (`member_otps`). `merchant_id` is the merchant whose API key created the member.
+
+## member_otps
+
+At most one live code per member; a new request replaces the row, a successful login deletes it.
+
+| Column       | Type                    | Notes                                                       |
+| ------------ | ----------------------- | ----------------------------------------------------------- |
+| `member_id`  | BIGINT UNSIGNED, PK, FK | `members(id)`, `ON DELETE CASCADE`                          |
+| `code_hash`  | CHAR(64) ascii          | HMAC-SHA256 of `<member_id>:<code>` keyed with `JWT_SECRET` |
+| `attempts`   | TINYINT UNSIGNED        | wrong codes so far; the row is deleted at 5                 |
+| `expires_at` | TIMESTAMP               | 5 minutes after the request                                 |
+| `created_at` | TIMESTAMP               | time of the latest request                                  |
 
 ## orders
 

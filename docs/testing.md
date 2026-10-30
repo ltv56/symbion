@@ -17,6 +17,23 @@ curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
   -d '{"email":"admin@example.com","password":"wrong"}'
 ```
 
+## Member login (MySQL)
+
+Needs `DEMO_MODE=true` in the api environment and member `an@x.com` (see Members).
+
+```sh
+# request a code -> 200 {"otp":"<6 digits>"} (without DEMO_MODE: {})
+curl -s -X POST localhost:3000/auth/member/otp -H 'content-type: application/json' -d '{"email":"an@x.com"}'
+
+# login -> 200 {"accessToken":"<jwt>"}
+MTOKEN=$(curl -s -X POST localhost:3000/auth/member/login -H 'content-type: application/json' \
+  -d '{"email":"an@x.com","otp":"<code>"}' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+
+# error path -> 401 {"message":"Invalid or expired code",...} (same code again)
+curl -s -X POST localhost:3000/auth/member/login -H 'content-type: application/json' \
+  -d '{"email":"an@x.com","otp":"<code>"}'
+```
+
 ## Merchants (MySQL)
 
 All `/merchants*` calls need the admin token (`$TOKEN`, see Admin login).

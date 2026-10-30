@@ -53,6 +53,20 @@ The api does not start when a required variable is missing or `JWT_SECRET` is to
 
 Known limitations: no refresh token, no logout, no rate limit on login, a single admin account.
 
+## POST /auth/member/otp, POST /auth/member/login
+
+Member login with a one-time code.
+
+`POST /auth/member/otp`, body `email`: creates a 6 digit code valid for 5 minutes and replaces any earlier code. Responses: `200` with `{}` (also for an unknown email), or `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`; `400` invalid email. No email is sent yet.
+
+`POST /auth/member/login`, body `email`, `otp` (string of 6 digits): responses `200` with `{ "accessToken": "<jwt>" }`, payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
+
+Admin endpoints reject a member token (`401`).
+
+| Variable    | Notes                                                   |
+| ----------- | ------------------------------------------------------- |
+| `DEMO_MODE` | optional; `true` returns the code in the `otp` response |
+
 ## Request id and logs
 
 - Every response has an `x-request-id` header: the client's value (1-64 chars of `A-Z a-z 0-9 . _ -`) or a generated UUID.
