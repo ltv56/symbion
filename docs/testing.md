@@ -1,18 +1,65 @@
 # Manual testing
 
+## Admin login
+
+Needs `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` and `JWT_SECRET` in the api environment (see `infra/.env.example`).
+
+```sh
+# create the value for ADMIN_PASSWORD_HASH (the password is read from stdin)
+printf '%s' 'my-password' | pnpm --silent --filter @symbion/api hash-password
+
+# login -> 200 {"accessToken":"<jwt>"}
+TOKEN=$(curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
+  -d '{"email":"admin@example.com","password":"my-password"}' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+
+# error path -> 401 {"message":"Invalid credentials",...}
+curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
+  -d '{"email":"admin@example.com","password":"wrong"}'
+```
+
 ## Merchants (MySQL)
+
+All `/merchants*` calls need the admin token (`$TOKEN`, see Admin login).
 
 ```sh
 # create a merchant -> 201 {"id":1,"name":"Shop A","apiKey":"<64 hex chars>"}; the key is shown only once
-curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' \
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"Shop A"}'
 
 # list / get never include the key or its hash
-curl -s localhost:3000/merchants
-curl -s localhost:3000/merchants/1
+curl -s localhost:3000/merchants -H "Authorization: Bearer $TOKEN"
+curl -s localhost:3000/merchants/1 -H "Authorization: Bearer $TOKEN"
+
+# error path -> 401 (no token)
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d '{"name":"Shop A"}'
 
 # error path -> 400 (blank name)
-curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d '{"name":" "}'
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"name":" "}'
+```
+
+## Tiers (MySQL)
+
+```sh
+# list (public) -> tiers by min_points ascending
+curl -s localhost:3000/tiers
+
+# create (admin) -> 201 {"id":4,"name":"Platinum","minPoints":10000,"earnRate":2}
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Platinum","minPoints":10000,"earnRate":2}'
+
+# error path -> 409 (same name, or same minPoints)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Platinum","minPoints":20000,"earnRate":2}'
+
+# error path -> 401 (no token)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -d '{"name":"X","minPoints":1,"earnRate":1}'
+
+# error path -> 400 (earnRate has 3 decimals)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"X","minPoints":1,"earnRate":1.234}'
+
+# error path -> 404
+curl -s localhost:3000/tiers/999999
 ```
 
 ## Members (MySQL)
