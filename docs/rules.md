@@ -44,3 +44,13 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - Created by the app admin on behalf of a merchant (`POST /vouchers`), `active` from creation.
 - Existing vouchers are not re-checked when the point value changes.
 - Listed (`GET /vouchers`) while `status` is `active` and `valid_until` is in the future. A voucher with stock 0 stays listed.
+
+## Redemption
+
+- A member pays the voucher's `points_price` from their balance and gets a code (`POST /redemptions`).
+- Allowed only when the balance covers the price. A negative balance blocks redemption.
+- Allowed only while the voucher is `active`, before `valid_until` and with stock left. Each redemption takes one from stock.
+- Points are spent oldest-expiry first (FIFO), in the same transaction as the stock change. Ledger key `redemption:<id>`, `merchant_id` of the voucher.
+- The redemption stores the points and the point value at that moment; later changes to the voucher or `program_settings` don't change it.
+- Code: 10 characters, `0-9` and `A-Z` without `I`, `L`, `O`, `U`. Status `issued`.
+- Repeating the `Idempotency-Key` returns the same redemption and spends nothing. Reusing it for another voucher is rejected (`422`).

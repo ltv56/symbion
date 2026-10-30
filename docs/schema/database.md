@@ -96,3 +96,20 @@ Programme-wide values. Exactly one row (`id = 1`), inserted by the migration.
 | `created_at`   | TIMESTAMP           | defaults to now                                         |
 
 `face_value >= points_price × point_value_vnd` is enforced by the API (a `CHECK` cannot read `program_settings`). Index `(status, id)` serves the list of active vouchers.
+
+## redemptions
+
+| Column            | Type                         | Notes                                                           |
+| ----------------- | ---------------------------- | --------------------------------------------------------------- |
+| `id`              | BIGINT UNSIGNED, PK          | auto increment                                                  |
+| `merchant_id`     | BIGINT UNSIGNED, FK          | `merchants(id)`; the voucher's merchant                         |
+| `member_id`       | BIGINT UNSIGNED, FK          | `members(id)`                                                   |
+| `voucher_id`      | BIGINT UNSIGNED, FK          | `vouchers(id)`                                                  |
+| `code`            | VARCHAR(16) ascii, ascii_bin | unique; 10 characters of Crockford base32, upper case           |
+| `points`          | BIGINT UNSIGNED              | `points_price` at redemption; `CHECK (> 0)`                     |
+| `point_value_vnd` | INT UNSIGNED                 | `program_settings.point_value_vnd` at redemption; `CHECK (> 0)` |
+| `status`          | VARCHAR(16)                  | `issued` (default); `CHECK`                                     |
+| `client_key`      | VARCHAR(255), utf8mb4_bin    | the request's `Idempotency-Key`                                 |
+| `created_at`      | TIMESTAMP                    | defaults to now                                                 |
+
+`UNIQUE (member_id, client_key)`. The ledger spend of a redemption has key `redemption:<id>` and the voucher's `merchant_id`.

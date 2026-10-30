@@ -151,6 +151,24 @@ curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-
   -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5000}'
 ```
 
+## Redemptions (MySQL)
+
+Requires `$KEY`, member `an@x.com` with at least 500 points (e.g. two orders of 2,500,000) and an active voucher `$VID` with `pointsPrice` 500 (see Vouchers).
+
+```sh
+# redeem -> 201 {"code":"<10 chars>","points":500,"status":"issued",...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-1' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+
+# same key again -> 200 with the same id and code, no second spend
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-1' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+
+# error path -> 409 (not enough points, after spending them with new keys)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-2' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+```
+
 ## Health and logs
 
 ```sh

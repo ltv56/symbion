@@ -15,6 +15,7 @@ import { HealthModule } from './health/health.module';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { OrdersModule } from './orders/orders.module';
+import { RedemptionsModule } from './redemptions/redemptions.module';
 import { TiersModule } from './tiers/tiers.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 
@@ -46,6 +47,7 @@ import { VouchersModule } from './vouchers/vouchers.module';
     MembersModule,
     MerchantsModule,
     OrdersModule,
+    RedemptionsModule,
     TiersModule,
     VouchersModule,
   ],

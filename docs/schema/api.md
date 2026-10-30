@@ -131,3 +131,18 @@ Public. Only vouchers with `status` `active` and `validUntil` in the future.
 Response: `200` with `{ "items": [<voucher>], "nextCursor": <id | null> }`; `nextCursor` is `null` on the last page. `400` for an invalid or unknown query field.
 
 `GET /vouchers/:id`: `200` with the voucher, `404` (`"message": "Voucher with id 1 not found"`) when unknown, `expired` or past `validUntil`, `400` when the id is not an integer.
+
+## POST /redemptions
+
+A member redeems a voucher for points. Any merchant's API key may call; the redemption belongs to the voucher's merchant.
+
+| Input             | Notes                                                         |
+| ----------------- | ------------------------------------------------------------- |
+| `x-api-key`       | header, required                                              |
+| `Idempotency-Key` | header, required, 1-255 characters; unique per member         |
+| `memberEmail`     | body, email of an existing member                             |
+| `voucherId`       | body, integer from 1; an `active` voucher before `validUntil` |
+
+A redemption is `{ "id", "merchantId", "memberId", "voucherId", "code", "points", "pointValueVnd", "status", "clientKey", "createdAt" }`; `code` is 10 characters of Crockford base32, `status` is `issued`.
+
+Responses: `201` with the redemption, `200` with the original redemption when this member already used the `Idempotency-Key` for the same voucher, `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member, or voucher unknown, `expired` or past `validUntil`, `409` not enough points (a negative balance included) or no stock left, `422` the `Idempotency-Key` was already used for another voucher.
