@@ -13,6 +13,8 @@ import { generateVoucherCode } from './voucher-code';
 
 type RedeemResult = { redemption: Redemption; created: boolean };
 
+const CODE_LIFETIME_MS = 30 * 86_400_000;
+
 @Injectable()
 export class RedemptionsService {
   constructor(
@@ -55,8 +57,9 @@ export class RedemptionsService {
           merchant_id: number;
           points_price: number;
           stock: number;
+          valid_until: Date;
         }[] = await tx.query(
-          `SELECT merchant_id, points_price, stock FROM vouchers
+          `SELECT merchant_id, points_price, stock, valid_until FROM vouchers
           WHERE id = ? AND status = 'active' AND valid_until > ?
           FOR UPDATE`,
           [voucherId, now],
@@ -94,6 +97,7 @@ export class RedemptionsService {
             points,
             pointValueVnd: Number(settings?.point_value_vnd),
             clientKey,
+            expiresAt: codeExpiry(now, voucher.valid_until),
           }),
         );
         // save() keeps the insertId as the driver returns it (a string)
@@ -138,6 +142,9 @@ export class RedemptionsService {
       if (redemption.status === 'used') {
         return redemption;
       }
+      if (redemption.status === 'expired') {
+        throw new ConflictException(`Redemption code ${code} has expired`);
+      }
 
       await tx.update(Redemption, redemption.id, {
         status: 'used',
@@ -147,6 +154,12 @@ export class RedemptionsService {
       return tx.findOneByOrFail(Redemption, where);
     });
   }
+}
+
+// Whole seconds: TIMESTAMP has none, and the response must match a later read.
+function codeExpiry(now: Date, validUntil: Date): Date {
+  const start = Math.floor(now.getTime() / 1000) * 1000;
+  return new Date(Math.min(start + CODE_LIFETIME_MS, validUntil.getTime()));
 }
 
 function sameVoucherOrThrow(

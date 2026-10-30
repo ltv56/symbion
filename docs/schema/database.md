@@ -111,9 +111,10 @@ Programme-wide values. Exactly one row (`id = 1`), inserted by the migration.
 | `status`          | VARCHAR(16)                  | `issued` (default) or `used`; `CHECK`                           |
 | `client_key`      | VARCHAR(255), utf8mb4_bin    | the request's `Idempotency-Key`                                 |
 | `used_at`         | TIMESTAMP NULL               | set when confirmed; `CHECK` non-null exactly when `used`        |
+| `expires_at`      | TIMESTAMP                    | `LEAST(created_at + 30 days, vouchers.valid_until)`             |
 | `created_at`      | TIMESTAMP                    | defaults to now                                                 |
 
-`UNIQUE (member_id, client_key)`. The ledger spend of a redemption has key `redemption:<id>` and the voucher's `merchant_id`.
+`expired` is not stored: the API reports `issued` past `expires_at` as `expired`. `UNIQUE (member_id, client_key)`. The ledger spend of a redemption has key `redemption:<id>` and the voucher's `merchant_id`.
 
 ## refunds
 

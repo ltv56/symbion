@@ -185,6 +185,16 @@ curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm 
 curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $KEY"
 ```
 
+Expired code: move `expires_at` of a new, unused `$CODE` into the past.
+
+```sh
+docker compose -f infra/compose.yaml exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" symbion' \
+  <<< "UPDATE redemptions SET expires_at = NOW() - INTERVAL 1 MINUTE WHERE code = '$CODE'"
+
+# error path -> 409 {"message":"Redemption code <code> has expired",...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $VKEY"
+```
+
 ## Refunds (MySQL)
 
 Requires `$KEY` and member `an@x.com` (see Members).

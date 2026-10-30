@@ -407,5 +407,79 @@ describe('Redemptions', () => {
       expect(countStatuses(responses)).toEqual({ 200: 10 });
       expect(new Set(responses.map((res) => res.body.usedAt)).size).toBe(1);
     });
+
+    describe('expiry', () => {
+      const DAY_MS = 86_400_000;
+      const wholeSeconds = (ms: number) =>
+        new Date(Math.floor(ms / 1000) * 1000);
+
+      const expire = (code: string) =>
+        dataSource.query(
+          'UPDATE redemptions SET expires_at = ? WHERE code = ?',
+          [new Date(Date.now() - 60_000), code],
+        );
+
+      it('expires 30 days after redemption', async () => {
+        const voucherId = await insertVoucher({
+          validUntil: new Date(Date.now() + 60 * DAY_MS),
+        });
+        await addPoints(memberId, 500);
+        const before = wholeSeconds(Date.now()).getTime();
+
+        const res1 = await post('r1', { memberEmail, voucherId }).expect(201);
+        const res2 = await post('r1', { memberEmail, voucherId }).expect(200);
+
+        const expiresAt = new Date(res1.body.expiresAt).getTime();
+        expect(expiresAt).toBeGreaterThanOrEqual(before + 30 * DAY_MS);
+        expect(expiresAt).toBeLessThanOrEqual(Date.now() + 30 * DAY_MS);
+        expect(res2.body.expiresAt).toBe(res1.body.expiresAt);
+      });
+
+      it("expires at the voucher's valid_until when that is sooner", async () => {
+        const validUntil = wholeSeconds(Date.now() + 5 * DAY_MS);
+        const voucherId = await insertVoucher({ validUntil });
+        await addPoints(memberId, 500);
+
+        const res = await post('r1', { memberEmail, voucherId }).expect(201);
+
+        expect(res.body.expiresAt).toBe(validUntil.toISOString());
+      });
+
+      it('returns 409 for an expired code and refunds no points', async () => {
+        const code = await issueCode();
+        await expire(code);
+
+        await confirm(code).expect(409);
+
+        await expect(statusOf(code)).resolves.toBe('issued');
+        await expect(balanceOf(memberId)).resolves.toBe(0);
+      });
+
+      it("shows an expired code's status as expired", async () => {
+        const code = await issueCode();
+        await expire(code);
+
+        const voucherRow = await dataSource.query(
+          'SELECT voucher_id FROM redemptions WHERE code = ?',
+          [code],
+        );
+        const res = await post('r1', {
+          memberEmail,
+          voucherId: Number(voucherRow[0].voucher_id),
+        }).expect(200);
+
+        expect(res.body).toMatchObject({ code, status: 'expired' });
+      });
+
+      it('keeps a used code used after its expiry passes', async () => {
+        const code = await issueCode();
+        await confirm(code).expect(200);
+        await expire(code);
+
+        const res = await confirm(code).expect(200);
+
+        expect(res.body.status).toBe('used');
+      });
+    });
   });
 });

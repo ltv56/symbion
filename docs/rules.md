@@ -55,6 +55,8 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - Code: 10 characters, `0-9` and `A-Z` without `I`, `L`, `O`, `U`. Status `issued`.
 - Repeating the `Idempotency-Key` returns the same redemption and spends nothing. Reusing it for another voucher is rejected (`422`).
 - Only the voucher's merchant confirms the code (`issued` → `used`, records `used_at`). Other merchants get `404`. Confirming again returns the same result.
+- A code expires 30 days after redemption, or at the voucher's `valid_until` if that is sooner (`expires_at`). An unused code past `expires_at` shows status `expired`.
+- Confirming an expired code is rejected (`409`). Its points are not returned. A used code stays `used`.
 
 ## Refunds
 

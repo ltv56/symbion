@@ -68,6 +68,7 @@ export class RedemptionsController {
   @ApiNotFoundResponse({
     description: "Unknown code, or a code of another merchant's voucher",
   })
+  @ApiConflictResponse({ description: 'Code expired' })
   confirm(
     @Param('code') code: string,
     @CurrentMerchant() merchant: Merchant,
