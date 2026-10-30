@@ -110,8 +110,9 @@
   scrollbar-color: #55302a #2a0f0e;
 }
 
-/* Dialogs render in a portal and sit on a cream (light) or dark (dark) surface, not on a panel. */
-[data-slot='dialog-content'] {
+/* Dialogs render in a portal and sit on a cream (light) or dark (dark) surface, not on a panel. Content on the ground uses the same tokens. */
+[data-slot='dialog-content'],
+[data-surface='ground'] {
   --background: #fff6e3;
   --foreground: #2b1b16;
   --primary: #861616;
@@ -124,7 +125,8 @@
   --input: #e6d4b4;
 }
 
-.dark [data-slot='dialog-content'] {
+.dark [data-slot='dialog-content'],
+.dark [data-surface='ground'] {
   --background: #3a1a17;
   --foreground: #f6e9d2;
   --primary: #c2332c;

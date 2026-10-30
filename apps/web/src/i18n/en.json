@@ -1,8 +1,13 @@
 {
-  "app": {
-    "signedIn": "Signed in"
+  "member": {
+    "loading": "Loading…",
+    "loadError": "Could not load your account.",
+    "retry": "Try again",
+    "tier": "Tier",
+    "balance": "Points"
   },
   "header": {
+    "signOut": "Sign out",
     "language": "Switch language",
     "themeToDark": "Switch to dark theme",
     "themeToLight": "Switch to light theme"

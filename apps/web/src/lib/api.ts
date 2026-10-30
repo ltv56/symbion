@@ -1,4 +1,4 @@
-import { getToken } from './auth';
+import { getToken, signOut } from './auth';
 
 export class ApiError extends Error {
   status: number;
@@ -29,6 +29,8 @@ export async function api<T>(
   });
 
   if (!res.ok) {
+    // A 401 without a token is a wrong login code; with one it is an expired session
+    if (res.status === 401 && token) signOut();
     const error: { message?: string } | null = await res
       .json()
       .catch(() => null);

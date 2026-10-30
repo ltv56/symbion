@@ -1,13 +1,14 @@
 import { Moon, Sun } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { toggleDark, useDark } from '@/lib/theme';
 import { BrandMark } from './BrandMark';
 
 // The header sits on the ground, not on a panel: the default ghost hover tint is a panel colour
-const ON_GROUND = 'hover:bg-foreground/10 hover:text-foreground';
+export const GROUND_HOVER = 'hover:bg-foreground/10 hover:text-foreground';
 
-export function AppHeader() {
+export function AppHeader({ children }: { children?: ReactNode }) {
   const { t, i18n } = useTranslation();
   const dark = useDark();
   const other = i18n.language === 'vi' ? 'en' : 'vi';
@@ -19,9 +20,10 @@ export function AppHeader() {
         <span className="text-lg font-bold tracking-tight">Symbion</span>
       </div>
       <div className="flex items-center gap-1">
+        {children}
         <Button
           variant="ghost"
-          className={`${ON_GROUND} max-md:min-w-11 font-mono`}
+          className={`${GROUND_HOVER} max-md:min-w-11 font-mono`}
           aria-label={t('header.language')}
           onClick={() => void i18n.changeLanguage(other)}
         >
@@ -30,7 +32,7 @@ export function AppHeader() {
         <Button
           variant="ghost"
           size="icon"
-          className={ON_GROUND}
+          className={GROUND_HOVER}
           aria-label={t(dark ? 'header.themeToLight' : 'header.themeToDark')}
           onClick={toggleDark}
         >

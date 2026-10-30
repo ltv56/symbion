@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { queryClient } from './query';
 
 const KEY = 'token';
 const listeners = new Set<() => void>();
@@ -26,6 +27,12 @@ export function setToken(next: string | null) {
     // storage can be blocked: the token then lasts until the page reloads
   }
   listeners.forEach((listener) => listener());
+}
+
+// Cache cleared too, or the next member to sign in would briefly see this member's data
+export function signOut() {
+  setToken(null);
+  queryClient.clear();
 }
 
 function subscribe(listener: () => void) {

@@ -1,8 +1,13 @@
 {
-  "app": {
-    "signedIn": "Đã đăng nhập"
+  "member": {
+    "loading": "Đang tải…",
+    "loadError": "Không tải được thông tin tài khoản.",
+    "retry": "Thử lại",
+    "tier": "Hạng",
+    "balance": "Điểm"
   },
   "header": {
+    "signOut": "Đăng xuất",
     "language": "Đổi ngôn ngữ",
     "themeToDark": "Chuyển sang giao diện tối",
     "themeToLight": "Chuyển sang giao diện sáng"
