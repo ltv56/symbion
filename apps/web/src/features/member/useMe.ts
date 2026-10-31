@@ -7,6 +7,8 @@ export interface Me {
   name: string;
   tier: { id: number; name: string };
   balance: number;
+  spend12m: number;
+  nextTier: { id: number; name: string; minSpend: number } | null;
 }
 
 export function useMe() {

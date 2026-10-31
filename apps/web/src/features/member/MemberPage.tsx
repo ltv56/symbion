@@ -5,15 +5,19 @@ import { FormError } from '@/components/FormError';
 import { Button } from '@/components/ui/button';
 import { signOut } from '@/lib/auth';
 import { BalanceHeadline } from './balance/BalanceHeadline';
-import { TierSeal } from './tier/TierSeal';
+import { TierProgress } from './tier/TierProgress';
 import { useMe } from './useMe';
 
 function LoadingBlock() {
   const { t } = useTranslation();
   return (
-    <div role="status" className="py-6 md:py-10">
+    <div role="status" className="space-y-4 py-6 md:py-10">
       <span className="sr-only">{t('member.loading')}</span>
       <div className="h-12 w-3/4 animate-pulse rounded-lg bg-foreground/10" />
+      <div className="flex items-center gap-4">
+        <div className="size-24 shrink-0 animate-pulse rounded-full bg-foreground/10" />
+        <div className="h-3 flex-1 animate-pulse rounded-full bg-foreground/10" />
+      </div>
     </div>
   );
 }
@@ -64,9 +68,7 @@ export function MemberPage() {
               </p>
               <BalanceHeadline balance={me.data.balance} />
             </div>
-            <div className="mt-6">
-              <TierSeal name={me.data.tier.name} />
-            </div>
+            <TierProgress me={me.data} />
           </section>
         )}
       </main>

@@ -9,7 +9,12 @@
     "negativeHintLabel": "Xem thêm",
     "negativeHint": "Điểm mới sẽ bù khoản thiếu trước, sau đó bạn đổi voucher lại được.",
     "tierSeal": "Hạng {{tier}}",
-    "tierSealTitle": "HẠNG"
+    "tierSealTitle": "HẠNG",
+    "tierSpent": "{{spent}} / {{target}}",
+    "tierProgress": "Còn <b>{{amount}}</b> chi tiêu trong 12 tháng để lên hạng <b>{{tier}}</b>.",
+    "tierReached": "Bạn đã đủ chi tiêu cho hạng <b>{{tier}}</b>. Hạng cập nhật ở đơn kế tiếp.",
+    "topTier": "Bạn đang ở hạng cao nhất. Chi tiêu 12 tháng gần nhất: <b>{{amount}}</b>.",
+    "tierProgressLabel": "Tiến độ lên hạng {{tier}}"
   },
   "tier": {
     "bronze": "Đồng",
