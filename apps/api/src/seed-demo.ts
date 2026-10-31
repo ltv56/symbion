@@ -41,7 +41,7 @@ export async function seedDemo(ds: DataSource, apiKey: string): Promise<void> {
     [apiKeyHash],
   );
   const [tier] = await ds.query(
-    'SELECT id FROM tiers ORDER BY min_points ASC LIMIT 1',
+    'SELECT id FROM tiers ORDER BY min_spend ASC LIMIT 1',
   );
 
   for (const member of DEMO_MEMBERS) {
