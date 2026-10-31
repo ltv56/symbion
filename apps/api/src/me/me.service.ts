@@ -1,9 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Ledger } from '@symbion/ledger';
 import { DataSource, EntityManager } from 'typeorm';
+import { RedemptionStatus } from '../redemptions/redemption.entity';
 import { spendLast12Months } from '../tiers/spend';
 
 const HISTORY_LIMIT = 50;
+const REDEMPTIONS_LIMIT = 50;
 
 export type Profile = {
   id: number;
@@ -31,6 +33,18 @@ export type HistoryEntry = {
   merchantName: string;
   ref: { type: string; id: number } | null;
   expiresAt: Date | null;
+  createdAt: Date;
+};
+
+export type MemberRedemption = {
+  id: number;
+  code: string;
+  status: RedemptionStatus;
+  points: number;
+  voucherTitle: string;
+  merchantName: string;
+  usedAt: Date | null;
+  expiresAt: Date;
   createdAt: Date;
 };
 
@@ -149,6 +163,46 @@ export class MeService {
         row.ref_type !== null && row.ref_id !== null
           ? { type: row.ref_type, id: Number(row.ref_id) }
           : null,
+      expiresAt: row.expires_at,
+      createdAt: row.created_at,
+    }));
+  }
+
+  async redemptions(memberId: number): Promise<MemberRedemption[]> {
+    const rows: {
+      id: number;
+      code: string;
+      status: RedemptionStatus;
+      points: number;
+      voucher_title: string;
+      merchant_name: string;
+      used_at: Date | null;
+      expires_at: Date;
+      created_at: Date;
+    }[] = await this.dataSource.query(
+      `SELECT r.id, r.code, r.status, r.points, v.title AS voucher_title,
+        mc.name AS merchant_name, r.used_at, r.expires_at, r.created_at
+      FROM redemptions r
+        JOIN vouchers v ON v.id = r.voucher_id
+        JOIN merchants mc ON mc.id = r.merchant_id
+      WHERE r.member_id = ?
+      ORDER BY r.id DESC
+      LIMIT ?`,
+      [memberId, REDEMPTIONS_LIMIT],
+    );
+    const now = new Date();
+    return rows.map((row) => ({
+      id: Number(row.id),
+      code: row.code,
+      // 'expired' is never stored
+      status:
+        row.status === 'issued' && row.expires_at <= now
+          ? 'expired'
+          : row.status,
+      points: Number(row.points),
+      voucherTitle: row.voucher_title,
+      merchantName: row.merchant_name,
+      usedAt: row.used_at,
       expiresAt: row.expires_at,
       createdAt: row.created_at,
     }));
