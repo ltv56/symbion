@@ -47,7 +47,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 - **Expiry:** a lot with `expiresAt` at or before `now` is ignored by `balance` and `spend`. `expiresAt: null` never expires.
 - **FIFO:** `spend` takes from the lot that expires first, then lots without expiry, ties by lower id.
 - **Negative balance:** `spend` does not throw when points are short. It writes an entry whose `remaining` is minus the shortfall (a debt lot), so the balance can go below 0. `debt` is the shortfall of that call.
-- **Type and ref:** every lot has `type` (`earn` or `spend`), set by the ledger from the operation. `ref` (`{ type, id }` or `null`) is the caller's source of the lot, stored as given; only `earn` takes one.
+- **Type and ref:** every lot has `type` (`earn` or `spend`), set by the ledger from the operation. `ref` (`{ type, id }` or `null`) is the caller's source of the lot, stored as given; `earn` and `spend` take one.
 - **Debt:** `earn` pays the oldest debt lots first, so the new lot has `remaining = points - paid`. A member never has a debt lot next to a spendable lot. An `earn` that is already expired at `now` is stored but pays no debt.
 
 ## Storage

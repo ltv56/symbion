@@ -21,6 +21,16 @@ pnpm --filter @symbion/api start:dev   # API on http://localhost:3000
 pnpm --filter @symbion/web dev         # web on http://localhost:5173
 ```
 
+## Web
+
+`apps/web`: React, Vite, Tailwind, shadcn/ui, TanStack Query, react-hook-form with zod, react-i18next.
+
+- The dev server proxies `/api/*` to `http://localhost:3000/*` (`vite.config.ts`). The API must be running. Production serves the build behind nginx under the same `/api/` prefix, so the API needs no CORS.
+- Member sign-in needs an existing member and `DEMO_MODE=true` on the API: the code comes back in the response and is shown on the page. No email is sent.
+- `localStorage` keys: `token` (member access token), `lang` (`vi` default, or `en`), `theme` (`light` or `dark`; the system setting when unset).
+- Copy lives in `src/i18n/en.json` and `src/i18n/vi.json`; add a key to both.
+- `src/components/ui` is shadcn output (`npx shadcn@latest add <name>`) with local changes to `button`, `input` and `input-otp` (44px touch targets on a phone, field fill, separate code boxes). Re-adding with `--overwrite` replaces them.
+
 ## CI
 
 `.github/workflows/ci.yml`, on pull requests and pushes to `dev` and `master`. Local equivalent: `pnpm check`.

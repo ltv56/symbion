@@ -20,7 +20,7 @@ import { IdempotencyKey } from '../common/idempotency-key.decorator';
 import { RedeemVoucherDto } from '../redemptions/dto/create-redemption.dto';
 import { Redemption } from '../redemptions/redemption.entity';
 import { RedemptionsService } from '../redemptions/redemptions.service';
-import { HistoryEntry, MeService, Profile } from './me.service';
+import { HistoryEntry, MeService, Profile, UnspentLot } from './me.service';
 
 @Controller('me')
 @UseGuards(MemberGuard)
@@ -32,9 +32,19 @@ export class MeController {
   ) {}
 
   @Get()
-  @ApiOkResponse({ description: 'Member, tier and point balance' })
+  @ApiOkResponse({
+    description: 'Member, tier, point balance and progress to the next tier',
+  })
   profile(@CurrentMemberId() memberId: number): Promise<Profile> {
     return this.me.profile(memberId);
+  }
+
+  @Get('lots')
+  @ApiOkResponse({
+    description: 'Unspent, unexpired point lots, earliest expiry first',
+  })
+  lots(@CurrentMemberId() memberId: number): Promise<UnspentLot[]> {
+    return this.me.lots(memberId);
   }
 
   @Get('history')

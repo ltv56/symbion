@@ -98,6 +98,58 @@ describe('Me', () => {
         name: 'John',
         tier: { id: expect.any(Number), name: 'Silver' },
         balance: 500,
+        spend12m: 0,
+        nextTier: null,
+      });
+    });
+
+    describe('tier progress', () => {
+      let orderSeq = 0;
+      const addOrder = async (amount: number, monthsAgo = 0) => {
+        const res = await dataSource.query(
+          `INSERT INTO orders (merchant_id, member_id, idempotency_key, amount, created_at)
+          VALUES (?, ?, ?, ?, NOW() - INTERVAL ? MONTH)`,
+          [merchantId, memberId, `order-${++orderSeq}`, amount, monthsAgo],
+        );
+        return Number(res.insertId);
+      };
+      const addRefund = (orderId: number, amount: number) =>
+        dataSource.query(
+          `INSERT INTO refunds (merchant_id, order_id, idempotency_key, amount)
+          VALUES (?, ?, ?, ?)`,
+          [merchantId, orderId, `refund-${++orderSeq}`, amount],
+        );
+
+      it('returns the 12-month spend and the next tier above the current one', async () => {
+        const gold = await dataSource.query(
+          `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Gold', 5000000, 1.5)`,
+        );
+        await dataSource.query(
+          `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Platinum', 10000000, 2)`,
+        );
+        await addOrder(800_000);
+        const refunded = await addOrder(300_000);
+        await addRefund(refunded, 100_000);
+        const old = await addOrder(2_000_000, 13);
+        await addRefund(old, 500_000);
+
+        const res = await get('/me').expect(200);
+
+        expect(res.body.spend12m).toBe(1_000_000);
+        expect(res.body.nextTier).toEqual({
+          id: Number(gold.insertId),
+          name: 'Gold',
+          minSpend: 5_000_000,
+        });
+      });
+
+      it('returns no next tier on the top tier', async () => {
+        await addOrder(800_000);
+
+        const res = await get('/me').expect(200);
+
+        expect(res.body.spend12m).toBe(800_000);
+        expect(res.body.nextTier).toBeNull();
       });
     });
 
@@ -145,6 +197,59 @@ describe('Me', () => {
       expect(res.body).toHaveLength(50);
       expect(res.body[0].points).toBe(55);
       expect(res.body[49].points).toBe(6);
+    });
+  });
+
+  describe('GET /me/lots', () => {
+    const day = 86_400_000;
+    const inDays = (days: number) => new Date(Date.now() + days * day);
+
+    it('returns unspent, unexpired lots by expiry, lots without expiry last', async () => {
+      await addLot(memberId, 100, { expiresAt: inDays(200) });
+      await addLot(memberId, 300, {
+        atMerchant: otherMerchantId,
+        expiresAt: inDays(30),
+      });
+      await addLot(memberId, 50);
+      await addLot(memberId, 70, { expiresAt: inDays(200) });
+
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toEqual([
+        {
+          id: expect.any(Number),
+          merchantId: otherMerchantId,
+          merchantName: 'Shop B',
+          remaining: 300,
+          expiresAt: expect.any(String),
+        },
+        expect.objectContaining({ remaining: 100, merchantName: 'Shop A' }),
+        expect.objectContaining({ remaining: 70 }),
+        expect.objectContaining({ remaining: 50, expiresAt: null }),
+      ]);
+    });
+
+    it('leaves out spent-out, expired, debt and other members lots', async () => {
+      await addLot(memberId, 100, { expiresAt: inDays(10) });
+      await addLot(memberId, 500, { expiresAt: new Date(Date.now() - 60_000) });
+      await addLot(memberId, -40);
+      await addLot(otherMemberId, 999, { expiresAt: inDays(10) });
+      await dataSource.query(
+        `UPDATE ledger_lots SET remaining = 0 WHERE member_id = ? AND points = 100`,
+        [memberId],
+      );
+      await addLot(memberId, 60, { expiresAt: inDays(20) });
+
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].remaining).toBe(60);
+    });
+
+    it('returns an empty list for a member with no points', async () => {
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toEqual([]);
     });
   });
 
@@ -231,7 +336,7 @@ describe('Me', () => {
     });
   });
 
-  describe.each(['/me', '/me/history'])('%s auth', (path) => {
+  describe.each(['/me', '/me/history', '/me/lots'])('%s auth', (path) => {
     it('returns 401 without a token', async () => {
       await get(path, null).expect(401);
     });

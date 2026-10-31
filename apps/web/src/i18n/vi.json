@@ -1,0 +1,38 @@
+{
+  "member": {
+    "loading": "Đang tải…",
+    "loadError": "Không tải được thông tin tài khoản.",
+    "retry": "Thử lại",
+    "tier": "Hạng",
+    "balance": "Điểm"
+  },
+  "header": {
+    "signOut": "Đăng xuất",
+    "language": "Đổi ngôn ngữ",
+    "themeToDark": "Chuyển sang giao diện tối",
+    "themeToLight": "Chuyển sang giao diện sáng"
+  },
+  "login": {
+    "title": "Đăng nhập",
+    "intro": "Nhập email để nhận mã đăng nhập.",
+    "email": "Email",
+    "sendCode": "Gửi mã",
+    "sending": "Đang gửi…",
+    "codeIntro": "Nhập mã 6 số của {{email}}. Mã có hiệu lực trong 5 phút.",
+    "code": "Mã 6 số",
+    "signIn": "Đăng nhập",
+    "signingIn": "Đang đăng nhập…",
+    "demoCode": "Mã demo:",
+    "useDemoCode": "Dùng mã này",
+    "wrongCode": "Mã không đúng hoặc đã hết hạn.",
+    "resend": "Gửi mã mới",
+    "changeEmail": "Dùng email khác",
+    "validation": {
+      "email": "Nhập email hợp lệ.",
+      "code": "Nhập đủ 6 số."
+    }
+  },
+  "errors": {
+    "generic": "Có lỗi xảy ra. Thử lại sau."
+  }
+}

@@ -35,6 +35,7 @@ export type SpendInput = {
   points: number;
   now: Date;
   idempotencyKey: string;
+  ref?: LotRef;
 };
 
 export type SpendResult = {

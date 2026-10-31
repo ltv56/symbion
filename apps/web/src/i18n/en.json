@@ -1,0 +1,38 @@
+{
+  "member": {
+    "loading": "Loading…",
+    "loadError": "Could not load your account.",
+    "retry": "Try again",
+    "tier": "Tier",
+    "balance": "Points"
+  },
+  "header": {
+    "signOut": "Sign out",
+    "language": "Switch language",
+    "themeToDark": "Switch to dark theme",
+    "themeToLight": "Switch to light theme"
+  },
+  "login": {
+    "title": "Sign in",
+    "intro": "Enter your email to get a code.",
+    "email": "Email",
+    "sendCode": "Send code",
+    "sending": "Sending…",
+    "codeIntro": "Enter the 6-digit code for {{email}}. It is valid for 5 minutes.",
+    "code": "6-digit code",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "demoCode": "Demo code:",
+    "useDemoCode": "Use this code",
+    "wrongCode": "The code is wrong or has expired.",
+    "resend": "Send a new code",
+    "changeEmail": "Use another email",
+    "validation": {
+      "email": "Enter a valid email.",
+      "code": "Enter all 6 digits."
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong. Try again."
+  }
+}

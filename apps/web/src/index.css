@@ -1,1 +1,171 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource/be-vietnam-pro/400.css';
+@import '@fontsource/be-vietnam-pro/500.css';
+@import '@fontsource/be-vietnam-pro/600.css';
+@import '@fontsource/be-vietnam-pro/700.css';
+@import '@fontsource-variable/geist-mono';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: 'Geist Mono Variable', monospace;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-field: var(--field);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-earn: var(--earn);
+  --color-brand: var(--brand);
+  --color-progress-fill: var(--progress-fill);
+  --color-progress-track: var(--progress-track);
+  --color-tier-bronze: var(--tier-bronze);
+  --color-tier-silver: var(--tier-silver);
+  --color-tier-gold: var(--tier-gold);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* Light: cream ground, lacquer-red panels (card). */
+:root {
+  --background: #fff6e3;
+  --foreground: #2b1b16;
+  --card: #861616;
+  --card-foreground: #fff6e3;
+  --popover: #fff6e3;
+  --popover-foreground: #2b1b16;
+  --primary: #fff6e3;
+  --primary-foreground: #861616;
+  --secondary: #6a1010;
+  --secondary-foreground: #fff6e3;
+  --muted: #6a1010;
+  --muted-foreground: #f3d2c6;
+  --accent: #6a1010;
+  --accent-foreground: #fff6e3;
+  --destructive: #f2c14e;
+  --border: #c0605a;
+  /* Field edge on a panel */
+  --input: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+  --field: color-mix(in srgb, var(--card-foreground) 10%, transparent);
+  --ring: #f2c14e;
+  --earn: #a8e6c1;
+  --brand: #861616;
+  --progress-fill: #861616;
+  --progress-track: #e6d4b4;
+  --tier-bronze: #8f4f1b;
+  --tier-silver: #4e6272;
+  --tier-gold: #8a6200;
+  --radius: 0.875rem;
+  scrollbar-color: #861616 #f3e6cb;
+}
+
+/* Dark: maroon ground, dark panels. */
+.dark {
+  --background: #2a0f0e;
+  --foreground: #f6e9d2;
+  --card: #3a1a17;
+  --card-foreground: #f6e9d2;
+  --popover: #3a1a17;
+  --popover-foreground: #f6e9d2;
+  --primary: #c2332c;
+  --primary-foreground: #fff6e3;
+  --secondary: #4a2420;
+  --secondary-foreground: #f6e9d2;
+  --muted: #4a2420;
+  --muted-foreground: #c9b49b;
+  --accent: #4a2420;
+  --accent-foreground: #f6e9d2;
+  --destructive: #f0786b;
+  --border: #55302a;
+  /* Field edge on the dark panel */
+  --input: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+  --field: color-mix(in srgb, var(--card-foreground) 10%, transparent);
+  --ring: #f0786b;
+  --earn: #7fd0a4;
+  --brand: #f2c14e;
+  --progress-fill: #f2c14e;
+  --progress-track: #4a2420;
+  --tier-bronze: #d9955a;
+  --tier-silver: #a9b8c6;
+  --tier-gold: #e3b64a;
+  scrollbar-color: #55302a #2a0f0e;
+}
+
+/* Dialogs sit on the ground colour */
+[data-slot='dialog-content'],
+[data-surface='ground'] {
+  --background: #fff6e3;
+  --foreground: #2b1b16;
+  --primary: #861616;
+  --primary-foreground: #fff6e3;
+  --secondary: #f3e6cb;
+  --muted: #f3e6cb;
+  --muted-foreground: #6b574c;
+  --destructive: #861616;
+  --border: #e6d4b4;
+  --input: #e6d4b4;
+}
+
+.dark [data-slot='dialog-content'],
+.dark [data-surface='ground'] {
+  --background: #3a1a17;
+  --foreground: #f6e9d2;
+  --primary: #c2332c;
+  --primary-foreground: #fff6e3;
+  --secondary: #4a2420;
+  --muted: #4a2420;
+  --muted-foreground: #c9b49b;
+  --destructive: #f0786b;
+  --border: #55302a;
+  --input: #55302a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: light;
+    accent-color: var(--brand);
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground;
+    caret-color: var(--foreground);
+  }
+  ::selection {
+    background: #f2c14e;
+    color: #2b1b16;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

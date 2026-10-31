@@ -119,7 +119,7 @@ export class Ledger<Tx> {
       expiresAt: null,
       idempotencyKey: input.idempotencyKey,
       type: 'spend',
-      ref: null,
+      ref: input.ref ?? null,
     });
 
     let left = input.points;

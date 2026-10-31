@@ -1,7 +1,8 @@
+import { LoginPage } from '@/features/login/LoginPage';
+import { MemberPage } from '@/features/member/MemberPage';
+import { useToken } from '@/lib/auth';
+
 export function App() {
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50">
-      <h1 className="text-3xl font-semibold text-slate-800">Symbion</h1>
-    </main>
-  );
+  const token = useToken();
+  return token ? <MemberPage /> : <LoginPage />;
 }
