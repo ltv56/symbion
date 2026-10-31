@@ -62,7 +62,7 @@ export function CodeForm({
 
   return (
     <form onSubmit={submit} noValidate className="mt-2 space-y-5">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground wrap-anywhere">
         {t('login.codeIntro', { email })}
       </p>
       {demoOtp && (
