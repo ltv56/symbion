@@ -41,6 +41,15 @@ export function YearView({
             now={now}
             base={base}
             enabled={inHorizon(monthsAhead(year, date.getMonth(), now))}
+            onOpen={(focus) =>
+              open({
+                kind: 'days',
+                year,
+                month: date.getMonth(),
+                from: 'year',
+                focus,
+              })
+            }
           />
         ))}
       </div>

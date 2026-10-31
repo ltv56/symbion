@@ -55,6 +55,11 @@ export function useActiveLot() {
     setHoverId,
     toggle,
     row,
-    calendar: { activeId, onActiveChange: setHoverId },
+    calendar: {
+      activeId,
+      selectedId: pinnedId,
+      onActiveChange: setHoverId,
+      onPick: toggle,
+    },
   };
 }

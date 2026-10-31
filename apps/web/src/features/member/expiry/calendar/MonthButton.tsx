@@ -2,7 +2,7 @@ import { cn } from 'cn';
 import { useTranslation } from 'react-i18next';
 import { monthLabel, sameMonth } from '../expiry';
 import { SandHourglass } from './SandHourglass';
-import { moreLabel } from './layout';
+import { moreLabel, PRESS } from './layout';
 import type { Base } from './types';
 
 export function MonthButton({
@@ -10,12 +10,14 @@ export function MonthButton({
   now,
   base,
   enabled,
+  onOpen,
   className,
 }: {
   date: Date;
   now: Date;
   base: Base;
   enabled: boolean;
+  onOpen: (focus?: number) => void;
   className?: string;
 }) {
   const { t, i18n } = useTranslation();
@@ -36,8 +38,10 @@ export function MonthButton({
   const many = here.length > 2;
   const isToday = sameMonth(now, date);
   return (
-    <div
-      role="group"
+    <button
+      type="button"
+      disabled={!enabled}
+      onClick={() => onOpen()}
       aria-label={t('timeline.monthLots', {
         month: `${label} ${date.getFullYear()}`,
         count: here.length,
@@ -45,6 +49,7 @@ export function MonthButton({
       className={cn(
         // the box hugs its content
         '@container flex flex-col items-center self-start rounded-lg px-1 py-2 text-sm',
+        PRESS,
         !enabled && 'opacity-35',
         className,
       )}
@@ -67,11 +72,17 @@ export function MonthButton({
             <span
               key={id}
               className={cn(
-                'grid size-4.5 place-items-center',
+                // small screens: the press falls through to the month
+                'pointer-events-none grid size-4.5 place-items-center md:pointer-events-auto',
                 i === 1 && many && '@max-[3.5rem]:hidden',
               )}
               onPointerEnter={() => base.onActiveChange(id)}
               onPointerLeave={() => base.onActiveChange(null)}
+              // opens the month with this lot's day blinking
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpen(id);
+              }}
             >
               <SandHourglass lit={base.activeId === id} className="size-4.5" />
             </span>
@@ -88,6 +99,6 @@ export function MonthButton({
           )}
         </span>
       )}
-    </div>
+    </button>
   );
 }

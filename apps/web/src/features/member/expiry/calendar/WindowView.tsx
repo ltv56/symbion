@@ -74,6 +74,15 @@ export function WindowView({
               i === change - 1 && 'mr-1.5',
               i === change && 'ml-1.5',
             )}
+            onOpen={(focus) =>
+              open({
+                kind: 'days',
+                year: date.getFullYear(),
+                month: date.getMonth(),
+                from: 'window',
+                focus,
+              })
+            }
           />
         ))}
       </div>

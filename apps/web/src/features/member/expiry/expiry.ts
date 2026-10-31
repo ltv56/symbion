@@ -1,6 +1,6 @@
 import type { Lot } from './useLots';
 
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 // Points that expire within this many days count as expiring soon
 export const EXPIRING_SOON_DAYS = 60;
 
@@ -29,6 +29,10 @@ export function byExpiry(a: Lot, b: Lot): number {
 
 export function sameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+export function sameDay(a: Date, b: Date): boolean {
+  return sameMonth(a, b) && a.getDate() === b.getDate();
 }
 
 // Whole months from the current one

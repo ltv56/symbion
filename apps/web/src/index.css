@@ -173,3 +173,24 @@
     }
   }
 }
+
+/* A day blinks once */
+@keyframes day-flash {
+  0%,
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+  30% {
+    background-color: color-mix(
+      in srgb,
+      var(--card-foreground) 28%,
+      transparent
+    );
+    box-shadow: inset 0 0 0 1.5px
+      color-mix(in srgb, var(--card-foreground) 60%, transparent);
+  }
+}
+.day-flash {
+  animation: day-flash 1s ease-out;
+}
