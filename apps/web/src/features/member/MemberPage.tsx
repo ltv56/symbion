@@ -5,6 +5,7 @@ import { FormError } from '@/components/FormError';
 import { Button } from '@/components/ui/button';
 import { signOut } from '@/lib/auth';
 import { BalanceHeadline } from './balance/BalanceHeadline';
+import { TierSeal } from './tier/TierSeal';
 import { useMe } from './useMe';
 
 function LoadingBlock() {
@@ -63,10 +64,9 @@ export function MemberPage() {
               </p>
               <BalanceHeadline balance={me.data.balance} />
             </div>
-            <dl className="mt-6 grid max-w-xs grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
-              <dt className="font-medium">{t('member.tier')}</dt>
-              <dd className="text-right">{me.data.tier.name}</dd>
-            </dl>
+            <div className="mt-6">
+              <TierSeal name={me.data.tier.name} />
+            </div>
           </section>
         )}
       </main>

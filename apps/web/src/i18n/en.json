@@ -3,12 +3,18 @@
     "loading": "Loading…",
     "loadError": "Could not load your account.",
     "retry": "Try again",
-    "tier": "Tier",
     "greeting": "Hi, <b>{{name}}</b>",
     "headline": "You have <n/> points",
     "negativeNote": "A refund took back points you had already spent.",
     "negativeHintLabel": "More info",
-    "negativeHint": "New points cover the shortfall first, then you can redeem again."
+    "negativeHint": "New points cover the shortfall first, then you can redeem again.",
+    "tierSeal": "{{tier}} tier",
+    "tierSealTitle": "TIER"
+  },
+  "tier": {
+    "bronze": "Bronze",
+    "silver": "Silver",
+    "gold": "Gold"
   },
   "header": {
     "signOut": "Sign out",

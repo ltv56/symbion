@@ -3,12 +3,18 @@
     "loading": "Đang tải…",
     "loadError": "Không tải được thông tin tài khoản.",
     "retry": "Thử lại",
-    "tier": "Hạng",
     "greeting": "Xin chào, <b>{{name}}</b>",
     "headline": "Bạn đang có <n/> điểm",
     "negativeNote": "Đơn hoàn đã thu hồi điểm bạn dùng.",
     "negativeHintLabel": "Xem thêm",
-    "negativeHint": "Điểm mới sẽ bù khoản thiếu trước, sau đó bạn đổi voucher lại được."
+    "negativeHint": "Điểm mới sẽ bù khoản thiếu trước, sau đó bạn đổi voucher lại được.",
+    "tierSeal": "Hạng {{tier}}",
+    "tierSealTitle": "HẠNG"
+  },
+  "tier": {
+    "bronze": "Đồng",
+    "silver": "Bạc",
+    "gold": "Vàng"
   },
   "header": {
     "signOut": "Đăng xuất",

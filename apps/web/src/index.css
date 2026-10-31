@@ -36,9 +36,6 @@
   --color-brand: var(--brand);
   --color-progress-fill: var(--progress-fill);
   --color-progress-track: var(--progress-track);
-  --color-tier-bronze: var(--tier-bronze);
-  --color-tier-silver: var(--tier-silver);
-  --color-tier-gold: var(--tier-gold);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -71,9 +68,6 @@
   --brand: #861616;
   --progress-fill: #861616;
   --progress-track: #e6d4b4;
-  --tier-bronze: #8f4f1b;
-  --tier-silver: #4e6272;
-  --tier-gold: #8a6200;
   --radius: 0.875rem;
   scrollbar-color: #861616 #f3e6cb;
 }
@@ -104,9 +98,6 @@
   --brand: #f2c14e;
   --progress-fill: #f2c14e;
   --progress-track: #4a2420;
-  --tier-bronze: #d9955a;
-  --tier-silver: #a9b8c6;
-  --tier-gold: #e3b64a;
   scrollbar-color: #55302a #2a0f0e;
 }
 
