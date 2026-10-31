@@ -1,16 +1,26 @@
+import { cn } from 'cn';
 import { useTranslation } from 'react-i18next';
 import { MerchantAvatar } from '@/components/MerchantAvatar';
 import { formatDate, formatPoints } from '@/lib/format';
-import { daysOf } from './expiry';
+import { daysOf, isSoon } from './expiry';
 import type { Lot } from './useLots';
 
-// The days left
+// The days left, gold when soon
 function DaysText({ lot, loadedAt }: { lot: Lot; loadedAt: number }) {
   const { t } = useTranslation();
   const days = daysOf(lot, loadedAt);
   if (days === null) return null;
+  const soon = isSoon(lot, loadedAt);
   return (
-    <span className="font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+    <span
+      className={cn(
+        'font-mono whitespace-nowrap tabular-nums',
+        soon
+          ? 'text-sm font-semibold text-destructive @max-[14rem]:text-[13px]'
+          : 'text-xs text-muted-foreground',
+      )}
+    >
+      {soon && <span className="sr-only">{t('timeline.soon')}: </span>}
       {t('timeline.left', { count: days })}
     </span>
   );

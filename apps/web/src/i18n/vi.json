@@ -25,8 +25,11 @@
     "title": "Điểm theo hạn dùng",
     "empty": "Hiện không có điểm còn hạn. Điểm mới sẽ hiện ở đây sau mỗi đơn hàng.",
     "noExpiry": "Không hết hạn",
+    "soon": "Sắp hết hạn",
     "left_other": "còn {{count}} ngày",
+    "expiresIn": "hết hạn trong {{days}} ngày",
     "unit_other": "điểm",
+    "lots_other": "{{count}} khoản điểm",
     "showAll": "Xem tất cả {{n}} khoản điểm",
     "showLess": "Thu gọn"
   },
