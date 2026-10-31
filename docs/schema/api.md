@@ -64,7 +64,7 @@ Member login with a one-time code.
 
 Admin endpoints reject a member token (`401`).
 
-## GET /me, GET /me/lots, GET /me/history, GET /me/redemptions
+## GET /me, GET /me/lots, GET /me/history, GET /me/redemptions, GET /me/partners
 
 Member only (`Authorization: Bearer <member token>`). `401` for a missing, invalid or non-member token.
 
@@ -75,6 +75,8 @@ Member only (`Authorization: Bearer <member token>`). `401` for a missing, inval
 `GET /me/history`: `200` with the member's latest 50 ledger entries, newest first, each `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`; `ref.type` is `order`, `redemption` or `refund` (entries written before spends carried a `ref` have `null`).
 
 `GET /me/redemptions`: `200` with the member's latest 50 redemptions, newest first, each `{ "id", "code", "status", "points", "voucherTitle", "merchantName", "usedAt", "expiresAt", "createdAt" }`; `status` is `issued`, `used` or `expired`, `expired` being an `issued` code past `expiresAt` (never stored); `usedAt` is `null` unless `used`; `merchantName` is the merchant that owns the voucher.
+
+`GET /me/partners`: `200` with every merchant of the programme, each `{ "id", "name" }`, ordered by `name`. Points are shared across merchants, so no merchant is filtered out.
 
 ## POST /me/redemptions
 
