@@ -253,6 +253,110 @@ describe('Me', () => {
     });
   });
 
+  describe('GET /me/redemptions', () => {
+    let voucherId: number;
+    let codeSeq = 0;
+
+    beforeEach(async () => {
+      const res = await dataSource.query(
+        `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until)
+        VALUES (?, 'Coffee', 50000, 500, 10, ?)`,
+        [otherMerchantId, new Date(Date.now() + 86_400_000)],
+      );
+      voucherId = Number(res.insertId);
+    });
+
+    const addRedemption = async (
+      forMemberId: number,
+      {
+        status = 'issued',
+        usedAt = null as Date | null,
+        expiresAt = new Date(Date.now() + 86_400_000),
+      } = {},
+    ): Promise<number> => {
+      const n = ++codeSeq;
+      const res = await dataSource.query(
+        `INSERT INTO redemptions (merchant_id, member_id, voucher_id, code, points, point_value_vnd, status, client_key, used_at, expires_at)
+        VALUES (?, ?, ?, ?, 500, 100, ?, ?, ?, ?)`,
+        [
+          otherMerchantId,
+          forMemberId,
+          voucherId,
+          `CODE${String(n).padStart(6, '0')}`,
+          status,
+          `key-${n}`,
+          usedAt,
+          expiresAt,
+        ],
+      );
+      return Number(res.insertId);
+    };
+
+    it("returns the member's own redemptions, newest first", async () => {
+      const first = await addRedemption(memberId);
+      const second = await addRedemption(memberId);
+      await addRedemption(otherMemberId);
+
+      const res = await get('/me/redemptions').expect(200);
+
+      expect(res.body.map((r: { id: number }) => r.id)).toEqual([
+        second,
+        first,
+      ]);
+      expect(res.body[0]).toEqual({
+        id: second,
+        code: expect.stringMatching(/^CODE\d{6}$/),
+        status: 'issued',
+        points: 500,
+        voucherTitle: 'Coffee',
+        merchantName: 'Shop B',
+        usedAt: null,
+        expiresAt: expect.any(String),
+        createdAt: expect.any(String),
+      });
+    });
+
+    it('shows a used code as used and an issued code past its expiry as expired', async () => {
+      const past = new Date(Date.now() - 60_000);
+      const used = await addRedemption(memberId, {
+        status: 'used',
+        usedAt: new Date(Date.now() - 120_000),
+      });
+      const usedThenExpired = await addRedemption(memberId, {
+        status: 'used',
+        usedAt: new Date(Date.now() - 180_000),
+        expiresAt: past,
+      });
+      const expired = await addRedemption(memberId, { expiresAt: past });
+
+      const res = await get('/me/redemptions').expect(200);
+
+      const statusOf = (id: number) =>
+        res.body.find((r: { id: number }) => r.id === id).status;
+      expect(statusOf(used)).toBe('used');
+      expect(statusOf(usedThenExpired)).toBe('used');
+      expect(statusOf(expired)).toBe('expired');
+      expect(
+        res.body.find((r: { id: number }) => r.id === used).usedAt,
+      ).toEqual(expect.any(String));
+    });
+
+    it('returns at most 50 redemptions', async () => {
+      for (let i = 1; i <= 55; i++) {
+        await addRedemption(memberId);
+      }
+
+      const res = await get('/me/redemptions').expect(200);
+
+      expect(res.body).toHaveLength(50);
+    });
+
+    it('returns an empty list for a member with no redemptions', async () => {
+      const res = await get('/me/redemptions').expect(200);
+      expect(res.body).toEqual([]);
+    });
+  });
+
   describe('POST /me/redemptions', () => {
     const insertVoucher = async (): Promise<number> => {
       const res = await dataSource.query(
@@ -336,24 +440,27 @@ describe('Me', () => {
     });
   });
 
-  describe.each(['/me', '/me/history', '/me/lots'])('%s auth', (path) => {
-    it('returns 401 without a token', async () => {
-      await get(path, null).expect(401);
-    });
+  describe.each(['/me', '/me/history', '/me/lots', '/me/redemptions'])(
+    '%s auth',
+    (path) => {
+      it('returns 401 without a token', async () => {
+        await get(path, null).expect(401);
+      });
 
-    it('returns 401 for an admin token', async () => {
-      await get(path, `Bearer ${await adminToken(app)}`).expect(401);
-    });
+      it('returns 401 for an admin token', async () => {
+        await get(path, `Bearer ${await adminToken(app)}`).expect(401);
+      });
 
-    it('returns 401 for a malformed token', async () => {
-      await get(path, 'Bearer not-a-jwt').expect(401);
-    });
+      it('returns 401 for a malformed token', async () => {
+        await get(path, 'Bearer not-a-jwt').expect(401);
+      });
 
-    it('returns 401 for a merchant api key', async () => {
-      await request(app.getHttpServer())
-        .get(path)
-        .set('x-api-key', 'key-a')
-        .expect(401);
-    });
-  });
+      it('returns 401 for a merchant api key', async () => {
+        await request(app.getHttpServer())
+          .get(path)
+          .set('x-api-key', 'key-a')
+          .expect(401);
+      });
+    },
+  );
 });

@@ -20,7 +20,13 @@ import { IdempotencyKey } from '../common/idempotency-key.decorator';
 import { RedeemVoucherDto } from '../redemptions/dto/create-redemption.dto';
 import { Redemption } from '../redemptions/redemption.entity';
 import { RedemptionsService } from '../redemptions/redemptions.service';
-import { HistoryEntry, MeService, Profile, UnspentLot } from './me.service';
+import {
+  HistoryEntry,
+  MemberRedemption,
+  MeService,
+  Profile,
+  UnspentLot,
+} from './me.service';
 
 @Controller('me')
 @UseGuards(MemberGuard)
@@ -51,6 +57,14 @@ export class MeController {
   @ApiOkResponse({ description: 'Latest 50 point entries, newest first' })
   history(@CurrentMemberId() memberId: number): Promise<HistoryEntry[]> {
     return this.me.history(memberId);
+  }
+
+  @Get('redemptions')
+  @ApiOkResponse({ description: 'Latest 50 redemptions, newest first' })
+  redemptionList(
+    @CurrentMemberId() memberId: number,
+  ): Promise<MemberRedemption[]> {
+    return this.me.redemptions(memberId);
   }
 
   @Post('redemptions')
