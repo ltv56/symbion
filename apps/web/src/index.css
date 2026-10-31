@@ -159,6 +159,11 @@
     @apply bg-background text-foreground;
     caret-color: var(--foreground);
   }
+  /* Buttons get the hand cursor */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    @apply cursor-pointer;
+  }
   ::selection {
     background: #f2c14e;
     color: #2b1b16;
