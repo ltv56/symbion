@@ -1,9 +1,8 @@
-import { LogOut } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
-import { AppHeader, GROUND_HOVER } from '@/components/AppHeader';
+import { AppHeader } from '@/components/AppHeader';
 import { FormError } from '@/components/FormError';
 import { Button } from '@/components/ui/button';
-import { signOut } from '@/lib/auth';
+import { AccountMenu } from './AccountMenu';
 import { BalanceHeadline } from './balance/BalanceHeadline';
 import { ExpiryTimeline } from './expiry/ExpiryTimeline';
 import { TierProgress } from './tier/TierProgress';
@@ -29,16 +28,8 @@ export function MemberPage() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <AppHeader>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={GROUND_HOVER}
-          aria-label={t('header.signOut')}
-          onClick={signOut}
-        >
-          <LogOut />
-        </Button>
+      <AppHeader languageInMenu>
+        <AccountMenu />
       </AppHeader>
       <main className="mx-auto w-full max-w-5xl px-4 pb-16 md:px-6">
         <div data-surface="ground">

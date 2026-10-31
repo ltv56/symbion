@@ -43,6 +43,7 @@
     "monthLots_other": "{{month}}, {{count}} batches"
   },
   "header": {
+    "menu": "Menu",
     "signOut": "Sign out",
     "language": "Switch language",
     "themeToDark": "Switch to dark theme",

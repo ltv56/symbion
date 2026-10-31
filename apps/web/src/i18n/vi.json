@@ -39,6 +39,7 @@
     "monthLots_other": "{{month}}, {{count}} khoản điểm"
   },
   "header": {
+    "menu": "Menu",
     "signOut": "Đăng xuất",
     "language": "Đổi ngôn ngữ",
     "themeToDark": "Chuyển sang giao diện tối",
