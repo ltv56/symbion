@@ -8,6 +8,7 @@ How points are earned and used. Each section covers what is implemented.
 
 - `amount`: VND the member actually paid (after any voucher).
 - Tier multipliers: Bronze 1.0, Silver 1.25, Gold 1.5 (`tiers.earn_rate`, seeded by `pnpm seed`).
+- Tier thresholds (`tiers.min_spend`, 12-month spend in VND): Bronze 0, Silver 1,000,000, Gold 5,000,000.
 - Always rounded down. An order that earns less than 1 point earns 0.
 - Integer arithmetic only: the multiplier is used as a whole percent (1.25 → 125), so no float rounding errors.
 
@@ -28,6 +29,29 @@ How points are earned and used. Each section covers what is implemented.
 - Points expire 12 months after the order.
 
 Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
+
+## Tiers
+
+`spend = order amounts of the last 12 months − refunds of those orders`
+
+| Tier   | `min_spend` (VND) | Multiplier |
+| ------ | ----------------- | ---------- |
+| Bronze | 0                 | 1.0        |
+| Silver | 1,000,000         | 1.25       |
+| Gold   | 5,000,000         | 1.5        |
+
+- The member's tier is the highest tier whose `min_spend` is at most their spend.
+- Evaluated after every order and every refund, in the same transaction. The tier can go up or down.
+- The order that crosses a threshold earns at the tier the member had before it.
+- A repeated `Idempotency-Key` does not re-evaluate.
+- Known limitation: with no new order, a tier stays as it is after older orders leave the window (no nightly job).
+
+| Orders in the last 12 months (VND) | Tier   |
+| ---------------------------------- | ------ |
+| 999,999                            | Bronze |
+| 999,999 + 1                        | Silver |
+| 4,000,000 + 999,999                | Silver |
+| 5,000,000                          | Gold   |
 
 ## Vouchers
 
@@ -69,6 +93,7 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - An order can be refunded several times; the refunds together cannot exceed the order amount (`422`).
 - Repeating the `Idempotency-Key` returns the same refund and deducts nothing. Reusing it for another order or amount is rejected (`422`).
 - Deducted in full even when the member already spent the points: the balance goes negative and blocks redemption until later orders cover it.
+- Re-evaluates the member's tier (see Tiers): an order of 5,000,000 (Gold) refunded by 4,500,000 leaves Bronze.
 
 | Order (VND) | Earned | Refund (VND) | Deducted |
 | ----------- | ------ | ------------ | -------- |

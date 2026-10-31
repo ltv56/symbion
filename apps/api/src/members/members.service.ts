@@ -28,7 +28,7 @@ export class MembersService {
     merchantId: number,
   ): Promise<Member> {
     const [tier] = await this.members.query(
-      'SELECT id FROM tiers ORDER BY min_points ASC LIMIT 1',
+      'SELECT id FROM tiers ORDER BY min_spend ASC LIMIT 1',
     );
     if (!tier) {
       throw new ServiceUnavailableException('No tiers configured');

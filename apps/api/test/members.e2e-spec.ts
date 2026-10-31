@@ -24,7 +24,7 @@ describe('Members', () => {
     await resetDatabase(dataSource);
     merchantId = await insertMerchant(dataSource, apiKey);
     await dataSource.query(
-      `INSERT INTO tiers (name, min_points, earn_rate) VALUES ('Silver', 1000, 1.50), ('Bronze', 0, 1.00)`,
+      `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Silver', 1000000, 1.50), ('Bronze', 0, 1.00)`,
     );
   });
 

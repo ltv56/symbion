@@ -8,8 +8,9 @@ export class Tier {
   @Column({ type: 'varchar' })
   name!: string;
 
-  @Column({ name: 'min_points', type: 'int', unsigned: true })
-  minPoints!: number;
+  // 12-month spend in VND
+  @Column({ name: 'min_spend', type: 'bigint', unsigned: true })
+  minSpend!: number;
 
   // The driver returns DECIMAL as a string; the API exposes a number.
   @Column({

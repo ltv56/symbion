@@ -31,7 +31,7 @@ describe('Redemptions', () => {
     callerMerchantId = await insertMerchant(dataSource, apiKey);
     voucherMerchantId = await insertMerchant(dataSource, 'other-key', 'Shop B');
     const tier = await dataSource.query(
-      `INSERT INTO tiers (name, min_points, earn_rate) VALUES ('Bronze', 0, 1.00)`,
+      `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Bronze', 0, 1.00)`,
     );
     const insertMember = (email: string) =>
       dataSource.query(

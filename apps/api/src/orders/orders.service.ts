@@ -13,6 +13,7 @@ import {
 } from '../earning/earning.strategy';
 import { addMonths } from '../common/add-months';
 import { isDuplicateEntry } from '../common/is-duplicate-entry';
+import { evaluateTier } from '../tiers/evaluate-tier';
 import { Order } from './order.entity';
 import { MAX_POINTS_PER_ORDER } from './orders.config';
 
@@ -37,19 +38,22 @@ export class OrdersService {
     try {
       const order = await this.dataSource.transaction(async (tx) => {
         // Lock the member before the order insert, or parallel orders deadlock.
-        const [row]: { id: number; multiplier_percent: number }[] =
-          await tx.query(
-            `SELECT m.id, CAST(t.earn_rate * 100 AS UNSIGNED) AS multiplier_percent
-            FROM members m
-            JOIN tiers t ON m.tier_id = t.id
-            WHERE m.email = ?
-            FOR UPDATE OF m`,
-            [memberEmail],
-          );
-        if (!row) {
+        // Lock alone, read the tier after: the 12-month spend must see earlier orders.
+        const [member]: { id: number; tier_id: number }[] = await tx.query(
+          `SELECT id, tier_id FROM members WHERE email = ? FOR UPDATE`,
+          [memberEmail],
+        );
+        if (!member) {
           throw new NotFoundException(`Member ${memberEmail} not found`);
         }
-        memberId = Number(row.id);
+        memberId = Number(member.id);
+        // tier_id is a FK, so the row exists.
+        const [{ multiplier_percent }]: [{ multiplier_percent: number }] =
+          await tx.query(
+            `SELECT CAST(earn_rate * 100 AS UNSIGNED) AS multiplier_percent
+            FROM tiers WHERE id = ?`,
+            [member.tier_id],
+          );
 
         // Insert the order, don't look it up by key first: parallel retries would both see "not found".
         const order = await tx.save(Order, {
@@ -61,11 +65,11 @@ export class OrdersService {
 
         const calculatedPoints = this.earning.calculate({
           amountVnd: amount,
-          tierMultiplierPercent: Number(row.multiplier_percent),
+          tierMultiplierPercent: Number(multiplier_percent),
         });
         const points = Math.min(calculatedPoints, this.maxPointsPerOrder);
+        const now = new Date();
         if (points > 0) {
-          const now = new Date();
           const expiresAt = addMonths(now, 12);
           await this.ledger.earn(tx, {
             merchantId: String(merchantId),
@@ -77,6 +81,8 @@ export class OrdersService {
             expiresAt,
           });
         }
+        // After earning: this order earns at the tier the member had when it was placed.
+        await evaluateTier(tx, memberId, now);
         return order;
       });
       return { order, created: true };
