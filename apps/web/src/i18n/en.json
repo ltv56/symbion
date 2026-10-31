@@ -4,7 +4,8 @@
     "loadError": "Could not load your account.",
     "retry": "Try again",
     "tier": "Tier",
-    "balance": "Points"
+    "greeting": "Hi, <b>{{name}}</b>",
+    "headline": "You have <n/> points"
   },
   "header": {
     "signOut": "Sign out",

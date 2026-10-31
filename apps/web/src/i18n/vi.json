@@ -4,7 +4,8 @@
     "loadError": "Không tải được thông tin tài khoản.",
     "retry": "Thử lại",
     "tier": "Hạng",
-    "balance": "Điểm"
+    "greeting": "Xin chào, <b>{{name}}</b>",
+    "headline": "Bạn đang có <n/> điểm"
   },
   "header": {
     "signOut": "Đăng xuất",
