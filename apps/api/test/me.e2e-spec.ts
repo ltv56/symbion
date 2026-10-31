@@ -309,6 +309,7 @@ describe('Me', () => {
         status: 'issued',
         points: 500,
         voucherTitle: 'Coffee',
+        merchantId: otherMerchantId,
         merchantName: 'Shop B',
         usedAt: null,
         expiresAt: expect.any(String),
