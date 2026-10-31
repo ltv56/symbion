@@ -1,11 +1,12 @@
 import {
+  AfterLoad,
   Column,
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export type RedemptionStatus = 'issued';
+export type RedemptionStatus = 'issued' | 'used' | 'expired';
 
 @Entity('redemptions')
 export class Redemption {
@@ -36,6 +37,20 @@ export class Redemption {
   @Column({ name: 'client_key', type: 'varchar' })
   clientKey!: string;
 
+  @Column({ name: 'used_at', type: 'timestamp', nullable: true })
+  usedAt!: Date | null;
+
+  @Column({ name: 'expires_at', type: 'timestamp' })
+  expiresAt!: Date;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
+
+  // 'expired' is never stored
+  @AfterLoad()
+  deriveExpired(): void {
+    if (this.status === 'issued' && this.expiresAt <= new Date()) {
+      this.status = 'expired';
+    }
+  }
 }

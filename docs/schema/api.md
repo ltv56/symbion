@@ -30,7 +30,7 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 
 ## Authentication
 
-- `/members*`, `POST /orders`, `POST /orders/:orderId/refunds` and `POST /redemptions` require the `x-api-key` header of a merchant.
+- `/members*`, `POST /orders`, `POST /orders/:orderId/refunds`, `POST /redemptions` and `POST /redemptions/:code/confirm` require the `x-api-key` header of a merchant.
 - `GET /members*` returns only the calling merchant's members; a member of another merchant is `404`.
 - `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
 - `GET /tiers*` and `GET /vouchers*` are public.
@@ -158,6 +158,12 @@ A member redeems a voucher for points. Any merchant's API key may call; the rede
 | `memberEmail`     | body, email of an existing member                             |
 | `voucherId`       | body, integer from 1; an `active` voucher before `validUntil` |
 
-A redemption is `{ "id", "merchantId", "memberId", "voucherId", "code", "points", "pointValueVnd", "status", "clientKey", "createdAt" }`; `code` is 10 characters of Crockford base32, `status` is `issued`.
+A redemption is `{ "id", "merchantId", "memberId", "voucherId", "code", "points", "pointValueVnd", "status", "clientKey", "usedAt", "expiresAt", "createdAt" }`; `code` is 10 characters of Crockford base32, `status` is `issued`, `used` or `expired` (`issued` past `expiresAt`), `usedAt` is `null` until used, `expiresAt` is the earlier of 30 days after redemption and the voucher's `validUntil`.
 
 Responses: `201` with the redemption, `200` with the original redemption when this member already used the `Idempotency-Key` for the same voucher, `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member, or voucher unknown, `expired` or past `validUntil`, `409` not enough points (a negative balance included) or no stock left, `422` the `Idempotency-Key` was already used for another voucher.
+
+## POST /redemptions/:code/confirm
+
+The voucher's merchant marks a code used at the counter. No body. The code is matched case-insensitively.
+
+Responses: `200` with the redemption (`status` `used`, `usedAt` set); `200` with the same redemption and unchanged `usedAt` when it was already used, `401` missing or unknown API key, `404` unknown code or a code of another merchant's voucher, `409` the code is expired.
