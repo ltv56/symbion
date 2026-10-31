@@ -24,6 +24,7 @@ import {
   HistoryEntry,
   MemberRedemption,
   MeService,
+  Partner,
   Profile,
   UnspentLot,
 } from './me.service';
@@ -65,6 +66,12 @@ export class MeController {
     @CurrentMemberId() memberId: number,
   ): Promise<MemberRedemption[]> {
     return this.me.redemptions(memberId);
+  }
+
+  @Get('partners')
+  @ApiOkResponse({ description: 'Every merchant of the programme, by name' })
+  partners(): Promise<Partner[]> {
+    return this.me.partners();
   }
 
   @Post('redemptions')

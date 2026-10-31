@@ -357,6 +357,20 @@ describe('Me', () => {
     });
   });
 
+  describe('GET /me/partners', () => {
+    it('lists every merchant by name with only id and name', async () => {
+      const aroma = await insertMerchant(dataSource, 'key-c', 'Aroma');
+
+      const res = await get('/me/partners').expect(200);
+
+      expect(res.body).toEqual([
+        { id: aroma, name: 'Aroma' },
+        { id: merchantId, name: 'Shop A' },
+        { id: otherMerchantId, name: 'Shop B' },
+      ]);
+    });
+  });
+
   describe('POST /me/redemptions', () => {
     const insertVoucher = async (): Promise<number> => {
       const res = await dataSource.query(
@@ -440,27 +454,30 @@ describe('Me', () => {
     });
   });
 
-  describe.each(['/me', '/me/history', '/me/lots', '/me/redemptions'])(
-    '%s auth',
-    (path) => {
-      it('returns 401 without a token', async () => {
-        await get(path, null).expect(401);
-      });
+  describe.each([
+    '/me',
+    '/me/history',
+    '/me/lots',
+    '/me/redemptions',
+    '/me/partners',
+  ])('%s auth', (path) => {
+    it('returns 401 without a token', async () => {
+      await get(path, null).expect(401);
+    });
 
-      it('returns 401 for an admin token', async () => {
-        await get(path, `Bearer ${await adminToken(app)}`).expect(401);
-      });
+    it('returns 401 for an admin token', async () => {
+      await get(path, `Bearer ${await adminToken(app)}`).expect(401);
+    });
 
-      it('returns 401 for a malformed token', async () => {
-        await get(path, 'Bearer not-a-jwt').expect(401);
-      });
+    it('returns 401 for a malformed token', async () => {
+      await get(path, 'Bearer not-a-jwt').expect(401);
+    });
 
-      it('returns 401 for a merchant api key', async () => {
-        await request(app.getHttpServer())
-          .get(path)
-          .set('x-api-key', 'key-a')
-          .expect(401);
-      });
-    },
-  );
+    it('returns 401 for a merchant api key', async () => {
+      await request(app.getHttpServer())
+        .get(path)
+        .set('x-api-key', 'key-a')
+        .expect(401);
+    });
+  });
 });
