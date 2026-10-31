@@ -33,6 +33,9 @@
     "lots_other": "{{count}} khoản điểm",
     "showAll": "Xem tất cả {{n}} khoản điểm",
     "showLess": "Thu gọn",
+    "back": "Quay lại",
+    "prev": "Trước",
+    "next": "Sau",
     "monthLots_other": "{{month}}, {{count}} khoản điểm"
   },
   "header": {

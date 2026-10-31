@@ -31,6 +31,15 @@ export function sameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
+// Whole months from the current one
+export function monthsAhead(year: number, month: number, now: Date): number {
+  return (year - now.getFullYear()) * 12 + (month - now.getMonth());
+}
+
+export function inHorizon(ahead: number): boolean {
+  return ahead >= 0 && ahead <= 12;
+}
+
 // "T10" in Vietnamese, "Oct" in English
 export function monthLabel(date: Date, lang: string): string {
   return lang === 'vi'

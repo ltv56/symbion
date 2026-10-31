@@ -36,6 +36,9 @@
     "lots_other": "{{count}} batches",
     "showAll": "Show all {{n}} batches",
     "showLess": "Show fewer",
+    "back": "Back",
+    "prev": "Previous",
+    "next": "Next",
     "monthLots_one": "{{month}}, {{count}} batch",
     "monthLots_other": "{{month}}, {{count}} batches"
   },

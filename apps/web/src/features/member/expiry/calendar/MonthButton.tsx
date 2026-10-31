@@ -9,24 +9,28 @@ export function MonthButton({
   date,
   now,
   base,
+  enabled,
   className,
 }: {
   date: Date;
   now: Date;
   base: Base;
+  enabled: boolean;
   className?: string;
 }) {
   const { t, i18n } = useTranslation();
   const label = monthLabel(date, i18n.language);
-  const here = base.lots
-    .flatMap((lot) => {
-      if (!lot.expiresAt) return [];
-      const expires = new Date(lot.expiresAt);
-      return sameMonth(expires, date)
-        ? [{ id: lot.id, day: expires.getDate() }]
-        : [];
-    })
-    .sort((a, b) => a.day - b.day);
+  const here = enabled
+    ? base.lots
+        .flatMap((lot) => {
+          if (!lot.expiresAt) return [];
+          const expires = new Date(lot.expiresAt);
+          return sameMonth(expires, date)
+            ? [{ id: lot.id, day: expires.getDate() }]
+            : [];
+        })
+        .sort((a, b) => a.day - b.day)
+    : [];
   // Wide: two hourglasses, then a count. Narrow: one and the count
   const shown = here.slice(0, 2);
   const many = here.length > 2;
@@ -41,6 +45,7 @@ export function MonthButton({
       className={cn(
         // the box hugs its content
         '@container flex flex-col items-center self-start rounded-lg px-1 py-2 text-sm',
+        !enabled && 'opacity-35',
         className,
       )}
     >
