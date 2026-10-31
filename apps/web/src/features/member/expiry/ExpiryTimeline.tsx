@@ -1,12 +1,13 @@
-import { cn } from 'cn';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanelQuery } from '@/components/PanelQuery';
 import { ShowMore } from '@/components/ShowMore';
 import { RubberStamp } from '@/components/RubberStamp';
 import { formatPoints } from '@/lib/format';
+import { ExpiryCalendar } from './calendar/ExpiryCalendar';
 import { byExpiry, EXPIRING_SOON_DAYS, isSoon } from './expiry';
-import { LotRow } from './LotRow';
+import { LotList } from './LotList';
+import { useActiveLot } from './useActiveLot';
 import { useLots } from './useLots';
 import type { Lot } from './useLots';
 
@@ -50,30 +51,11 @@ function AtRisk({ points }: { points: number }) {
   );
 }
 
-function RowList({
-  lots,
-  loadedAt,
-  className,
-}: {
-  lots: Lot[];
-  loadedAt: number;
-  className?: string;
-}) {
-  return (
-    <ul className={cn('divide-y divide-border', className)}>
-      {lots.map((lot) => (
-        <li key={lot.id}>
-          <LotRow lot={lot} loadedAt={loadedAt} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-// Points at risk and the stamp, then the rows. `loadedAt` is "today"
+// Points at risk and the stamp, the calendar, then the rows. `loadedAt` is "today"
 function Groups({ lots, loadedAt }: { lots: Lot[]; loadedAt: number }) {
   const { t } = useTranslation();
   const rows = useRows(lots, loadedAt);
+  const link = useActiveLot();
   const atRisk = rows.soon.reduce((sum, lot) => sum + lot.remaining, 0);
 
   return (
@@ -91,8 +73,16 @@ function Groups({ lots, loadedAt }: { lots: Lot[]; loadedAt: number }) {
           </RubberStamp>
         </div>
       )}
-      <RowList lots={rows.soon} loadedAt={loadedAt} className="mt-2" />
-      <RowList lots={rows.later} loadedAt={loadedAt} />
+      <div className={rows.soon.length > 0 ? 'mt-2' : 'mt-3'}>
+        <ExpiryCalendar lots={lots} loadedAt={loadedAt} {...link.calendar} />
+      </div>
+      <LotList
+        lots={rows.soon}
+        loadedAt={loadedAt}
+        link={link}
+        className="mt-2"
+      />
+      <LotList lots={rows.later} loadedAt={loadedAt} link={link} />
       {rows.foldable && (
         <ShowMore
           expanded={rows.expanded}

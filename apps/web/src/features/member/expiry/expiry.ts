@@ -26,3 +26,14 @@ export function byExpiry(a: Lot, b: Lot): number {
   if (b.expiresAt === null) return -1;
   return new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime();
 }
+
+export function sameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+// "T10" in Vietnamese, "Oct" in English
+export function monthLabel(date: Date, lang: string): string {
+  return lang === 'vi'
+    ? `T${date.getMonth() + 1}`
+    : new Intl.DateTimeFormat(lang, { month: 'short' }).format(date);
+}

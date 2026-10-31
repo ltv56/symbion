@@ -24,6 +24,7 @@
   "timeline": {
     "title": "Points by expiry",
     "empty": "No unexpired points right now. New points appear here after an order.",
+    "today": "Today",
     "noExpiry": "Does not expire",
     "soon": "Expiring soon",
     "left_one": "{{count}} day left",
@@ -34,7 +35,9 @@
     "lots_one": "{{count}} batch",
     "lots_other": "{{count}} batches",
     "showAll": "Show all {{n}} batches",
-    "showLess": "Show fewer"
+    "showLess": "Show fewer",
+    "monthLots_one": "{{month}}, {{count}} batch",
+    "monthLots_other": "{{month}}, {{count}} batches"
   },
   "header": {
     "signOut": "Sign out",
