@@ -4,14 +4,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Merchant } from '../merchants/merchant.entity';
 import { MerchantsService } from '../merchants/merchants.service';
 import { ProgramSettings } from '../settings/program-settings.entity';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { Voucher } from './voucher.entity';
 
+export type VoucherView = Voucher & { merchantName: string };
+
 export interface VoucherPage {
-  items: Voucher[];
+  items: VoucherView[];
   nextCursor: number | null;
 }
 
@@ -48,14 +51,13 @@ export class VouchersService {
 
   // Keyset pagination; one extra row tells whether another page exists
   async list(limit: number, after?: number): Promise<VoucherPage> {
-    const rows = await this.vouchers.find({
-      where: {
-        ...this.redeemable(),
-        ...(after ? { id: LessThan(after) } : {}),
-      },
-      order: { id: 'DESC' },
-      take: limit + 1,
-    });
+    const query = this.redeemable()
+      .orderBy('v.id', 'DESC')
+      .limit(limit + 1);
+    if (after) {
+      query.andWhere('v.id < :after', { after });
+    }
+    const rows = await this.withMerchantName(query);
 
     const items = rows.slice(0, limit);
     const last = items[items.length - 1];
@@ -65,11 +67,33 @@ export class VouchersService {
     };
   }
 
-  findActive(id: number): Promise<Voucher | null> {
-    return this.vouchers.findOneBy({ id, ...this.redeemable() });
+  async findActive(id: number): Promise<VoucherView | null> {
+    const [voucher] = await this.withMerchantName(
+      this.redeemable().andWhere('v.id = :id', { id }),
+    );
+    return voucher ?? null;
   }
 
-  private redeemable(): FindOptionsWhere<Voucher> {
-    return { status: 'active', validUntil: MoreThan(new Date()) };
+  private redeemable(): SelectQueryBuilder<Voucher> {
+    return this.vouchers
+      .createQueryBuilder('v')
+      .innerJoin(Merchant, 'm', 'm.id = v.merchantId')
+      .addSelect('m.name', 'merchantName')
+      .where('v.status = :status AND v.validUntil > :now', {
+        status: 'active',
+        now: new Date(),
+      });
+  }
+
+  // The join is one-to-one, so entities and raw rows line up by index
+  private async withMerchantName(
+    query: SelectQueryBuilder<Voucher>,
+  ): Promise<VoucherView[]> {
+    const { entities, raw } = await query.getRawAndEntities<{
+      merchantName: string;
+    }>();
+    return entities.map((voucher, i) =>
+      Object.assign(voucher, { merchantName: raw[i]!.merchantName }),
+    );
   }
 }

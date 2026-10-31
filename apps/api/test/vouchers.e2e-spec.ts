@@ -189,6 +189,7 @@ describe('Vouchers', () => {
       expect(res.body.items[0]).toEqual({
         id: d,
         merchantId,
+        merchantName: 'Shop A',
         title: 'D',
         faceValue: 50000,
         pointsPrice: 500,
@@ -197,6 +198,29 @@ describe('Vouchers', () => {
         status: 'active',
         createdAt: expect.any(String),
       });
+    });
+
+    it('names the merchant of each voucher', async () => {
+      const other = await insertMerchant(dataSource, 'other-key', 'Shop B');
+      const a = await insertVoucher('A');
+      const res = await dataSource.query(
+        `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until)
+         VALUES (?, 'B', 50000, 500, 10, ?)`,
+        [other, new Date(validUntil)],
+      );
+      const b = Number(res.insertId);
+
+      const page = await list().expect(200);
+
+      expect(
+        page.body.items.map((v: { id: number; merchantName: string }) => [
+          v.id,
+          v.merchantName,
+        ]),
+      ).toEqual([
+        [b, 'Shop B'],
+        [a, 'Shop A'],
+      ]);
     });
 
     it('pages with limit and after until nextCursor is null', async () => {
@@ -258,7 +282,12 @@ describe('Vouchers', () => {
     it('gets an active voucher', async () => {
       const id = await insertVoucher('A');
       const res = await get(id).expect(200);
-      expect(res.body).toMatchObject({ id, merchantId, title: 'A' });
+      expect(res.body).toMatchObject({
+        id,
+        merchantId,
+        merchantName: 'Shop A',
+        title: 'A',
+      });
     });
 
     it.each([

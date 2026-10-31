@@ -176,7 +176,7 @@ Responses: `201` with the voucher, `400` validation (unknown fields included) or
 
 ## GET /vouchers, GET /vouchers/:id
 
-Public. Only vouchers with `status` `active` and `validUntil` in the future.
+Public. Only vouchers with `status` `active` and `validUntil` in the future. Each voucher also carries `merchantName`, the name of its merchant.
 
 `GET /vouchers` lists by `id` descending (keyset pagination). Query:
 
