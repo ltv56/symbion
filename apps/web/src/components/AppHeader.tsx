@@ -22,7 +22,7 @@ export function AppHeader({
   const language = useLanguageToggle();
 
   return (
-    <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 md:px-6">
+    <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
       <BrandLockup />
       <div className="flex items-center gap-1">
         <Button
