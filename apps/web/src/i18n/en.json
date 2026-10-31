@@ -21,6 +21,17 @@
     "silver": "Silver",
     "gold": "Gold"
   },
+  "timeline": {
+    "title": "Points by expiry",
+    "empty": "No unexpired points right now. New points appear here after an order.",
+    "noExpiry": "Does not expire",
+    "left_one": "{{count}} day left",
+    "left_other": "{{count}} days left",
+    "unit_one": "point",
+    "unit_other": "points",
+    "showAll": "Show all {{n}} batches",
+    "showLess": "Show fewer"
+  },
   "header": {
     "signOut": "Sign out",
     "language": "Switch language",

@@ -36,6 +36,12 @@
   --color-brand: var(--brand);
   --color-progress-fill: var(--progress-fill);
   --color-progress-track: var(--progress-track);
+  --color-avatar-1: var(--avatar-1);
+  --color-avatar-1-ink: var(--avatar-1-ink);
+  --color-avatar-2: var(--avatar-2);
+  --color-avatar-2-ink: var(--avatar-2-ink);
+  --color-avatar-3: var(--avatar-3);
+  --color-avatar-3-ink: var(--avatar-3-ink);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -68,6 +74,13 @@
   --brand: #861616;
   --progress-fill: #861616;
   --progress-track: #e6d4b4;
+  /* Merchant avatar tints */
+  --avatar-1: #f7e0a0;
+  --avatar-1-ink: #4a3200;
+  --avatar-2: #cfe8d8;
+  --avatar-2-ink: #12402a;
+  --avatar-3: #d5dfeb;
+  --avatar-3-ink: #1d3550;
   --radius: 0.875rem;
   scrollbar-color: #861616 #f3e6cb;
 }
