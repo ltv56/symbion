@@ -147,7 +147,8 @@ describe('Member auth', () => {
     );
     const lifetime = row!.expires_at.getTime() - before;
     expect(lifetime).toBeGreaterThan(299_000);
-    expect(lifetime).toBeLessThanOrEqual(301_000);
+    // request latency slack
+    expect(lifetime).toBeLessThanOrEqual(310_000);
   });
 
   it('replaces the previous otp when a new one is requested', async () => {

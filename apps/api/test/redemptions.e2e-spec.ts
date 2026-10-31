@@ -140,6 +140,7 @@ describe('Redemptions', () => {
       points: pointsPrice,
       pointValueVnd: 100,
       status: 'issued',
+      usedAt: null,
     });
     expect(res.body.code).toMatch(/^[0-9A-HJKMNP-TV-Z]{10}$/);
     await expect(balanceOf(memberId)).resolves.toBe(300);

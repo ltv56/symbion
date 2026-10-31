@@ -44,3 +44,17 @@ jobs:
       - run: pnpm db:migrate
       - run: pnpm test
       - run: pnpm build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -f apps/api/Dockerfile -t symbion-api .
+      - run: docker build -f infra/nginx/Dockerfile -t symbion-nginx .
+      - name: Check the nginx config
+        run: |
+          mkdir -p certs/live/example.com
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 -subj /CN=example.com \
+            -keyout certs/live/example.com/privkey.pem -out certs/live/example.com/fullchain.pem
+          docker run --rm -e DOMAIN=example.com -v "$PWD/certs:/etc/letsencrypt:ro" \
+            --add-host api:127.0.0.1 symbion-nginx nginx -t

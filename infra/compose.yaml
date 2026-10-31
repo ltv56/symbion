@@ -9,7 +9,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     ports:
-      - '${DB_PORT:-3306}:3306'
+      - '127.0.0.1:${DB_PORT:-3306}:3306'
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -46,7 +46,7 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
       DEMO_MODE: ${DEMO_MODE:-false}
     ports:
-      - '${API_PORT:-3000}:3000'
+      - '127.0.0.1:${API_PORT:-3000}:3000'
     healthcheck:
       # busybox wget ships with the alpine image; 127.0.0.1 because the api listens on IPv4 only
       test:
@@ -57,6 +57,23 @@ services:
       start_period: 15s
     depends_on:
       mysql:
+        condition: service_healthy
+
+  nginx:
+    profiles: ['prod']
+    build:
+      context: ..
+      dockerfile: infra/nginx/Dockerfile
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      api:
         condition: service_healthy
 
 volumes:
