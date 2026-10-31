@@ -1,6 +1,7 @@
 import NumberFlow from '@number-flow/react';
 import { Trans, useTranslation } from 'react-i18next';
 import { formatPoints } from '@/lib/format';
+import { NegativeNote } from './NegativeNote';
 
 // A longer number steps down a size
 function sizeFor(characters: number): string {
@@ -15,24 +16,27 @@ export function BalanceHeadline({ balance }: { balance: number }) {
   const { t, i18n } = useTranslation();
   const shown = formatPoints(balance, i18n.language);
 
-  // the label carries the whole sentence
   return (
-    <h1
-      aria-label={t('member.headline').replace('<n/>', shown)}
-      className="text-2xl leading-tight font-medium text-balance md:text-3xl"
-    >
-      <Trans
-        i18nKey="member.headline"
-        components={{
-          n: (
-            <NumberFlow
-              value={balance}
-              locales={i18n.language}
-              className={`${sizeFor(shown.length)} leading-none font-bold tracking-[-0.02em]`}
-            />
-          ),
-        }}
-      />
-    </h1>
+    <>
+      {/* the label carries the whole sentence */}
+      <h1
+        aria-label={t('member.headline').replace('<n/>', shown)}
+        className="text-2xl leading-tight font-medium text-balance md:text-3xl"
+      >
+        <Trans
+          i18nKey="member.headline"
+          components={{
+            n: (
+              <NumberFlow
+                value={balance}
+                locales={i18n.language}
+                className={`${sizeFor(shown.length)} leading-none font-bold tracking-[-0.02em]`}
+              />
+            ),
+          }}
+        />
+      </h1>
+      {balance < 0 && <NegativeNote />}
+    </>
   );
 }

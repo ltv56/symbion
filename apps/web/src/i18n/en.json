@@ -5,7 +5,10 @@
     "retry": "Try again",
     "tier": "Tier",
     "greeting": "Hi, <b>{{name}}</b>",
-    "headline": "You have <n/> points"
+    "headline": "You have <n/> points",
+    "negativeNote": "A refund took back points you had already spent.",
+    "negativeHintLabel": "More info",
+    "negativeHint": "New points cover the shortfall first, then you can redeem again."
   },
   "header": {
     "signOut": "Sign out",
