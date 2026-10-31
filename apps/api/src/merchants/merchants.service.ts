@@ -40,14 +40,13 @@ export class MerchantsService {
 
   // The old key stops working at once.
   async rotateApiKey(id: number): Promise<CreatedMerchant | null> {
-    const apiKey = newApiKey();
-    const { affected } = await this.merchants.update(id, {
-      apiKeyHash: hashApiKey(apiKey),
-    });
-    if (!affected) {
+    // Read first: a failure after the hash update would revoke the old key without returning the new one.
+    const merchant = await this.merchants.findOneBy({ id });
+    if (!merchant) {
       return null;
     }
-    const merchant = await this.merchants.findOneByOrFail({ id });
+    const apiKey = newApiKey();
+    await this.merchants.update(id, { apiKeyHash: hashApiKey(apiKey) });
     return { id: merchant.id, name: merchant.name, apiKey };
   }
 }
