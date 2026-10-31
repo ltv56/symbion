@@ -4,8 +4,10 @@ import { PanelQuery } from '@/components/PanelQuery';
 import { ShowMore } from '@/components/ShowMore';
 import { RubberStamp } from '@/components/RubberStamp';
 import { formatPoints } from '@/lib/format';
+import { cutDepth } from './divider/dividerShape';
 import { ExpiryCalendar } from './calendar/ExpiryCalendar';
-import { byExpiry, EXPIRING_SOON_DAYS, isSoon } from './expiry';
+import { ExpiryDivider } from './divider/ExpiryDivider';
+import { byExpiry, daysOf, EXPIRING_SOON_DAYS, isSoon } from './expiry';
 import { LotList } from './LotList';
 import { useActiveLot } from './useActiveLot';
 import { useLots } from './useLots';
@@ -56,6 +58,7 @@ function Groups({ lots, loadedAt }: { lots: Lot[]; loadedAt: number }) {
   const { t } = useTranslation();
   const rows = useRows(lots, loadedAt);
   const link = useActiveLot();
+  const nearest = rows.soon[0] ? daysOf(rows.soon[0], loadedAt) : null;
   const atRisk = rows.soon.reduce((sum, lot) => sum + lot.remaining, 0);
 
   return (
@@ -82,6 +85,9 @@ function Groups({ lots, loadedAt }: { lots: Lot[]; loadedAt: number }) {
         link={link}
         className="mt-2"
       />
+      {nearest !== null && rows.later.length > 0 && (
+        <ExpiryDivider depth={cutDepth(nearest)} />
+      )}
       <LotList lots={rows.later} loadedAt={loadedAt} link={link} />
       {rows.foldable && (
         <ShowMore
