@@ -48,6 +48,14 @@ const STEEL: Metal = {
 export const metalFor = (name: string): Metal =>
   METALS[name.toLowerCase()] ?? STEEL;
 
+export type Rim = 'plain' | 'milled' | 'scalloped';
+
+// Silver gets a milled edge, gold a scalloped one; any other tier stays plain
+const RIMS: Record<string, Rim> = { silver: 'milled', gold: 'scalloped' };
+
+export const rimFor = (name: string): Rim =>
+  RIMS[name.toLowerCase()] ?? 'plain';
+
 const channels = (hex: string) =>
   [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 

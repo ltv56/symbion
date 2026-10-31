@@ -78,8 +78,15 @@ export function SealDefs({ id, metal }: { id: string; metal: Metal }) {
 }
 
 // A face of wedges between the metal's floor and its glint
-export function Sunburst({ id, metal }: { id: string; metal: Metal }) {
-  const radius = 35.5;
+export function Sunburst({
+  id,
+  metal,
+  radius = 35.5,
+}: {
+  id: string;
+  metal: Metal;
+  radius?: number;
+}) {
   const floor = mix(metal.mid, metal.light, 0.5);
   const reach = radius + 1;
   return (
