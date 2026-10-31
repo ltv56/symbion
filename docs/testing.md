@@ -62,6 +62,39 @@ curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Aut
 curl -s localhost:3000/tiers/999999
 ```
 
+## Vouchers (MySQL)
+
+Point value: `SELECT point_value_vnd FROM program_settings` (default 100).
+
+```sh
+# create (admin) -> 201, faceValue at the floor (500 x 100)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":1,"title":"50k off","faceValue":50000,"pointsPrice":500,"stock":100,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# error path -> 400 (faceValue below the floor)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":1,"title":"10k off","faceValue":10000,"pointsPrice":500,"stock":100,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# error path -> 404 (unknown merchant)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":999999,"title":"X","faceValue":50000,"pointsPrice":500,"stock":1,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# list (public), newest id first -> {"items":[...],"nextCursor":<id|null>}
+curl -s 'localhost:3000/vouchers?limit=2'
+
+# next page: pass nextCursor as after
+curl -s 'localhost:3000/vouchers?limit=2&after=<nextCursor>'
+
+# get one -> 200
+curl -s localhost:3000/vouchers/1
+
+# error path -> 400 (limit out of range)
+curl -s 'localhost:3000/vouchers?limit=101'
+
+# error path -> 404 (unknown, expired or past validUntil)
+curl -s localhost:3000/vouchers/999999
+```
+
 ## Members (MySQL)
 
 Requires applied migrations (see Migrations), one merchant and one tier. Start the API with `pnpm start` (`PORT`, default 3000). New members get the tier with the smallest `min_points`.
@@ -121,6 +154,24 @@ curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-
   -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5000}'
 ```
 
+## Redemptions (MySQL)
+
+Requires `$KEY`, member `an@x.com` with at least 500 points (e.g. two orders of 2,500,000) and an active voucher `$VID` with `pointsPrice` 500 (see Vouchers).
+
+```sh
+# redeem -> 201 {"code":"<10 chars>","points":500,"status":"issued",...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-1' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+
+# same key again -> 200 with the same id and code, no second spend
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-1' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+
+# error path -> 409 (not enough points, after spending them with new keys)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-2' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+```
+
 ## Health and logs
 
 ```sh
@@ -131,7 +182,7 @@ curl -s -i localhost:3000/health
 cd apps/api && NODE_ENV=production PORT=3000 node dist/main
 ```
 
-E2E tests (`pnpm check`) delete all rows in `ledger_lots`, `orders`, `members`, `tiers` and `merchants`. Use a throwaway database only.
+E2E tests (`pnpm check`) delete all rows in `vouchers`, `ledger_lots`, `orders`, `members`, `tiers` and `merchants`. Use a throwaway database only.
 
 Ledger MySQL tests require applied migrations (`pnpm db:migrate`). Run only these: `pnpm --filter @symbion/api test ledger-mysql`.
 

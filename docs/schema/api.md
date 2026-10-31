@@ -30,9 +30,10 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 
 ## Authentication
 
-- `/members*` and `POST /orders` require the `x-api-key` header of a merchant.
+- `/members*`, `POST /orders` and `POST /redemptions` require the `x-api-key` header of a merchant.
 - `GET /members*` returns only the calling merchant's members; a member of another merchant is `404`.
-- `/merchants*` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
+- `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
+- `GET /tiers*` and `GET /vouchers*` are public.
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
 
 ## POST /auth/login
@@ -96,3 +97,52 @@ A merchant reports an order for a member. `merchant_id` comes from the API key, 
 A new order awards points to the member in the same transaction (see `docs/rules.md`). The response body is the order; points are not included.
 
 Responses: `201` with the created order (`amount` is a number), `200` with the original order when the same `Idempotency-Key` was already used by this merchant with the same `memberEmail` and `amount` (no second order, no extra points), `400` invalid input (amount not an integer or outside 1 to 9999999999) or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member, `422` the `Idempotency-Key` was already used for another member or `amount` (`"message": "Idempotency-Key was already used with a different request"`). `memberEmail` is compared after it resolves to a member, so emails that match the same member are equal; an unknown member returns `404` before the key is checked.
+
+## POST /vouchers
+
+Admin only. Creates a voucher on behalf of a merchant. Body:
+
+| Field         | Rule                                            |
+| ------------- | ----------------------------------------------- |
+| `merchantId`  | integer, an existing merchant                   |
+| `title`       | string, trimmed, 1-255 characters               |
+| `faceValue`   | integer VND from 1 to 9007199254740991          |
+| `pointsPrice` | integer from 1 to 9007199254740991              |
+| `stock`       | integer from 0 to 4294967295                    |
+| `validUntil`  | ISO 8601 date-time in the future, whole seconds |
+
+`faceValue` must be at least `pointsPrice × point value` (`program_settings.point_value_vnd`).
+
+A voucher is `{ "id", "merchantId", "title", "faceValue", "pointsPrice", "stock", "validUntil", "status", "createdAt" }`; `status` is `active`.
+
+Responses: `201` with the voucher, `400` validation (unknown fields included) or `faceValue` below the floor (`"message": "faceValue 49999 is below the floor 50000 (500 points x 100 VND)"`), `401` no or invalid admin token, `404` unknown merchant.
+
+## GET /vouchers, GET /vouchers/:id
+
+Public. Only vouchers with `status` `active` and `validUntil` in the future.
+
+`GET /vouchers` lists by `id` descending (keyset pagination). Query:
+
+| Field   | Rule                                                  |
+| ------- | ----------------------------------------------------- |
+| `limit` | integer from 1 to 100, default 20                     |
+| `after` | integer from 1; the `nextCursor` of the previous page |
+
+Response: `200` with `{ "items": [<voucher>], "nextCursor": <id | null> }`; `nextCursor` is `null` on the last page. `400` for an invalid or unknown query field.
+
+`GET /vouchers/:id`: `200` with the voucher, `404` (`"message": "Voucher with id 1 not found"`) when unknown, `expired` or past `validUntil`, `400` when the id is not an integer.
+
+## POST /redemptions
+
+A member redeems a voucher for points. Any merchant's API key may call; the redemption belongs to the voucher's merchant.
+
+| Input             | Notes                                                         |
+| ----------------- | ------------------------------------------------------------- |
+| `x-api-key`       | header, required                                              |
+| `Idempotency-Key` | header, required, 1-255 characters; unique per member         |
+| `memberEmail`     | body, email of an existing member                             |
+| `voucherId`       | body, integer from 1; an `active` voucher before `validUntil` |
+
+A redemption is `{ "id", "merchantId", "memberId", "voucherId", "code", "points", "pointValueVnd", "status", "clientKey", "createdAt" }`; `code` is 10 characters of Crockford base32, `status` is `issued`.
+
+Responses: `201` with the redemption, `200` with the original redemption when this member already used the `Idempotency-Key` for the same voucher, `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member, or voucher unknown, `expired` or past `validUntil`, `409` not enough points (a negative balance included) or no stock left, `422` the `Idempotency-Key` was already used for another voucher.

@@ -17,6 +17,7 @@ describe('Seed', () => {
   });
 
   beforeEach(async () => {
+    await dataSource.query('DELETE FROM redemptions');
     await dataSource.query('DELETE FROM orders');
     await dataSource.query('DELETE FROM ledger_lots');
     await dataSource.query('DELETE FROM members');

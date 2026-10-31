@@ -71,3 +71,45 @@ One row per lot (see `packages/ledger`). Rows are never deleted; only `remaining
 | `ref_id`          | BIGINT UNSIGNED, NULL       | id of the source row; NULL together with `ref_type` (`CHECK`)    |
 
 `UNIQUE (merchant_id, idempotency_key)` is the last line of defence for a repeated earn or spend. Index `(member_id, expires_at, id)` serves the FIFO read. Lots awarded for an order have `ref_type = 'order'`, `ref_id = orders.id`.
+
+## program_settings
+
+Programme-wide values. Exactly one row (`id = 1`), inserted by the migration.
+
+| Column            | Type                 | Notes                                                                      |
+| ----------------- | -------------------- | -------------------------------------------------------------------------- |
+| `id`              | TINYINT UNSIGNED, PK | `CHECK (id = 1)`                                                           |
+| `point_value_vnd` | INT UNSIGNED         | VND the app pays a merchant per redeemed point; `CHECK (> 0)`, default 100 |
+
+## vouchers
+
+| Column         | Type                | Notes                                                   |
+| -------------- | ------------------- | ------------------------------------------------------- |
+| `id`           | BIGINT UNSIGNED, PK | auto increment                                          |
+| `merchant_id`  | BIGINT UNSIGNED, FK | `merchants(id)`; the merchant where the voucher is used |
+| `title`        | VARCHAR(255)        |                                                         |
+| `face_value`   | BIGINT UNSIGNED     | VND discount; `CHECK (face_value > 0)`                  |
+| `points_price` | BIGINT UNSIGNED     | points a member pays; `CHECK (points_price > 0)`        |
+| `stock`        | INT UNSIGNED        | vouchers left                                           |
+| `valid_until`  | TIMESTAMP           | not redeemable after this time                          |
+| `status`       | VARCHAR(16)         | `active` (default) or `expired`; `CHECK`                |
+| `created_at`   | TIMESTAMP           | defaults to now                                         |
+
+`face_value >= points_price × point_value_vnd` is enforced by the API (a `CHECK` cannot read `program_settings`). Index `(status, id)` serves the list of active vouchers.
+
+## redemptions
+
+| Column            | Type                         | Notes                                                           |
+| ----------------- | ---------------------------- | --------------------------------------------------------------- |
+| `id`              | BIGINT UNSIGNED, PK          | auto increment                                                  |
+| `merchant_id`     | BIGINT UNSIGNED, FK          | `merchants(id)`; the voucher's merchant                         |
+| `member_id`       | BIGINT UNSIGNED, FK          | `members(id)`                                                   |
+| `voucher_id`      | BIGINT UNSIGNED, FK          | `vouchers(id)`                                                  |
+| `code`            | VARCHAR(16) ascii, ascii_bin | unique; 10 characters of Crockford base32, upper case           |
+| `points`          | BIGINT UNSIGNED              | `points_price` at redemption; `CHECK (> 0)`                     |
+| `point_value_vnd` | INT UNSIGNED                 | `program_settings.point_value_vnd` at redemption; `CHECK (> 0)` |
+| `status`          | VARCHAR(16)                  | `issued` (default); `CHECK`                                     |
+| `client_key`      | VARCHAR(255), utf8mb4_bin    | the request's `Idempotency-Key`                                 |
+| `created_at`      | TIMESTAMP                    | defaults to now                                                 |
+
+`UNIQUE (member_id, client_key)`. The ledger spend of a redemption has key `redemption:<id>` and the voucher's `merchant_id`.
