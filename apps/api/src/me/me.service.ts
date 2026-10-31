@@ -48,6 +48,11 @@ export type MemberRedemption = {
   createdAt: Date;
 };
 
+export type Partner = {
+  id: number;
+  name: string;
+};
+
 @Injectable()
 export class MeService {
   constructor(
@@ -206,5 +211,13 @@ export class MeService {
       expiresAt: row.expires_at,
       createdAt: row.created_at,
     }));
+  }
+
+  // Every merchant is a partner
+  async partners(): Promise<Partner[]> {
+    const rows: { id: number; name: string }[] = await this.dataSource.query(
+      `SELECT id, name FROM merchants ORDER BY name, id`,
+    );
+    return rows.map((row) => ({ id: Number(row.id), name: row.name }));
   }
 }
