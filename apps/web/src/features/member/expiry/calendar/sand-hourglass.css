@@ -1,0 +1,61 @@
+/* The sand drops, then the glass flips */
+@keyframes hg-flip {
+  0%,
+  88% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(180deg);
+  }
+}
+@keyframes hg-top {
+  0% {
+    transform: scaleY(1);
+  }
+  85%,
+  100% {
+    transform: scaleY(0.04);
+  }
+}
+@keyframes hg-bottom {
+  0% {
+    transform: scaleY(0.04);
+  }
+  85%,
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes hg-stream {
+  to {
+    stroke-dashoffset: -3.5;
+  }
+}
+.hg {
+  animation: hg-flip 3.2s ease-in-out infinite;
+}
+.hg-top {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: hg-top 3.2s linear infinite;
+}
+.hg-bottom {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: hg-bottom 3.2s linear infinite;
+}
+.hg-stream {
+  animation: hg-stream 0.45s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hg,
+  .hg-top,
+  .hg-bottom,
+  .hg-stream {
+    animation: none;
+  }
+  .hg-top,
+  .hg-bottom {
+    transform: scaleY(0.5);
+  }
+}

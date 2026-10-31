@@ -36,9 +36,12 @@
   --color-brand: var(--brand);
   --color-progress-fill: var(--progress-fill);
   --color-progress-track: var(--progress-track);
-  --color-tier-bronze: var(--tier-bronze);
-  --color-tier-silver: var(--tier-silver);
-  --color-tier-gold: var(--tier-gold);
+  --color-avatar-1: var(--avatar-1);
+  --color-avatar-1-ink: var(--avatar-1-ink);
+  --color-avatar-2: var(--avatar-2);
+  --color-avatar-2-ink: var(--avatar-2-ink);
+  --color-avatar-3: var(--avatar-3);
+  --color-avatar-3-ink: var(--avatar-3-ink);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -71,9 +74,13 @@
   --brand: #861616;
   --progress-fill: #861616;
   --progress-track: #e6d4b4;
-  --tier-bronze: #8f4f1b;
-  --tier-silver: #4e6272;
-  --tier-gold: #8a6200;
+  /* Merchant avatar tints */
+  --avatar-1: #f7e0a0;
+  --avatar-1-ink: #4a3200;
+  --avatar-2: #cfe8d8;
+  --avatar-2-ink: #12402a;
+  --avatar-3: #d5dfeb;
+  --avatar-3-ink: #1d3550;
   --radius: 0.875rem;
   scrollbar-color: #861616 #f3e6cb;
 }
@@ -104,9 +111,6 @@
   --brand: #f2c14e;
   --progress-fill: #f2c14e;
   --progress-track: #4a2420;
-  --tier-bronze: #d9955a;
-  --tier-silver: #a9b8c6;
-  --tier-gold: #e3b64a;
   scrollbar-color: #55302a #2a0f0e;
 }
 
@@ -155,6 +159,11 @@
     @apply bg-background text-foreground;
     caret-color: var(--foreground);
   }
+  /* Buttons get the hand cursor */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    @apply cursor-pointer;
+  }
   ::selection {
     background: #f2c14e;
     color: #2b1b16;
@@ -168,4 +177,25 @@
       transition-duration: 0.01ms !important;
     }
   }
+}
+
+/* A day blinks once */
+@keyframes day-flash {
+  0%,
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+  30% {
+    background-color: color-mix(
+      in srgb,
+      var(--card-foreground) 28%,
+      transparent
+    );
+    box-shadow: inset 0 0 0 1.5px
+      color-mix(in srgb, var(--card-foreground) 60%, transparent);
+  }
+}
+.day-flash {
+  animation: day-flash 1s ease-out;
 }
