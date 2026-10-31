@@ -29,7 +29,7 @@ export async function api<T>(
   });
 
   if (!res.ok) {
-    // A 401 without a token is a wrong login code; with one it is an expired session
+    // 401 without a token: wrong code; with one: expired session
     if (res.status === 401 && token) signOut();
     const error: { message?: string } | null = await res
       .json()

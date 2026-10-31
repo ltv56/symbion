@@ -24,12 +24,12 @@ export function setToken(next: string | null) {
     if (next) localStorage.setItem(KEY, next);
     else localStorage.removeItem(KEY);
   } catch {
-    // storage can be blocked: the token then lasts until the page reloads
+    // storage can be blocked
   }
   listeners.forEach((listener) => listener());
 }
 
-// Cache cleared too, or the next member to sign in would briefly see this member's data
+// Clear the cache too
 export function signOut() {
   setToken(null);
   queryClient.clear();

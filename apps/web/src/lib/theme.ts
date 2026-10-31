@@ -14,7 +14,7 @@ function initialDark(): boolean {
 }
 
 let dark = initialDark();
-// Runs on import, before the first render, so a dark visitor never sees a light frame
+// Runs on import, before the first render
 document.documentElement.classList.toggle('dark', dark);
 
 export function toggleDark() {

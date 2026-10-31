@@ -1,7 +1,7 @@
 import { CircleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-// Icon + words: an error is never colour alone
+// Icon and words
 export function FormError({
   id,
   children,

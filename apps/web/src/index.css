@@ -63,7 +63,7 @@
   --accent-foreground: #fff6e3;
   --destructive: #f2c14e;
   --border: #c0605a;
-  /* Field edge on a panel: blush at 60% is 3.4:1 on lacquer red (non-text contrast) */
+  /* Field edge on a panel */
   --input: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
   --field: color-mix(in srgb, var(--card-foreground) 10%, transparent);
   --ring: #f2c14e;
@@ -96,7 +96,7 @@
   --accent-foreground: #f6e9d2;
   --destructive: #f0786b;
   --border: #55302a;
-  /* dusty tan at 60% is 3.7:1 on the dark panel */
+  /* Field edge on the dark panel */
   --input: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
   --field: color-mix(in srgb, var(--card-foreground) 10%, transparent);
   --ring: #f0786b;
@@ -110,7 +110,7 @@
   scrollbar-color: #55302a #2a0f0e;
 }
 
-/* Dialogs render in a portal and sit on a cream (light) or dark (dark) surface, not on a panel. Content on the ground uses the same tokens. */
+/* Dialogs sit on the ground colour */
 [data-slot='dialog-content'],
 [data-surface='ground'] {
   --background: #fff6e3;

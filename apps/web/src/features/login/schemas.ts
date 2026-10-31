@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Messages are i18n keys, translated where they are shown
+// Messages are i18n keys
 export const emailSchema = z.object({
   email: z.email({ error: 'login.validation.email' }),
 });

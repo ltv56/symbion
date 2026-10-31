@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toggleDark, useDark } from '@/lib/theme';
 import { BrandMark } from './BrandMark';
 
-// The header sits on the ground, not on a panel: the default ghost hover tint is a panel colour
+// The header sits on the ground
 export const GROUND_HOVER = 'hover:bg-foreground/10 hover:text-foreground';
 
 export function AppHeader({ children }: { children?: ReactNode }) {
