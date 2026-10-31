@@ -47,7 +47,7 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 
 ## Redemption
 
-- A member pays the voucher's `points_price` from their balance and gets a code (`POST /redemptions`).
+- A member pays the voucher's `points_price` from their balance and gets a code, through a merchant (`POST /redemptions`) or the member app (`POST /me/redemptions`).
 - Allowed only when the balance covers the price. A negative balance blocks redemption.
 - Allowed only while the voucher is `active`, before `valid_until` and with stock left. Each redemption takes one from stock.
 - Points are spent oldest-expiry first (FIFO), in the same transaction as the stock change. Ledger key `redemption:<id>`, `merchant_id` of the voucher.

@@ -8,6 +8,7 @@ const TABLES = [
   'vouchers',
   'orders',
   'ledger_lots',
+  'member_otps',
   'members',
   'tiers',
   'merchants',

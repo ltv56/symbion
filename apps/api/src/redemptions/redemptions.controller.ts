@@ -49,7 +49,7 @@ export class RedemptionsController {
     @IdempotencyKey() key: string,
   ): Promise<Redemption> {
     const { redemption, created } = await this.redemptionsService.redeem(
-      body.memberEmail,
+      { email: body.memberEmail },
       body.voucherId,
       key,
     );

@@ -4,6 +4,9 @@ import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import { AdminGuard } from './admin.guard';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { MemberGuard } from './member.guard';
+import { MemberAuthController } from './member-auth.controller';
+import { MemberAuthService } from './member-auth.service';
 
 const MIN_SECRET_LENGTH = 32;
 
@@ -30,8 +33,8 @@ const MIN_SECRET_LENGTH = 32;
       },
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, AdminGuard],
-  exports: [JwtModule, AdminGuard],
+  controllers: [AuthController, MemberAuthController],
+  providers: [AuthService, AdminGuard, MemberGuard, MemberAuthService],
+  exports: [JwtModule, AdminGuard, MemberGuard],
 })
 export class AuthModule {}

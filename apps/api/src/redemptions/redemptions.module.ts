@@ -14,5 +14,6 @@ import { RedemptionsService } from './redemptions.service';
   ],
   controllers: [RedemptionsController],
   providers: [RedemptionsService],
+  exports: [RedemptionsService],
 })
 export class RedemptionsModule {}

@@ -17,6 +17,40 @@ curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
   -d '{"email":"admin@example.com","password":"wrong"}'
 ```
 
+## Member login (MySQL)
+
+Needs `DEMO_MODE=true` in the api environment and member `an@x.com` (see Members).
+
+```sh
+# request a code -> 200 {"otp":"<6 digits>"} (without DEMO_MODE: {})
+curl -s -X POST localhost:3000/auth/member/otp -H 'content-type: application/json' -d '{"email":"an@x.com"}'
+
+# login -> 200 {"accessToken":"<jwt>"}
+MTOKEN=$(curl -s -X POST localhost:3000/auth/member/login -H 'content-type: application/json' \
+  -d '{"email":"an@x.com","otp":"<code>"}' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+
+# error path -> 401 {"message":"Invalid or expired code",...} (same code again)
+curl -s -X POST localhost:3000/auth/member/login -H 'content-type: application/json' \
+  -d '{"email":"an@x.com","otp":"<code>"}'
+
+# profile -> 200 {"id":1,"email":"an@x.com","tier":{"id":1,"name":"Bronze"},"balance":250,...}
+curl -s localhost:3000/me -H "Authorization: Bearer $MTOKEN"
+
+# latest 50 point entries -> 200 [{"type":"earn","points":250,"merchantName":"Shop A",...}]
+curl -s localhost:3000/me/history -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 401 (admin token instead of a member token)
+curl -s localhost:3000/me -H "Authorization: Bearer $TOKEN"
+
+# redeem as the member (needs 500 points and voucher $VID, see Redemptions) -> 201; same key again -> 200
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/me/redemptions -H "Authorization: Bearer $MTOKEN" \
+  -H 'Idempotency-Key: m-1' -H 'content-type: application/json' -d "{\"voucherId\":$VID}"
+
+# error path -> 409 (not enough points, new key)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/me/redemptions -H "Authorization: Bearer $MTOKEN" \
+  -H 'Idempotency-Key: m-2' -H 'content-type: application/json' -d "{\"voucherId\":$VID}"
+```
+
 ## Merchants (MySQL)
 
 All `/merchants*` calls need the admin token (`$TOKEN`, see Admin login).

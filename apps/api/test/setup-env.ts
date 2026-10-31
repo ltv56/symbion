@@ -9,3 +9,4 @@ process.env.ADMIN_EMAIL = ADMIN_TEST_EMAIL;
 process.env.ADMIN_PASSWORD_HASH = ADMIN_TEST_PASSWORD_HASH;
 process.env.JWT_SECRET = 'test-secret-test-secret-test-secret-1234';
 process.env.JWT_EXPIRES_IN = '1h';
+process.env.DEMO_MODE = 'true';

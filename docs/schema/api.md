@@ -33,6 +33,7 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 - `/members*`, `POST /orders`, `POST /orders/:orderId/refunds`, `POST /redemptions` and `POST /redemptions/:code/confirm` require the `x-api-key` header of a merchant.
 - `GET /members*` returns only the calling merchant's members; a member of another merchant is `404`.
 - `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
+- `/me*` requires `Authorization: Bearer <token>` from `POST /auth/member/login` (member only).
 - `GET /tiers*` and `GET /vouchers*` are public.
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
 
@@ -52,6 +53,39 @@ The token is a JWT (HS256) with payload `{ "sub": "admin", "role": "admin" }` th
 The api does not start when a required variable is missing or `JWT_SECRET` is too short.
 
 Known limitations: no refresh token, no logout, no rate limit on login, a single admin account.
+
+## POST /auth/member/otp, POST /auth/member/login
+
+Member login with a one-time code.
+
+`POST /auth/member/otp`, body `email`: creates a 6 digit code valid for 5 minutes and replaces any earlier code. Responses: `200` with `{}` (also for an unknown email), or `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`; `400` invalid email. No email is sent yet.
+
+`POST /auth/member/login`, body `email`, `otp` (string of 6 digits): responses `200` with `{ "accessToken": "<jwt>" }`, payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
+
+Admin endpoints reject a member token (`401`).
+
+## GET /me, GET /me/history
+
+Member only (`Authorization: Bearer <member token>`). `401` for a missing, invalid or non-member token.
+
+`GET /me`: `200` with `{ "id", "email", "name", "tier": { "id", "name" }, "balance" }`. `balance` is the sum of unexpired lots and may be negative.
+
+`GET /me/history`: `200` with the member's latest 50 ledger entries, newest first, each `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`.
+
+## POST /me/redemptions
+
+Member only. The logged-in member redeems a voucher; same rules and redemption shape as `POST /redemptions`.
+
+| Input             | Notes                                                         |
+| ----------------- | ------------------------------------------------------------- |
+| `Idempotency-Key` | header, required; unique per member                           |
+| `voucherId`       | body, integer from 1; an `active` voucher before `validUntil` |
+
+Responses: `201` with the redemption, `200` with the original redemption for a repeated `Idempotency-Key`, `400` invalid input (a `memberEmail` field included) or missing `Idempotency-Key`, `401` no member token, `404` voucher unknown, `expired` or past `validUntil`, `409` not enough points (a negative balance included) or no stock left, `422` the `Idempotency-Key` was already used for another voucher.
+
+| Variable    | Notes                                                   |
+| ----------- | ------------------------------------------------------- |
+| `DEMO_MODE` | optional; `true` returns the code in the `otp` response |
 
 ## Request id and logs
 
