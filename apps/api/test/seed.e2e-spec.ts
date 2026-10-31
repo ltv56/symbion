@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { seedTiers } from '../src/seed';
+import { resetDatabase } from './helpers/database';
 
 describe('Seed', () => {
   let dataSource: DataSource;
@@ -17,11 +18,7 @@ describe('Seed', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM redemptions');
-    await dataSource.query('DELETE FROM orders');
-    await dataSource.query('DELETE FROM ledger_lots');
-    await dataSource.query('DELETE FROM members');
-    await dataSource.query('DELETE FROM tiers');
+    await resetDatabase(dataSource);
   });
 
   afterAll(async () => {

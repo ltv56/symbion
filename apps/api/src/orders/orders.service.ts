@@ -6,17 +6,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ledger } from '@symbion/ledger';
-import {
-  DataSource,
-  EntityManager,
-  QueryFailedError,
-  Repository,
-} from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   EARNING_STRATEGY,
   type EarningStrategy,
 } from '../earning/earning.strategy';
 import { addMonths } from '../common/add-months';
+import { isDuplicateEntry } from '../common/is-duplicate-entry';
 import { Order } from './order.entity';
 import { MAX_POINTS_PER_ORDER } from './orders.config';
 
@@ -41,7 +37,7 @@ export class OrdersService {
     try {
       const order = await this.dataSource.transaction(async (tx) => {
         // Lock the member before the order insert, or parallel orders deadlock.
-        const rows: { id: number; multiplier_percent: number }[] =
+        const [row]: { id: number; multiplier_percent: number }[] =
           await tx.query(
             `SELECT m.id, CAST(t.earn_rate * 100 AS UNSIGNED) AS multiplier_percent
             FROM members m
@@ -50,7 +46,6 @@ export class OrdersService {
             FOR UPDATE OF m`,
             [memberEmail],
           );
-        const row = rows[0];
         if (!row) {
           throw new NotFoundException(`Member ${memberEmail} not found`);
         }
@@ -86,7 +81,7 @@ export class OrdersService {
       });
       return { order, created: true };
     } catch (error) {
-      if (isDuplicateOrderKey(error)) {
+      if (isDuplicateEntry(error, 'uq_orders_merchant_idempotency_key')) {
         const order = await this.orders.findOneByOrFail({
           merchantId,
           idempotencyKey,
@@ -104,17 +99,4 @@ export class OrdersService {
       throw error;
     }
   }
-}
-
-function isDuplicateOrderKey(error: unknown): boolean {
-  if (!(error instanceof QueryFailedError)) return false;
-  const driverError = error.driverError as {
-    code?: string;
-    sqlMessage?: string;
-  };
-  return (
-    driverError.code === 'ER_DUP_ENTRY' &&
-    (driverError.sqlMessage?.includes('uq_orders_merchant_idempotency_key') ??
-      false)
-  );
 }

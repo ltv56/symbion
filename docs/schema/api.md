@@ -30,7 +30,7 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 
 ## Authentication
 
-- `/members*`, `POST /orders` and `POST /redemptions` require the `x-api-key` header of a merchant.
+- `/members*`, `POST /orders`, `POST /orders/:orderId/refunds` and `POST /redemptions` require the `x-api-key` header of a merchant.
 - `GET /members*` returns only the calling merchant's members; a member of another merchant is `404`.
 - `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
 - `GET /tiers*` and `GET /vouchers*` are public.
@@ -97,6 +97,21 @@ A merchant reports an order for a member. `merchant_id` comes from the API key, 
 A new order awards points to the member in the same transaction (see `docs/rules.md`). The response body is the order; points are not included.
 
 Responses: `201` with the created order (`amount` is a number), `200` with the original order when the same `Idempotency-Key` was already used by this merchant with the same `memberEmail` and `amount` (no second order, no extra points), `400` invalid input (amount not an integer or outside 1 to 9999999999) or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member, `422` the `Idempotency-Key` was already used for another member or `amount` (`"message": "Idempotency-Key was already used with a different request"`). `memberEmail` is compared after it resolves to a member, so emails that match the same member are equal; an unknown member returns `404` before the key is checked.
+
+## POST /orders/:orderId/refunds
+
+The order's merchant refunds part or all of an order and the member loses the matching points (see `docs/rules.md`).
+
+| Input             | Notes                                                   |
+| ----------------- | ------------------------------------------------------- |
+| `x-api-key`       | header, required; the merchant of the order             |
+| `Idempotency-Key` | header, required, 1-255 characters; unique per merchant |
+| `orderId`         | path, integer                                           |
+| `amount`          | body, integer VND from 1 to 9999999999                  |
+
+A refund is `{ "id", "merchantId", "orderId", "idempotencyKey", "amount", "pointsDeducted", "createdAt" }`.
+
+Responses: `201` with the refund, `200` with the original refund when this merchant already used the `Idempotency-Key` for the same order and `amount` (nothing deducted again), `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown order or an order of another merchant, `409` the order is older than 90 days, `422` the refunds of the order would exceed its amount, or the `Idempotency-Key` was already used for another order or `amount`.
 
 ## POST /vouchers
 

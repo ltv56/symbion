@@ -54,3 +54,32 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - The redemption stores the points and the point value at that moment; later changes to the voucher or `program_settings` don't change it.
 - Code: 10 characters, `0-9` and `A-Z` without `I`, `L`, `O`, `U`. Status `issued`.
 - Repeating the `Idempotency-Key` returns the same redemption and spends nothing. Reusing it for another voucher is rejected (`422`).
+
+## Refunds
+
+`points deducted = ceil(points earned by the order × total refunded ÷ order amount) − points deducted by earlier refunds`
+
+- Sent by the order's merchant (`POST /orders/:orderId/refunds`).
+- Accepted up to 90 days after the order (`409` after that).
+- `total refunded` includes this refund. Rounding happens once on the total, so all refunds of an order together deduct at most the points it earned, and exactly those points when the whole amount is refunded.
+- Always rounded up. A refund of an order that earned 0 points deducts 0.
+- An order can be refunded several times; the refunds together cannot exceed the order amount (`422`).
+- Repeating the `Idempotency-Key` returns the same refund and deducts nothing. Reusing it for another order or amount is rejected (`422`).
+- Deducted in full even when the member already spent the points: the balance goes negative and blocks redemption until later orders cover it.
+
+| Order (VND) | Earned | Refund (VND) | Deducted |
+| ----------- | ------ | ------------ | -------- |
+| 250,000     | 25     | 250,000      | 25       |
+| 250,000     | 25     | 100,000      | 10       |
+| 250,000     | 25     | 35,000       | 4        |
+| 250,000     | 25     | 1            | 1        |
+| 5,000       | 0      | 5,000        | 0        |
+
+Several refunds of an order of 250,000 that earned 25:
+
+| Refund (VND) | Total refunded | `ceil` on total | Deducted |
+| ------------ | -------------- | --------------- | -------- |
+| 83,333       | 83,333         | 9               | 9        |
+| 83,333       | 166,666        | 17              | 8        |
+| 83,334       | 250,000        | 25              | 8        |
+| 1            | 250,001        | —               | `422`    |

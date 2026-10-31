@@ -172,6 +172,30 @@ curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-ty
   -H "x-api-key: $KEY" -H 'Idempotency-Key: r-2' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
 ```
 
+## Refunds (MySQL)
+
+Requires `$KEY` and member `an@x.com` (see Members).
+
+```sh
+# order of 250,000 -> 25 points; keep its id
+OID=$(curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
+  -H 'Idempotency-Key: refund-order-1' -d '{"memberEmail":"an@x.com","amount":250000}' | sed 's/.*"id":\([0-9]*\).*/\1/')
+
+# refund 35,000 -> 201 {"pointsDeducted":4,...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/$OID/refunds -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-1' -d '{"amount":35000}'
+
+# error path -> 404 (unknown order)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/999999/refunds -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-2' -d '{"amount":1}'
+
+# error path -> 409 (order older than 90 days)
+docker compose -f infra/compose.yaml exec mysql sh -c "mysql -u\"\$MYSQL_USER\" -p\"\$MYSQL_PASSWORD\" \"\$MYSQL_DATABASE\" \
+  -e 'UPDATE orders SET created_at = NOW() - INTERVAL 91 DAY WHERE id = $OID'"
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/$OID/refunds -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-3' -d '{"amount":1}'
+```
+
 ## Health and logs
 
 ```sh

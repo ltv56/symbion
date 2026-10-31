@@ -6,12 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ledger } from '@symbion/ledger';
-import {
-  DataSource,
-  EntityManager,
-  QueryFailedError,
-  Repository,
-} from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
+import { isDuplicateEntry } from '../common/is-duplicate-entry';
 import { Redemption } from './redemption.entity';
 import { generateVoucherCode } from './voucher-code';
 
@@ -35,11 +31,10 @@ export class RedemptionsService {
     try {
       return await this.dataSource.transaction(async (tx) => {
         // Lock order: member, then voucher.
-        const members: { id: number }[] = await tx.query(
+        const [member]: { id: number }[] = await tx.query(
           `SELECT id FROM members WHERE email = ? FOR UPDATE`,
           [memberEmail],
         );
-        const member = members[0];
         if (!member) {
           throw new NotFoundException(`Member ${memberEmail} not found`);
         }
@@ -56,7 +51,7 @@ export class RedemptionsService {
         }
 
         const now = new Date();
-        const vouchers: {
+        const [voucher]: {
           merchant_id: number;
           points_price: number;
           stock: number;
@@ -66,7 +61,6 @@ export class RedemptionsService {
           FOR UPDATE`,
           [voucherId, now],
         );
-        const voucher = vouchers[0];
         if (!voucher) {
           throw new NotFoundException(`Voucher with id ${voucherId} not found`);
         }
@@ -87,7 +81,7 @@ export class RedemptionsService {
           voucherId,
         ]);
 
-        const settings: { point_value_vnd: number }[] = await tx.query(
+        const [settings]: { point_value_vnd: number }[] = await tx.query(
           `SELECT point_value_vnd FROM program_settings WHERE id = 1`,
         );
         const merchantId = Number(voucher.merchant_id);
@@ -98,7 +92,7 @@ export class RedemptionsService {
             voucherId,
             code: generateVoucherCode(),
             points,
-            pointValueVnd: Number(settings[0]?.point_value_vnd),
+            pointValueVnd: Number(settings?.point_value_vnd),
             clientKey,
           }),
         );
@@ -116,7 +110,10 @@ export class RedemptionsService {
         return { redemption, created: true };
       });
     } catch (error) {
-      if (memberId !== undefined && isDuplicateClientKey(error)) {
+      if (
+        memberId !== undefined &&
+        isDuplicateEntry(error, 'uq_redemptions_member_client_key')
+      ) {
         const existing = await this.redemptions.findOneByOrFail({
           memberId,
           clientKey,
@@ -138,17 +135,4 @@ function sameVoucherOrThrow(
     );
   }
   return { redemption: existing, created: false };
-}
-
-function isDuplicateClientKey(error: unknown): boolean {
-  if (!(error instanceof QueryFailedError)) return false;
-  const driverError = error.driverError as {
-    code?: string;
-    sqlMessage?: string;
-  };
-  return (
-    driverError.code === 'ER_DUP_ENTRY' &&
-    (driverError.sqlMessage?.includes('uq_redemptions_member_client_key') ??
-      false)
-  );
 }

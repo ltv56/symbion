@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { EntityManager, QueryFailedError } from 'typeorm';
+import { EntityManager } from 'typeorm';
+import { isDuplicateEntry } from '../common/is-duplicate-entry';
 import {
   DuplicateKeyError,
   type LedgerStorage,
@@ -86,23 +87,21 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
         ],
       );
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY'
-      ) {
+      if (isDuplicateEntry(error)) {
         throw new DuplicateKeyError();
       }
       throw error;
     }
 
     const id = toSafeInt(result.insertId, 'insertId');
-    const rows = await tx.query(`SELECT * FROM ledger_lots WHERE id = ?`, [id]);
-
-    if (rows.length === 0) {
+    const [row]: LotRow[] = await tx.query(
+      `SELECT * FROM ledger_lots WHERE id = ?`,
+      [id],
+    );
+    if (!row) {
       throw new Error(`Could not find inserted lot with id ${id}`);
     }
-
-    return this.toLot(rows[0]);
+    return this.toLot(row);
   }
 
   async findLotByKey(
@@ -112,17 +111,13 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
   ): Promise<Lot | undefined> {
     // FOR UPDATE on purpose: a plain SELECT reads the REPEATABLE READ snapshot and may miss
     // the lot another transaction just committed, which is why the insert hit ER_DUP_ENTRY.
-    const rows = await tx.query(
-      `SELECT * FROM ledger_lots 
-      WHERE merchant_id = ? AND idempotency_key = ? 
+    const [row]: LotRow[] = await tx.query(
+      `SELECT * FROM ledger_lots
+      WHERE merchant_id = ? AND idempotency_key = ?
       FOR UPDATE`,
       [merchantId, idempotencyKey],
     );
-    if (rows.length === 0) {
-      return undefined;
-    }
-
-    return this.toLot(rows[0]);
+    return row ? this.toLot(row) : undefined;
   }
 
   async sumRemaining(
@@ -130,14 +125,14 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
     memberId: string,
     now: Date,
   ): Promise<number> {
-    const rows = await tx.query(
+    const [row]: { total: string }[] = await tx.query(
       `SELECT COALESCE(SUM(remaining), 0) AS total
       FROM ledger_lots
       WHERE member_id = ?
       AND (expires_at IS NULL OR expires_at > ?);`,
       [memberId, now],
     );
-    return toSafeInt(rows[0].total, 'total');
+    return toSafeInt(row?.total ?? 0, 'total');
   }
 
   async findSpendableLots(

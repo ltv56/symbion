@@ -1,11 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, IsInt, Max, Min } from 'class-validator';
-
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
-
-// Whole VND. The max keeps amount × tier percent (up to 99,999) below 2^53.
-const MAX_AMOUNT = 9_999_999_999;
+import { trim, MAX_AMOUNT_VND } from '../../common/dto';
 
 export class CreateOrderDto {
   @Transform(trim)
@@ -14,6 +9,6 @@ export class CreateOrderDto {
 
   @IsInt()
   @Min(1)
-  @Max(MAX_AMOUNT)
+  @Max(MAX_AMOUNT_VND)
   amount!: number;
 }
