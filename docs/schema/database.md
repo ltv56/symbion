@@ -8,6 +8,8 @@ MySQL 8, InnoDB, utf8mb4. Migrations are hand-written SQL in `apps/api/src/migra
 | -------------- | ------------------- | ---------------------------------------------------------- |
 | `id`           | BIGINT UNSIGNED, PK | auto increment                                             |
 | `name`         | VARCHAR(255)        |                                                            |
+| `photo_url`    | VARCHAR(2048), null | http(s) URL of a shop photo                                |
+| `address`      | VARCHAR(255), null  |                                                            |
 | `api_key_hash` | CHAR(64), UNIQUE    | SHA-256 hex digest (64 chars); the raw key is never stored |
 | `created_at`   | TIMESTAMP           | defaults to now                                            |
 
@@ -100,6 +102,8 @@ Programme-wide values. Exactly one row (`id = 1`), inserted by the migration.
 | `id`           | BIGINT UNSIGNED, PK | auto increment                                          |
 | `merchant_id`  | BIGINT UNSIGNED, FK | `merchants(id)`; the merchant where the voucher is used |
 | `title`        | VARCHAR(255)        |                                                         |
+| `description`  | TEXT, nullable      | API limit 2000 characters                               |
+| `steps`        | JSON, nullable      | array of strings (`CHECK`); API limit 10 items          |
 | `face_value`   | BIGINT UNSIGNED     | VND discount; `CHECK (face_value > 0)`                  |
 | `points_price` | BIGINT UNSIGNED     | points a member pays; `CHECK (points_price > 0)`        |
 | `stock`        | INT UNSIGNED        | vouchers left                                           |

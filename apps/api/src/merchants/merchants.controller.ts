@@ -7,6 +7,7 @@ import {
   NotFoundException,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
+import { UpdateMerchantDto } from './dto/update-merchant.dto';
 import { Merchant } from './merchant.entity';
 import { CreatedMerchant, MerchantsService } from './merchants.service';
 
@@ -45,6 +47,19 @@ export class MerchantsController {
   @Post()
   create(@Body() body: CreateMerchantDto): Promise<CreatedMerchant> {
     return this.merchantsService.create(body.name);
+  }
+
+  @Patch(':id')
+  @ApiNotFoundResponse({ description: 'Unknown merchant' })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateMerchantDto,
+  ): Promise<Merchant> {
+    const merchant = await this.merchantsService.update(id, body);
+    if (!merchant) {
+      throw new NotFoundException(`Merchant with id ${id} not found`);
+    }
+    return merchant;
   }
 
   @Post(':id/api-key')

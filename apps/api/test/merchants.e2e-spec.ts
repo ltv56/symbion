@@ -5,7 +5,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { adminToken } from './helpers/admin-token';
-import { resetDatabase } from './helpers/database';
+import { insertMerchant, resetDatabase } from './helpers/database';
 
 describe('Merchants', () => {
   let app: INestApplication;
@@ -174,6 +174,157 @@ describe('Merchants', () => {
       await request(app.getHttpServer())
         .post(`/merchants/${id}/api-key`)
         .set('x-api-key', apiKey)
+        .expect(401);
+    });
+  });
+
+  describe('PATCH /merchants/:id', () => {
+    let merchantId: number;
+
+    beforeEach(async () => {
+      merchantId = await insertMerchant(dataSource, 'patch-key');
+    });
+
+    const patch = (
+      body: Record<string, unknown>,
+      id: number | string = merchantId,
+    ) =>
+      request(app.getHttpServer())
+        .patch(`/merchants/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+
+    const row = async () => {
+      const [found] = await dataSource.query(
+        'SELECT name, photo_url, address FROM merchants WHERE id = ?',
+        [merchantId],
+      );
+      return found;
+    };
+
+    it('starts without a photo or address', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/merchants/${merchantId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(res.body).toMatchObject({ photoUrl: null, address: null });
+    });
+
+    it('sets the photo url and the trimmed address', async () => {
+      const res = await patch({
+        photoUrl: 'https://cdn.example.com/shop.jpg',
+        address: '  12 Nguyen Hue, District 1 ',
+      }).expect(200);
+
+      expect(res.body).toEqual({
+        id: merchantId,
+        name: 'Shop A',
+        photoUrl: 'https://cdn.example.com/shop.jpg',
+        address: '12 Nguyen Hue, District 1',
+        createdAt: expect.any(String),
+      });
+      expect(await row()).toEqual({
+        name: 'Shop A',
+        photo_url: 'https://cdn.example.com/shop.jpg',
+        address: '12 Nguyen Hue, District 1',
+      });
+      const one = await request(app.getHttpServer())
+        .get(`/merchants/${merchantId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      expect(one.body.address).toBe('12 Nguyen Hue, District 1');
+    });
+
+    it('keeps a field that is not in the body', async () => {
+      await patch({ photoUrl: 'https://cdn.example.com/shop.jpg' }).expect(200);
+
+      await patch({ address: '12 Nguyen Hue' }).expect(200);
+
+      expect(await row()).toMatchObject({
+        photo_url: 'https://cdn.example.com/shop.jpg',
+        address: '12 Nguyen Hue',
+      });
+    });
+
+    it('clears a field set to null', async () => {
+      await patch({
+        photoUrl: 'https://cdn.example.com/shop.jpg',
+        address: '12 Nguyen Hue',
+      }).expect(200);
+
+      const res = await patch({ photoUrl: null }).expect(200);
+
+      expect(res.body).toMatchObject({
+        photoUrl: null,
+        address: '12 Nguyen Hue',
+      });
+      expect(await row()).toMatchObject({
+        photo_url: null,
+        address: '12 Nguyen Hue',
+      });
+    });
+
+    it('accepts an empty body and changes nothing', async () => {
+      await patch({ address: '12 Nguyen Hue' }).expect(200);
+
+      const res = await patch({}).expect(200);
+
+      expect(res.body).toMatchObject({
+        id: merchantId,
+        address: '12 Nguyen Hue',
+      });
+    });
+
+    it('never exposes the key or hash', async () => {
+      const res = await patch({ address: '12 Nguyen Hue' }).expect(200);
+
+      expect(res.body).not.toHaveProperty('apiKeyHash');
+    });
+
+    it('returns 404 for an unknown merchant', async () => {
+      await patch({ address: 'x' }, 999_999).expect(404);
+    });
+
+    it.each([
+      ['an ftp url', { photoUrl: 'ftp://cdn.example.com/shop.jpg' }],
+      ['a javascript url', { photoUrl: 'javascript:alert(1)' }],
+      ['a url without a protocol', { photoUrl: 'cdn.example.com/shop.jpg' }],
+      ['a numeric url', { photoUrl: 5 }],
+      [
+        'a url over 2048 characters',
+        { photoUrl: `https://example.com/${'a'.repeat(2030)}` },
+      ],
+      ['a blank address', { address: '   ' }],
+      ['an address over 255 characters', { address: 'a'.repeat(256) }],
+      ['a numeric address', { address: 5 }],
+      ['a name field', { name: 'Shop B' }],
+    ])('returns 400 for %s', async (_label, body) => {
+      await patch(body).expect(400);
+
+      expect(await row()).toEqual({
+        name: 'Shop A',
+        photo_url: null,
+        address: null,
+      });
+    });
+
+    it.each([
+      ['no token', undefined],
+      ['a malformed token', 'Bearer nope'],
+    ])('returns 401 for %s', async (_label, header) => {
+      const req = request(app.getHttpServer()).patch(
+        `/merchants/${merchantId}`,
+      );
+      if (header) req.set('Authorization', header);
+      await req.send({ address: 'x' }).expect(401);
+    });
+
+    it('returns 401 for a merchant api key instead of a token', async () => {
+      await request(app.getHttpServer())
+        .patch(`/merchants/${merchantId}`)
+        .set('x-api-key', 'patch-key')
+        .send({ address: 'x' })
         .expect(401);
     });
   });

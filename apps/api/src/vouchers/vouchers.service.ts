@@ -11,7 +11,11 @@ import { ProgramSettings } from '../settings/program-settings.entity';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { Voucher } from './voucher.entity';
 
-export type VoucherView = Voucher & { merchantName: string };
+export type VoucherView = Voucher & {
+  merchantName: string;
+  merchantPhotoUrl: string | null;
+  merchantAddress: string | null;
+};
 
 export interface VoucherPage {
   items: VoucherView[];
@@ -57,7 +61,7 @@ export class VouchersService {
     if (after) {
       query.andWhere('v.id < :after', { after });
     }
-    const rows = await this.withMerchantName(query);
+    const rows = await this.withMerchant(query);
 
     const items = rows.slice(0, limit);
     const last = items[items.length - 1];
@@ -68,7 +72,7 @@ export class VouchersService {
   }
 
   async findActive(id: number): Promise<VoucherView | null> {
-    const [voucher] = await this.withMerchantName(
+    const [voucher] = await this.withMerchant(
       this.redeemable().andWhere('v.id = :id', { id }),
     );
     return voucher ?? null;
@@ -79,6 +83,8 @@ export class VouchersService {
       .createQueryBuilder('v')
       .innerJoin(Merchant, 'm', 'm.id = v.merchantId')
       .addSelect('m.name', 'merchantName')
+      .addSelect('m.photoUrl', 'merchantPhotoUrl')
+      .addSelect('m.address', 'merchantAddress')
       .where('v.status = :status AND v.validUntil > :now', {
         status: 'active',
         now: new Date(),
@@ -86,14 +92,21 @@ export class VouchersService {
   }
 
   // The join is one-to-one, so entities and raw rows line up by index
-  private async withMerchantName(
+  private async withMerchant(
     query: SelectQueryBuilder<Voucher>,
   ): Promise<VoucherView[]> {
     const { entities, raw } = await query.getRawAndEntities<{
       merchantName: string;
+      merchantPhotoUrl: string | null;
+      merchantAddress: string | null;
     }>();
-    return entities.map((voucher, i) =>
-      Object.assign(voucher, { merchantName: raw[i]!.merchantName }),
-    );
+    return entities.map((voucher, i) => {
+      const { merchantName, merchantPhotoUrl, merchantAddress } = raw[i]!;
+      return Object.assign(voucher, {
+        merchantName,
+        merchantPhotoUrl,
+        merchantAddress,
+      });
+    });
   }
 }

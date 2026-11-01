@@ -1,8 +1,11 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsDate,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Max,
   MaxLength,
@@ -34,6 +37,23 @@ export class CreateVoucherDto {
   @IsNotEmpty()
   @MaxLength(255)
   title!: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    Array.isArray(value) ? value.map((step) => trim({ value: step })) : value,
+  )
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @MaxLength(200, { each: true })
+  steps?: string[];
 
   // VND
   @IsInt()
