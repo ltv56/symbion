@@ -113,6 +113,17 @@ Programme-wide values. Exactly one row (`id = 1`), inserted by the migration.
 
 `face_value >= points_price × point_value_vnd` is enforced by the API (a `CHECK` cannot read `program_settings`). Index `(status, id)` serves the list of active vouchers.
 
+## voucher_favorites
+
+| Column        | Type                | Notes                                             |
+| ------------- | ------------------- | ------------------------------------------------- |
+| `member_id`   | BIGINT UNSIGNED, FK | `members(id)`                                     |
+| `voucher_id`  | BIGINT UNSIGNED, FK | `vouchers(id)`                                    |
+| `merchant_id` | BIGINT UNSIGNED, FK | `merchants(id)`; the voucher's merchant           |
+| `created_at`  | TIMESTAMP(3)        | defaults to now; the order of `GET /me/favorites` |
+
+`PRIMARY KEY (member_id, voucher_id)`: a member favorites a voucher once.
+
 ## redemptions
 
 | Column            | Type                         | Notes                                                           |

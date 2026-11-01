@@ -78,6 +78,16 @@ Member only (`Authorization: Bearer <member token>`). `401` for a missing, inval
 
 `GET /me/partners`: `200` with every merchant of the programme, each `{ "id", "name" }`, ordered by `name`. Points are shared across merchants, so no merchant is filtered out.
 
+## GET /me/favorites, PUT /me/favorites/:voucherId, DELETE /me/favorites/:voucherId
+
+Member only; `401` for a missing, invalid or non-member token. `:voucherId` is an integer, otherwise `400`.
+
+`GET /me/favorites`: `200` with the member's favorite vouchers that are still listed (`active` and before `validUntil`), newest first, each `{ "voucherId", "createdAt" }`.
+
+`PUT /me/favorites/:voucherId`: `204` adds the favorite; `204` again when it is already there (the first `createdAt` is kept). `404` when the voucher is unknown, `expired` or past `validUntil`.
+
+`DELETE /me/favorites/:voucherId`: `204` removes the favorite; `204` also when it was not a favorite or the voucher does not exist. Other members' favorites are not touched.
+
 ## POST /me/redemptions
 
 Member only. The logged-in member redeems a voucher; same rules and redemption shape as `POST /redemptions`.

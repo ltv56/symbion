@@ -14,6 +14,7 @@ const TIME_ZONE = 'Asia/Ho_Chi_Minh';
 export const WIPED_TABLES = [
   'refunds',
   'redemptions',
+  'voucher_favorites',
   'vouchers',
   'orders',
   'ledger_lots',
