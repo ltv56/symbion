@@ -372,6 +372,209 @@ describe('Me', () => {
     });
   });
 
+  describe('favorites', () => {
+    const DAY = 86_400_000;
+    let voucherId: number;
+
+    const insertVoucher = async (
+      validUntil = new Date(Date.now() + DAY),
+      status = 'active',
+    ): Promise<number> => {
+      const res = await dataSource.query(
+        `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until, status)
+        VALUES (?, 'Coffee', 50000, 500, 10, ?, ?)`,
+        [otherMerchantId, validUntil, status],
+      );
+      return Number(res.insertId);
+    };
+
+    const insertFavorite = (
+      forMemberId: number,
+      forVoucherId: number,
+      createdAt: Date,
+    ) =>
+      dataSource.query(
+        `INSERT INTO voucher_favorites (member_id, voucher_id, merchant_id, created_at)
+        VALUES (?, ?, ?, ?)`,
+        [forMemberId, forVoucherId, otherMerchantId, createdAt],
+      );
+
+    const favoriteRows = async (forMemberId = memberId) =>
+      (
+        await dataSource.query(
+          `SELECT voucher_id, merchant_id FROM voucher_favorites WHERE member_id = ?`,
+          [forMemberId],
+        )
+      ).map((row: { voucher_id: string; merchant_id: string }) => ({
+        voucherId: Number(row.voucher_id),
+        merchantId: Number(row.merchant_id),
+      }));
+
+    const send = (
+      method: 'put' | 'delete',
+      id: number | string,
+      auth: string | null = `Bearer ${token}`,
+    ) => {
+      const req = request(app.getHttpServer())[method](`/me/favorites/${id}`);
+      if (auth) req.set('Authorization', auth);
+      return req;
+    };
+
+    beforeEach(async () => {
+      voucherId = await insertVoucher();
+    });
+
+    describe('PUT /me/favorites/:voucherId', () => {
+      it("adds the voucher to the member's favorites", async () => {
+        await send('put', voucherId).expect(204);
+
+        const res = await get('/me/favorites').expect(200);
+        expect(res.body).toEqual([
+          { voucherId, createdAt: expect.any(String) },
+        ]);
+        await expect(favoriteRows()).resolves.toEqual([
+          { voucherId, merchantId: otherMerchantId },
+        ]);
+      });
+
+      it('keeps one row and the first createdAt when repeated', async () => {
+        await send('put', voucherId).expect(204);
+        await dataSource.query(
+          `UPDATE voucher_favorites SET created_at = '2026-01-01 00:00:00.000'`,
+        );
+
+        await send('put', voucherId).expect(204);
+
+        const res = await get('/me/favorites').expect(200);
+        expect(res.body).toEqual([
+          { voucherId, createdAt: '2026-01-01T00:00:00.000Z' },
+        ]);
+      });
+
+      it('adds one row when sent ten times in parallel', async () => {
+        const responses = await Promise.all(
+          Array.from({ length: 10 }, () => send('put', voucherId)),
+        );
+
+        expect(responses.map((res) => res.status)).toEqual(Array(10).fill(204));
+        await expect(favoriteRows()).resolves.toHaveLength(1);
+      });
+
+      it.each([
+        ['an unknown voucher', async () => 999_999],
+        ['an expired voucher', () => insertVoucher(new Date(Date.now() - DAY))],
+        [
+          'a voucher marked expired',
+          () => insertVoucher(new Date(Date.now() + DAY), 'expired'),
+        ],
+      ])('returns 404 for %s', async (_label, makeId) => {
+        const id = await makeId();
+
+        await send('put', id).expect(404);
+        await expect(favoriteRows()).resolves.toEqual([]);
+      });
+
+      it('returns 400 when the id is not an integer', async () => {
+        await send('put', 'abc').expect(400);
+      });
+    });
+
+    describe('DELETE /me/favorites/:voucherId', () => {
+      it('removes the favorite, and repeating it is not an error', async () => {
+        await send('put', voucherId).expect(204);
+
+        await send('delete', voucherId).expect(204);
+        await send('delete', voucherId).expect(204);
+
+        await expect(favoriteRows()).resolves.toEqual([]);
+      });
+
+      it('returns 204 for a voucher that was never a favorite or does not exist', async () => {
+        await send('delete', voucherId).expect(204);
+        await send('delete', 999_999).expect(204);
+      });
+
+      it("leaves other members' favorites alone", async () => {
+        await insertFavorite(otherMemberId, voucherId, new Date());
+
+        await send('delete', voucherId).expect(204);
+
+        await expect(favoriteRows(otherMemberId)).resolves.toHaveLength(1);
+      });
+
+      it('returns 400 when the id is not an integer', async () => {
+        await send('delete', 'abc').expect(400);
+      });
+    });
+
+    describe('GET /me/favorites', () => {
+      it("returns the member's own favorites, newest first", async () => {
+        const second = await insertVoucher();
+        const third = await insertVoucher();
+        await insertFavorite(
+          memberId,
+          voucherId,
+          new Date('2026-03-01T00:00:00Z'),
+        );
+        await insertFavorite(memberId, third, new Date('2026-03-03T00:00:00Z'));
+        await insertFavorite(
+          memberId,
+          second,
+          new Date('2026-03-02T00:00:00Z'),
+        );
+        await insertFavorite(otherMemberId, voucherId, new Date());
+
+        const res = await get('/me/favorites').expect(200);
+
+        expect(
+          res.body.map((row: { voucherId: number }) => row.voucherId),
+        ).toEqual([third, second, voucherId]);
+      });
+
+      it('leaves out vouchers that are no longer listed', async () => {
+        const expired = await insertVoucher();
+        const marked = await insertVoucher();
+        await insertFavorite(memberId, voucherId, new Date());
+        await insertFavorite(memberId, expired, new Date());
+        await insertFavorite(memberId, marked, new Date());
+        await dataSource.query(
+          `UPDATE vouchers SET valid_until = ? WHERE id = ?`,
+          [new Date(Date.now() - DAY), expired],
+        );
+        await dataSource.query(
+          `UPDATE vouchers SET status = 'expired' WHERE id = ?`,
+          [marked],
+        );
+
+        const res = await get('/me/favorites').expect(200);
+
+        expect(res.body).toEqual([
+          { voucherId, createdAt: expect.any(String) },
+        ]);
+      });
+
+      it('returns an empty list for a member with no favorites', async () => {
+        const res = await get('/me/favorites').expect(200);
+
+        expect(res.body).toEqual([]);
+      });
+    });
+
+    describe.each([
+      ['GET', (auth: string | null) => get('/me/favorites', auth)],
+      ['PUT', (auth: string | null) => send('put', 1, auth)],
+      ['DELETE', (auth: string | null) => send('delete', 1, auth)],
+    ] as const)('%s auth', (_method, call) => {
+      it('returns 401 without a token', async () => {
+        await call(null).expect(401);
+      });
+
+      it('returns 401 for an admin token', async () => {
+        await call(`Bearer ${await adminToken(app)}`).expect(401);
+      });
+    });
+  });
+
   describe('POST /me/redemptions', () => {
     const insertVoucher = async (): Promise<number> => {
       const res = await dataSource.query(
