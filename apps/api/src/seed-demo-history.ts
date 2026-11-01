@@ -13,9 +13,8 @@ import { RefundsService } from './refunds/refunds.service';
 
 const SHOP = 'Demo Shop';
 const CAFE = 'Demo Cafe';
-const SHOP_ADDRESS = '85 Le Loi, Ben Thanh Ward, District 1, Ho Chi Minh City';
-const CAFE_ADDRESS =
-  '12 Nguyen Hue, Ben Nghe Ward, District 1, Ho Chi Minh City';
+const SHOP_ADDRESS = '85 Lê Lợi, Quận 1, TP. Hồ Chí Minh';
+const CAFE_ADDRESS = '12 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh';
 const VIETNAM_OFFSET_MS = 7 * 3_600_000;
 const CODE_LIFETIME_MS = 30 * 86_400_000;
 
@@ -26,13 +25,13 @@ const MAX_POINTS_PER_ORDER = 10_000;
 const VOUCHERS = [
   {
     merchant: CAFE,
-    title: 'Free coffee',
+    title: 'Cà phê miễn phí',
     description:
-      'One free coffee of any size, hot or iced. One voucher per visit.',
+      'Một ly cà phê miễn phí, nóng hoặc đá, size nào cũng được. Mỗi lượt ghé quán dùng một voucher.',
     steps: [
-      'Redeem the voucher in the app.',
-      'Show the code to the staff at the counter.',
-      'The staff confirm the code and serve your coffee.',
+      'Đổi voucher trong ứng dụng.',
+      'Đưa mã cho nhân viên tại quầy.',
+      'Nhân viên xác nhận mã và phục vụ cà phê cho bạn.',
     ],
     faceValue: 35_000,
     pointsPrice: 300,
@@ -40,13 +39,13 @@ const VOUCHERS = [
   },
   {
     merchant: SHOP,
-    title: '20,000 VND off',
+    title: 'Giảm 20.000đ',
     description:
-      'Take 20,000 VND off a single bill. Not combined with other offers.',
+      'Giảm 20.000đ cho một hoá đơn. Không dùng chung với ưu đãi khác.',
     steps: [
-      'Redeem the voucher in the app.',
-      'Show the code to the staff before you pay.',
-      'The staff confirm the code and take 20,000 VND off the bill.',
+      'Đổi voucher trong ứng dụng.',
+      'Đưa mã cho nhân viên trước khi thanh toán.',
+      'Nhân viên xác nhận mã và trừ 20.000đ vào hoá đơn.',
     ],
     faceValue: 20_000,
     pointsPrice: 150,
@@ -54,13 +53,13 @@ const VOUCHERS = [
   },
   {
     merchant: SHOP,
-    title: '100,000 VND off',
+    title: 'Giảm 100.000đ',
     description:
-      'Take 100,000 VND off a single bill. Not combined with other offers.',
+      'Giảm 100.000đ cho một hoá đơn. Không dùng chung với ưu đãi khác.',
     steps: [
-      'Redeem the voucher in the app.',
-      'Show the code to the staff before you pay.',
-      'The staff confirm the code and take 100,000 VND off the bill.',
+      'Đổi voucher trong ứng dụng.',
+      'Đưa mã cho nhân viên trước khi thanh toán.',
+      'Nhân viên xác nhận mã và trừ 100.000đ vào hoá đơn.',
     ],
     faceValue: 100_000,
     pointsPrice: 800,
@@ -138,7 +137,7 @@ const STEPS: Step[] = [
     id: 'r1',
     day: 18,
     member: MEMBER_3,
-    voucher: 'Free coffee',
+    voucher: 'Cà phê miễn phí',
     confirm: true,
   },
   {
@@ -146,7 +145,7 @@ const STEPS: Step[] = [
     id: 'r2',
     day: 20,
     member: MEMBER_2,
-    voucher: '20,000 VND off',
+    voucher: 'Giảm 20.000đ',
     confirm: true,
   },
   {
@@ -154,7 +153,7 @@ const STEPS: Step[] = [
     id: 'r3',
     day: 22,
     member: MEMBER_3,
-    voucher: '20,000 VND off',
+    voucher: 'Giảm 20.000đ',
     confirm: false,
   },
   { kind: 'refund', id: 'f1', day: 25, order: 'o1', amount: 250_000 },
