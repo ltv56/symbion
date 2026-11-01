@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import dataSource from './data-source';
 import { seedTiers } from './seed';
+import { historyDataSource, seedDemoHistory } from './seed-demo-history';
 
 const MIN_KEY_LENGTH = 16;
 const DEMO_MERCHANT = 'Demo Shop';
@@ -56,12 +57,19 @@ export async function seedDemo(ds: DataSource, apiKey: string): Promise<void> {
 async function main(): Promise<void> {
   const apiKey = demoApiKey(process.env, process.argv.slice(2));
   await dataSource.initialize();
+  const history = historyDataSource(dataSource);
   try {
+    await history.initialize();
     await seedDemo(dataSource, apiKey);
     console.log(
       `Seeded merchant "${DEMO_MERCHANT}" and ${DEMO_MEMBERS.length} members`,
     );
+    const { month, steps } = await seedDemoHistory(history, apiKey, new Date());
+    console.log(`Seeded ${steps} events for ${month}`);
   } finally {
+    if (history.isInitialized) {
+      await history.destroy();
+    }
     await dataSource.destroy();
   }
 }
