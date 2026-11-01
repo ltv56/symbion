@@ -17,3 +17,17 @@ export function formatDate(value: string | Date, locale: string): string {
     : { day: '2-digit', month: '2-digit', year: 'numeric' };
   return new Intl.DateTimeFormat(locale, options).format(new Date(value));
 }
+
+// The date and the time of day
+export function formatDateTime(value: string | Date, locale: string): string {
+  const options: Intl.DateTimeFormatOptions = locale.startsWith('en')
+    ? { dateStyle: 'medium', timeStyle: 'short' }
+    : {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      };
+  return new Intl.DateTimeFormat(locale, options).format(new Date(value));
+}

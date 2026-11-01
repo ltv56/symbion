@@ -154,3 +154,9 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 - Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
 - The expiry calendar covers the next 12 months, the longest a lot lives (see Earning).
 - The tier bar shows the 12-month spend and the spend still needed for the next tier; the top tier has no next tier.
+- Vouchers are grouped: ready to redeem (stock left and balance covers the price), not enough points (including a negative balance), sold out. Not-enough-points vouchers are ordered by price, so the smallest shortfall comes first.
+- The home page shows 4 / 3 / 2 vouchers of the three groups; "See more" opens the all-vouchers page filtered to that group (filter: All, or one group).
+- A voucher not covered by the balance shows how many points are missing.
+- Redeem asks for confirmation: value, points deducted, balance after, code valid until (see Redemption), no refund if the code expires.
+- The app sends one `Idempotency-Key` per voucher until the server answers; a retry after a lost response repeats it. `200` shows "already recorded", points are deducted once.
+- A `409` reloads the balance and the vouchers: the dialog then says sold out, not enough points or voucher gone.

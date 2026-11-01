@@ -1,8 +1,16 @@
-import type { UseQueryResult } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormError } from '@/components/FormError';
 import { Button } from '@/components/ui/button';
+
+// The part of a query result the panel reads
+export interface PanelQueryState<T> {
+  isPending: boolean;
+  isError: boolean;
+  data: T | undefined;
+  dataUpdatedAt: number;
+  refetch: () => unknown;
+}
 
 // A panel holding a query: loading, error, empty, content
 export function PanelQuery<T>({
@@ -13,7 +21,7 @@ export function PanelQuery<T>({
   children,
 }: {
   title: string;
-  query: UseQueryResult<T>;
+  query: PanelQueryState<T>;
   isEmpty: (data: T) => boolean;
   emptyText: string;
   children: (data: T, loadedAt: number) => ReactNode;
