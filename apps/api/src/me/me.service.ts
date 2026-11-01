@@ -42,6 +42,7 @@ export type MemberRedemption = {
   status: RedemptionStatus;
   points: number;
   voucherTitle: string;
+  merchantId: number;
   merchantName: string;
   usedAt: Date | null;
   expiresAt: Date;
@@ -180,13 +181,14 @@ export class MeService {
       status: RedemptionStatus;
       points: number;
       voucher_title: string;
+      merchant_id: number;
       merchant_name: string;
       used_at: Date | null;
       expires_at: Date;
       created_at: Date;
     }[] = await this.dataSource.query(
       `SELECT r.id, r.code, r.status, r.points, v.title AS voucher_title,
-        mc.name AS merchant_name, r.used_at, r.expires_at, r.created_at
+        r.merchant_id, mc.name AS merchant_name, r.used_at, r.expires_at, r.created_at
       FROM redemptions r
         JOIN vouchers v ON v.id = r.voucher_id
         JOIN merchants mc ON mc.id = r.merchant_id
@@ -206,6 +208,7 @@ export class MeService {
           : row.status,
       points: Number(row.points),
       voucherTitle: row.voucher_title,
+      merchantId: Number(row.merchant_id),
       merchantName: row.merchant_name,
       usedAt: row.used_at,
       expiresAt: row.expires_at,
