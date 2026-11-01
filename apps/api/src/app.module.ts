@@ -16,6 +16,7 @@ import { MeModule } from './me/me.module';
 import { MembersModule } from './members/members.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { OrdersModule } from './orders/orders.module';
+import { ReconciliationModule } from './reconciliation/reconciliation.module';
 import { RedemptionsModule } from './redemptions/redemptions.module';
 import { RefundsModule } from './refunds/refunds.module';
 import { TiersModule } from './tiers/tiers.module';
@@ -50,6 +51,7 @@ import { VouchersModule } from './vouchers/vouchers.module';
     MembersModule,
     MerchantsModule,
     OrdersModule,
+    ReconciliationModule,
     RedemptionsModule,
     RefundsModule,
     TiersModule,
