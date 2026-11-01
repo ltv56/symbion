@@ -103,6 +103,28 @@ describe('Demo history seed', () => {
     }
   });
 
+  it('seeds the content in Vietnamese', async () => {
+    await seedDemoHistory(dataSource, apiKey, new Date());
+
+    const { merchants, vouchers } = await shopInfo();
+    expect(vouchers.map((v: { title: string }) => v.title).sort()).toEqual(
+      ['Cà phê miễn phí', 'Giảm 100.000đ', 'Giảm 20.000đ'].sort(),
+    );
+    expect(merchants.map((m: { address: string }) => m.address).sort()).toEqual(
+      [
+        '12 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
+        '85 Lê Lợi, Quận 1, TP. Hồ Chí Minh',
+      ].sort(),
+    );
+    const vietnamese = /[à-ỹđ]/i;
+    for (const voucher of vouchers) {
+      expect(voucher.description).toMatch(vietnamese);
+      for (const step of voucher.steps as string[]) {
+        expect(step).toMatch(vietnamese);
+      }
+    }
+  });
+
   it('fills the info again on a rerun', async () => {
     const now = new Date();
     await seedDemoHistory(dataSource, apiKey, now);
