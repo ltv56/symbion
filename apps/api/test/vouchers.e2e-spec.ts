@@ -221,6 +221,16 @@ describe('Vouchers', () => {
     return Number(res.insertId);
   };
 
+  const setShopInfo = () =>
+    dataSource.query(
+      'UPDATE merchants SET photo_url = ?, address = ? WHERE id = ?',
+      [
+        'https://cdn.example.com/shop.jpg',
+        '12 Nguyen Hue, District 1',
+        merchantId,
+      ],
+    );
+
   describe('GET /vouchers', () => {
     const list = (query = '') =>
       request(app.getHttpServer()).get(`/vouchers${query}`);
@@ -254,10 +264,27 @@ describe('Vouchers', () => {
         stock: 10,
         validUntil,
         status: 'active',
+        merchantPhotoUrl: null,
+        merchantAddress: null,
         description: null,
         steps: null,
         createdAt: expect.any(String),
       });
+    });
+
+    it('lists the photo and address of the merchant', async () => {
+      await setShopInfo();
+      const id = await insertVoucher('A');
+
+      const res = await list().expect(200);
+
+      expect(res.body.items).toEqual([
+        expect.objectContaining({
+          id,
+          merchantPhotoUrl: 'https://cdn.example.com/shop.jpg',
+          merchantAddress: '12 Nguyen Hue, District 1',
+        }),
+      ]);
     });
 
     it('lists the description and steps', async () => {
@@ -364,8 +391,20 @@ describe('Vouchers', () => {
         merchantId,
         merchantName: 'Shop A',
         title: 'A',
+        merchantPhotoUrl: null,
+        merchantAddress: null,
         description: null,
         steps: null,
+      });
+    });
+
+    it('gets the photo and address of the merchant', async () => {
+      await setShopInfo();
+      const id = await insertVoucher('A');
+      const res = await get(id).expect(200);
+      expect(res.body).toMatchObject({
+        merchantPhotoUrl: 'https://cdn.example.com/shop.jpg',
+        merchantAddress: '12 Nguyen Hue, District 1',
       });
     });
 

@@ -69,6 +69,7 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - Existing vouchers are not re-checked when the point value changes.
 - Listed (`GET /vouchers`) while `status` is `active` and `valid_until` is in the future. A voucher with stock 0 stays listed.
 - A voucher may carry a `description` and the `steps` to redeem it; both are optional and returned by `GET /vouchers*`.
+- A merchant may carry a shop photo URL and an address, set by the app admin (`PATCH /merchants/:id`); `GET /vouchers*` returns them with each voucher.
 
 ## Redemption
 

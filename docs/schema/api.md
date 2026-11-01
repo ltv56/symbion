@@ -109,6 +109,19 @@ Admin only. Replaces the merchant's API key; the old key is rejected (`401`) fro
 
 Responses: `200` with `{ "id", "name", "apiKey" }` (`apiKey`: 64 hex characters, shown only in this response), `400` id is not an integer, `401` no or invalid admin token, `404` unknown merchant.
 
+## PATCH /merchants/:id
+
+Admin only. Sets the merchant's shop details. Body, every field optional; a missing field is kept, `null` clears it:
+
+| Field      | Rule                                                         |
+| ---------- | ------------------------------------------------------------ |
+| `photoUrl` | `http` or `https` URL with a protocol, up to 2048 characters |
+| `address`  | string, trimmed, 1-255 characters                            |
+
+A merchant is `{ "id", "name", "photoUrl", "address", "createdAt" }`; `photoUrl` and `address` are `null` until set. `GET /merchants` and `GET /merchants/:id` return the same shape.
+
+Responses: `200` with the merchant (an empty body changes nothing), `400` validation (unknown fields included, so `name` cannot be changed), `401` no or invalid admin token, `404` unknown merchant.
+
 ## GET /tiers, GET /tiers/:id
 
 Public. `GET /tiers` lists tiers by `min_spend` ascending; `GET /tiers/:id` returns `404` for an unknown id and `400` when the id is not an integer. A tier is `{ "id", "name", "minSpend", "earnRate" }`; `earnRate` is a number.
@@ -182,7 +195,7 @@ Responses: `201` with the voucher, `400` validation (unknown fields included) or
 
 ## GET /vouchers, GET /vouchers/:id
 
-Public. Only vouchers with `status` `active` and `validUntil` in the future. Each voucher also carries `merchantName`, the name of its merchant.
+Public. Only vouchers with `status` `active` and `validUntil` in the future. Each voucher also carries `merchantName`, `merchantPhotoUrl` and `merchantAddress` of its merchant (`null` when unset).
 
 `GET /vouchers` lists by `id` descending (keyset pagination). Query:
 

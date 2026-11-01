@@ -8,6 +8,8 @@ MySQL 8, InnoDB, utf8mb4. Migrations are hand-written SQL in `apps/api/src/migra
 | -------------- | ------------------- | ---------------------------------------------------------- |
 | `id`           | BIGINT UNSIGNED, PK | auto increment                                             |
 | `name`         | VARCHAR(255)        |                                                            |
+| `photo_url`    | VARCHAR(2048), null | http(s) URL of a shop photo                                |
+| `address`      | VARCHAR(255), null  |                                                            |
 | `api_key_hash` | CHAR(64), UNIQUE    | SHA-256 hex digest (64 chars); the raw key is never stored |
 | `created_at`   | TIMESTAMP           | defaults to now                                            |
 

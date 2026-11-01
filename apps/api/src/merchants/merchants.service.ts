@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { UpdateMerchantDto } from './dto/update-merchant.dto';
 import { Merchant } from './merchant.entity';
 
 export interface CreatedMerchant {
@@ -36,6 +37,18 @@ export class MerchantsService {
       this.merchants.create({ name, apiKeyHash: hashApiKey(apiKey) }),
     );
     return { id: merchant.id, name: merchant.name, apiKey };
+  }
+
+  async update(id: number, dto: UpdateMerchantDto): Promise<Merchant | null> {
+    if (!(await this.merchants.existsBy({ id }))) {
+      return null;
+    }
+    const { photoUrl, address } = dto;
+    // update() throws when every value is undefined
+    if (photoUrl !== undefined || address !== undefined) {
+      await this.merchants.update(id, { photoUrl, address });
+    }
+    return this.merchants.findOneBy({ id });
   }
 
   // The old key stops working at once.
