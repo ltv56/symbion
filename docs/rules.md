@@ -136,3 +136,10 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 | 1,000  | 200      | 0        | 80,000 (merchant pays)     |
 | 0      | 0        | 500      | −50,000 (app pays)         |
 | 1,000  | 100      | 300      | 60,000 (merchant pays)     |
+
+## Member app
+
+- The balance is the sum of the member's unexpired lots (`GET /me`). After a refund it can be negative: it is shown with a minus sign and redemption is blocked (see Redemption).
+- Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
+- The expiry calendar covers the next 12 months, the longest a lot lives (see Earning).
+- The tier bar shows the 12-month spend and the spend still needed for the next tier; the top tier has no next tier.
