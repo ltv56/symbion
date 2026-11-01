@@ -32,7 +32,7 @@ Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filt
 
 - `/members*`, `POST /orders`, `POST /orders/:orderId/refunds`, `POST /redemptions` and `POST /redemptions/:code/confirm` require the `x-api-key` header of a merchant.
 - `GET /members*` returns only the calling merchant's members; a member of another merchant is `404`.
-- `/merchants*`, `POST /tiers` and `POST /vouchers` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
+- `/merchants*`, `POST /tiers`, `POST /vouchers` and `GET /reconciliation` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
 - `/me*` requires `Authorization: Bearer <token>` from `POST /auth/member/login` (member only).
 - `GET /tiers*` and `GET /vouchers*` are public.
 - `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
@@ -213,3 +213,15 @@ Responses: `201` with the redemption, `200` with the original redemption when th
 The voucher's merchant marks a code used at the counter. No body. The code is matched case-insensitively.
 
 Responses: `200` with the redemption (`status` `used`, `usedAt` set); `200` with the same redemption and unchanged `usedAt` when it was already used, `401` missing or unknown API key, `404` unknown code or a code of another merchant's voucher, `409` the code is expired.
+
+## GET /reconciliation
+
+What each merchant and the app owe for one calendar month (see `docs/rules.md`). Admin only.
+
+| Input   | Notes                                                                         |
+| ------- | ----------------------------------------------------------------------------- |
+| `month` | query, required, `YYYY-MM` from `2000-01`; the month runs in Asia/Ho_Chi_Minh |
+
+A report is `{ "month", "pointValueVnd", "merchants": [...] }`. Each merchant is `{ "merchantId", "merchantName", "earnedPoints", "earnedVnd", "refundedPoints", "refundedVnd", "redeemedPoints", "redeemedVnd", "netVnd" }`, ordered by `merchantId`. `netVnd = earnedVnd - refundedVnd - redeemedVnd`: positive means the merchant owes the app, negative means the app owes the merchant. A merchant with no points issued, refunded or redeemed in the month is left out.
+
+Responses: `200` with the report (`merchants` is empty for a month without activity), `400` missing or malformed `month`, `401` missing, invalid or non-admin token.

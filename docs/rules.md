@@ -112,6 +112,31 @@ Several refunds of an order of 250,000 that earned 25:
 | 83,334       | 250,000        | 25              | 8        |
 | 1            | 250,001        | —               | `422`    |
 
+## Reconciliation
+
+Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=YYYY-MM`). Computed on request from the ledger, refunds and redemptions; nothing is stored.
+
+`net = issued − refunded − redeemed` (VND)
+
+| Line     | Points                                                            | VND                                    |
+| -------- | ----------------------------------------------------------------- | -------------------------------------- |
+| Issued   | `earn` lots created at the merchant's shop in the month           | points × current point value           |
+| Refunded | `points_deducted` of refunds made in the month by the merchant    | points × current point value           |
+| Redeemed | `points` of codes confirmed `used` in the month, voucher merchant | points × point value on the redemption |
+
+- `net > 0`: the merchant owes the app. `net < 0`: the app owes the merchant.
+- The merchant pays for every point issued at its shop, base and tier bonus alike. The app pays the merchant for every code confirmed at its counter, whichever merchant issued the points.
+- Each event counts in the month it happened: a refund of an old order counts in the month of the refund, and a code counts in the month it was confirmed. A closed month does not change.
+- Codes that expired unused are not listed (the app keeps those points).
+- A merchant with no points issued, refunded or redeemed in the month is left out.
+- Known limitation: lots and refunds don't store the point value, so changing `program_settings.point_value_vnd` also changes the VND of closed months for those two lines. Redemptions keep their own value.
+
+| Issued | Refunded | Redeemed | Net (VND at 100 per point) |
+| ------ | -------- | -------- | -------------------------- |
+| 1,000  | 200      | 0        | 80,000 (merchant pays)     |
+| 0      | 0        | 500      | −50,000 (app pays)         |
+| 1,000  | 100      | 300      | 60,000 (merchant pays)     |
+
 ## Member app
 
 - The balance is the sum of the member's unexpired lots (`GET /me`). After a refund it can be negative: it is shown with a minus sign and redemption is blocked (see Redemption).

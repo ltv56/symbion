@@ -271,6 +271,25 @@ curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/$OID/refunds -H 'co
   -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-3' -d '{"amount":1}'
 ```
 
+## Reconciliation (MySQL)
+
+Requires `$TOKEN` (see Admin login) and the data from Orders, Redemptions and Refunds. The month is in Asia/Ho_Chi_Minh.
+
+```sh
+# this month -> 200 {"month":"...","pointValueVnd":100,"merchants":[{"merchantId":...,"netVnd":...}]}
+MONTH=$(date -u -d '+7 hours' +%Y-%m)
+curl -s -w ' [%{http_code}]\n' "localhost:3000/reconciliation?month=$MONTH" -H "Authorization: Bearer $TOKEN"
+
+# a month without activity -> 200 {"month":"2020-01","pointValueVnd":100,"merchants":[]}
+curl -s -w ' [%{http_code}]\n' 'localhost:3000/reconciliation?month=2020-01' -H "Authorization: Bearer $TOKEN"
+
+# error path -> 400 (malformed month)
+curl -s -w ' [%{http_code}]\n' 'localhost:3000/reconciliation?month=2026-13' -H "Authorization: Bearer $TOKEN"
+
+# error path -> 401 (no token)
+curl -s -w ' [%{http_code}]\n' "localhost:3000/reconciliation?month=$MONTH"
+```
+
 ## Health and logs
 
 ```sh
