@@ -12,6 +12,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { RedactedSqlLogger } from './common/redacted-sql.logger';
 import { requestIdMiddleware } from './common/request-id.middleware';
 import { AuthModule } from './auth/auth.module';
+import { DemoModule } from './demo/demo.module';
 import { HealthModule } from './health/health.module';
 import { MeModule } from './me/me.module';
 import { MembersModule } from './members/members.module';
@@ -48,6 +49,7 @@ import { VouchersModule } from './vouchers/vouchers.module';
       }),
     }),
     AuthModule,
+    DemoModule,
     HealthModule,
     MeModule,
     MembersModule,
