@@ -12,13 +12,17 @@ const DEMO_MEMBERS = [
   { name: 'Demo Member Three', email: 'member3@demo.example' },
 ];
 
-export function demoApiKey(env: NodeJS.ProcessEnv, argv: string[]): string {
-  const key = env.DEMO_API_KEY;
+export function checkDemoApiKey(key: string | undefined): string {
   if (!key || key.length < MIN_KEY_LENGTH) {
     throw new Error(
       `DEMO_API_KEY is required and must be at least ${MIN_KEY_LENGTH} characters`,
     );
   }
+  return key;
+}
+
+export function demoApiKey(env: NodeJS.ProcessEnv, argv: string[]): string {
+  const key = checkDemoApiKey(env.DEMO_API_KEY);
   if (env.NODE_ENV === 'production' && !argv.includes('--allow-production')) {
     throw new Error(
       'Refusing to seed demo data in production without --allow-production',
