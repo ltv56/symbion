@@ -120,6 +120,8 @@
     "active": "Chưa dùng",
     "past": "Đã dùng hoặc hết hạn",
     "groupTitle": "{{name}} ({{count}})",
+    "showAll": "Xem tất cả {{n}} mã",
+    "showLess": "Thu gọn",
     "validUntil": "Dùng được đến {{date}}",
     "usedOn": "Đã dùng {{date}}",
     "expiredOn": "Hết hạn {{date}}",

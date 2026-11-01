@@ -127,6 +127,8 @@
     "active": "Unused",
     "past": "Used or expired",
     "groupTitle": "{{name}} ({{count}})",
+    "showAll": "Show all {{n}} codes",
+    "showLess": "Show less",
     "validUntil": "Valid until {{date}}",
     "usedOn": "Used {{date}}",
     "expiredOn": "Expired {{date}}",

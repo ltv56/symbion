@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormError } from '@/components/FormError';
 import type { PanelQueryState } from '@/components/PanelQuery';
+import { ShowMore } from '@/components/ShowMore';
 import { Button } from '@/components/ui/button';
 import { groupRedemptions } from './groups';
 import type { RedemptionGroups } from './groups';
@@ -8,10 +10,23 @@ import { RedemptionTicket } from './RedemptionTicket';
 import { useRedemptions } from './useRedemptions';
 import type { MemberRedemption } from './useRedemptions';
 
+// Codes shown before "show all"
+const SHOWN = 10;
+
 const GROUPS: { key: keyof RedemptionGroups; label: string }[] = [
   { key: 'active', label: 'redemptions.active' },
   { key: 'past', label: 'redemptions.past' },
 ];
+
+// The first `limit` codes across the groups, in order
+function visibleGroups(
+  groups: RedemptionGroups,
+  limit: number,
+): RedemptionGroups {
+  const active = groups.active.slice(0, limit);
+  const past = groups.past.slice(0, limit - active.length);
+  return { active, past };
+}
 
 function Groups({
   items,
@@ -21,37 +36,49 @@ function Groups({
   loadedAt: number;
 }) {
   const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
   const groups = groupRedemptions(items);
+  const visible = visibleGroups(groups, expanded ? items.length : SHOWN);
 
   return (
-    <div className="space-y-5">
-      {GROUPS.map(({ key, label }) => {
-        const shown = groups[key];
-        if (shown.length === 0) return null;
-        return (
-          <section key={key}>
-            <h3
-              data-surface="ground"
-              className="mb-2 text-sm font-semibold text-muted-foreground"
-            >
-              {t('redemptions.groupTitle', {
-                name: t(label),
-                count: shown.length,
-              })}
-            </h3>
-            <ul className="space-y-3">
-              {shown.map((item) => (
-                <RedemptionTicket
-                  key={item.id}
-                  item={item}
-                  loadedAt={loadedAt}
-                />
-              ))}
-            </ul>
-          </section>
-        );
-      })}
-    </div>
+    <>
+      <div className="space-y-5">
+        {GROUPS.map(({ key, label }) => {
+          const shown = visible[key];
+          if (shown.length === 0) return null;
+          return (
+            <section key={key}>
+              <h3
+                data-surface="ground"
+                className="mb-2 text-sm font-semibold text-muted-foreground"
+              >
+                {t('redemptions.groupTitle', {
+                  name: t(label),
+                  count: groups[key].length,
+                })}
+              </h3>
+              <ul className="space-y-3">
+                {shown.map((item) => (
+                  <RedemptionTicket
+                    key={item.id}
+                    item={item}
+                    loadedAt={loadedAt}
+                  />
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+      </div>
+      {items.length > SHOWN && (
+        <ShowMore
+          expanded={expanded}
+          onToggle={() => setExpanded((value) => !value)}
+          moreLabel={t('redemptions.showAll', { n: items.length })}
+          lessLabel={t('redemptions.showLess')}
+        />
+      )}
+    </>
   );
 }
 
