@@ -1,10 +1,19 @@
+import { cn } from 'cn';
 import { Check, Copy } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 
-// The code in the Code face, with a copy button
-export function CodeCopy({ code }: { code: string }) {
+// The code in the Code face, with a copy button while it can still be used
+export function CodeCopy({
+  code,
+  copyable = true,
+  struck = false,
+}: {
+  code: string;
+  copyable?: boolean;
+  struck?: boolean;
+}) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const text = useRef<HTMLSpanElement>(null);
@@ -29,18 +38,23 @@ export function CodeCopy({ code }: { code: string }) {
     <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
       <span
         ref={text}
-        className="font-mono text-xl font-medium tracking-wide break-all tabular-nums select-all @max-[22rem]:text-lg"
+        className={cn(
+          'font-mono text-xl font-medium tracking-wide break-all tabular-nums select-all @max-[22rem]:text-lg',
+          struck && 'line-through decoration-2',
+        )}
       >
         <span aria-hidden>{code}</span>
         <span className="sr-only select-none">{code.split('').join(' ')}</span>
       </span>
-      <Button
-        size="icon"
-        aria-label={t('redemptions.copy', { code: code.split('').join(' ') })}
-        onClick={() => void copy()}
-      >
-        {copied ? <Check /> : <Copy />}
-      </Button>
+      {copyable && (
+        <Button
+          size="icon"
+          aria-label={t('redemptions.copy', { code: code.split('').join(' ') })}
+          onClick={() => void copy()}
+        >
+          {copied ? <Check /> : <Copy />}
+        </Button>
+      )}
       <span role="status" className="sr-only">
         {copied ? t('redemptions.copied') : ''}
       </span>

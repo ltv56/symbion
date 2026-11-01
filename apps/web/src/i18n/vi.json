@@ -115,6 +115,19 @@
     "failed": "Không kết nối được. Bấm thử lại, điểm chỉ bị trừ một lần."
   },
   "redemptions": {
+    "title": "Mã của tôi",
+    "empty": "Bạn chưa đổi voucher nào. Mã đã đổi sẽ hiện ở đây.",
+    "active": "Chưa dùng",
+    "past": "Đã dùng hoặc hết hạn",
+    "groupTitle": "{{name}} ({{count}})",
+    "validUntil": "Dùng được đến {{date}}",
+    "usedOn": "Đã dùng {{date}}",
+    "expiredOn": "Hết hạn {{date}}",
+    "left_other": "còn {{count}} ngày",
+    "leftHours_other": "còn {{count}} giờ",
+    "stampUsed": "Đã dùng",
+    "stampExpired": "Hết hạn",
+    "paid": "Đã trừ {{n}} điểm",
     "copy": "Sao chép mã {{code}}",
     "copied": "Đã sao chép mã"
   },
