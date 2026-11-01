@@ -65,6 +65,23 @@
       "code": "Nhập đủ 6 số."
     }
   },
+  "vouchers": {
+    "title": "Đổi điểm lấy voucher",
+    "empty": "Hiện chưa có voucher nào để đổi. Voucher mới sẽ hiện ở đây.",
+    "unit_other": "điểm",
+    "left_other": "còn {{count}} ngày",
+    "groupTitle": "{{name}} ({{count}})",
+    "groupReadyToRedeem": "Sẵn sàng đổi",
+    "groupShort": "Chưa đủ điểm",
+    "groupSoldOut": "Đã hết",
+    "more": "Xem thêm",
+    "moreFor": "Xem thêm voucher: {{name}}",
+    "allTitle": "Tất cả voucher",
+    "back": "Quay lại",
+    "filter": "Lọc voucher",
+    "filterAll": "Tất cả",
+    "needMore_other": "Cần thêm {{missing}} điểm"
+  },
   "errors": {
     "generic": "Có lỗi xảy ra. Thử lại sau."
   }

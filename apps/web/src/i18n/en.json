@@ -69,6 +69,26 @@
       "code": "Enter all 6 digits."
     }
   },
+  "vouchers": {
+    "title": "Redeem points for vouchers",
+    "empty": "No vouchers to redeem right now. New vouchers appear here.",
+    "unit_one": "point",
+    "unit_other": "points",
+    "left_one": "{{count}} day left",
+    "left_other": "{{count}} days left",
+    "groupTitle": "{{name}} ({{count}})",
+    "groupReadyToRedeem": "Ready to redeem",
+    "groupShort": "Not enough points",
+    "groupSoldOut": "Sold out",
+    "more": "See more",
+    "moreFor": "See more vouchers: {{name}}",
+    "allTitle": "All vouchers",
+    "back": "Back",
+    "filter": "Filter vouchers",
+    "filterAll": "All",
+    "needMore_one": "Need {{missing}} more point",
+    "needMore_other": "Need {{missing}} more points"
+  },
   "errors": {
     "generic": "Something went wrong. Try again."
   }

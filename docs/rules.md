@@ -145,3 +145,6 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 - Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
 - The expiry calendar covers the next 12 months, the longest a lot lives (see Earning).
 - The tier bar shows the 12-month spend and the spend still needed for the next tier; the top tier has no next tier.
+- Vouchers are grouped: ready to redeem (stock left and balance covers the price), not enough points (including a negative balance), sold out. Not-enough-points vouchers are ordered by price, so the smallest shortfall comes first.
+- The home page shows 4 / 3 / 2 vouchers of the three groups; "See more" opens the all-vouchers page filtered to that group (filter: All, or one group).
+- A voucher not covered by the balance shows how many points are missing.
