@@ -13,6 +13,9 @@ import { RefundsService } from './refunds/refunds.service';
 
 const SHOP = 'Demo Shop';
 const CAFE = 'Demo Cafe';
+const SHOP_ADDRESS = '85 Le Loi, Ben Thanh Ward, District 1, Ho Chi Minh City';
+const CAFE_ADDRESS =
+  '12 Nguyen Hue, Ben Nghe Ward, District 1, Ho Chi Minh City';
 const VIETNAM_OFFSET_MS = 7 * 3_600_000;
 const CODE_LIFETIME_MS = 30 * 86_400_000;
 
@@ -24,6 +27,13 @@ const VOUCHERS = [
   {
     merchant: CAFE,
     title: 'Free coffee',
+    description:
+      'One free coffee of any size, hot or iced. One voucher per visit.',
+    steps: [
+      'Redeem the voucher in the app.',
+      'Show the code to the staff at the counter.',
+      'The staff confirm the code and serve your coffee.',
+    ],
     faceValue: 35_000,
     pointsPrice: 300,
     stock: 50,
@@ -31,6 +41,13 @@ const VOUCHERS = [
   {
     merchant: SHOP,
     title: '20,000 VND off',
+    description:
+      'Take 20,000 VND off a single bill. Not combined with other offers.',
+    steps: [
+      'Redeem the voucher in the app.',
+      'Show the code to the staff before you pay.',
+      'The staff confirm the code and take 20,000 VND off the bill.',
+    ],
     faceValue: 20_000,
     pointsPrice: 150,
     stock: 50,
@@ -38,6 +55,13 @@ const VOUCHERS = [
   {
     merchant: SHOP,
     title: '100,000 VND off',
+    description:
+      'Take 100,000 VND off a single bill. Not combined with other offers.',
+    steps: [
+      'Redeem the voucher in the app.',
+      'Show the code to the staff before you pay.',
+      'The staff confirm the code and take 100,000 VND off the bill.',
+    ],
     faceValue: 100_000,
     pointsPrice: 800,
     stock: 20,
@@ -177,8 +201,11 @@ export async function seedDemoHistory(
   const refunds = new RefundsService(ds, ledger);
 
   const merchantIds = new Map<string, number>();
-  merchantIds.set(SHOP, await merchantId(ds, SHOP, apiKey));
-  merchantIds.set(CAFE, await merchantId(ds, CAFE, `${apiKey}-cafe`));
+  merchantIds.set(SHOP, await merchantId(ds, SHOP, apiKey, SHOP_ADDRESS));
+  merchantIds.set(
+    CAFE,
+    await merchantId(ds, CAFE, `${apiKey}-cafe`, CAFE_ADDRESS),
+  );
 
   const validUntil = addMonths(now, 12);
   const voucherIds = new Map<string, number>();
@@ -273,12 +300,13 @@ async function merchantId(
   ds: DataSource,
   name: string,
   apiKey: string,
+  address: string,
 ): Promise<number> {
   const apiKeyHash = createHash('sha256').update(apiKey).digest('hex');
   await ds.query(
-    `INSERT INTO merchants (name, api_key_hash) VALUES (?, ?)
-     ON DUPLICATE KEY UPDATE name = VALUES(name)`,
-    [name, apiKeyHash],
+    `INSERT INTO merchants (name, address, api_key_hash) VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE name = VALUES(name), address = VALUES(address)`,
+    [name, address, apiKeyHash],
   );
   const [row] = await ds.query(
     'SELECT id FROM merchants WHERE api_key_hash = ?',
@@ -287,7 +315,7 @@ async function merchantId(
   return Number(row.id);
 }
 
-// Stock is set once; a rerun only keeps the voucher open.
+// Stock is set once; a rerun keeps the voucher open and refreshes its description and steps.
 async function upsertVoucher(
   ds: DataSource,
   merchant: number,
@@ -300,17 +328,24 @@ async function upsertVoucher(
   );
   if (existing) {
     await ds.query(
-      `UPDATE vouchers SET valid_until = ?, status = 'active' WHERE id = ?`,
-      [validUntil, existing.id],
+      `UPDATE vouchers SET valid_until = ?, status = 'active', description = ?, steps = ? WHERE id = ?`,
+      [
+        validUntil,
+        voucher.description,
+        JSON.stringify(voucher.steps),
+        existing.id,
+      ],
     );
     return Number(existing.id);
   }
   const result = await ds.query(
-    `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until)
-    VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO vouchers (merchant_id, title, description, steps, face_value, points_price, stock, valid_until)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       merchant,
       voucher.title,
+      voucher.description,
+      JSON.stringify(voucher.steps),
       voucher.faceValue,
       voucher.pointsPrice,
       voucher.stock,
