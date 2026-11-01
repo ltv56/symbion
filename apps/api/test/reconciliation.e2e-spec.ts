@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { ReconciliationService } from '../src/reconciliation/reconciliation.service';
 import { adminToken } from './helpers/admin-token';
 import { insertMerchant, resetDatabase } from './helpers/database';
 
@@ -72,7 +73,12 @@ describe('Reconciliation', () => {
     {
       pointValueVnd = 100,
       usedAt = null,
-    }: { pointValueVnd?: number; usedAt?: string | null } = {},
+      expiresAt = '2030-01-01',
+    }: {
+      pointValueVnd?: number;
+      usedAt?: string | null;
+      expiresAt?: string;
+    } = {},
   ) => {
     const voucher = await dataSource.query(
       `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until, status)
@@ -82,7 +88,7 @@ describe('Reconciliation', () => {
     const n = ++seq;
     await dataSource.query(
       `INSERT INTO redemptions (merchant_id, member_id, voucher_id, code, points, point_value_vnd, status, client_key, used_at, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '2030-01-01')`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         merchantId,
         memberId,
@@ -93,6 +99,7 @@ describe('Reconciliation', () => {
         usedAt ? 'used' : 'issued',
         `redeem-${n}`,
         usedAt ? new Date(usedAt) : null,
+        new Date(expiresAt),
       ],
     );
   };
@@ -175,6 +182,8 @@ describe('Reconciliation', () => {
           refundedVnd: 0,
           redeemedPoints: 0,
           redeemedVnd: 0,
+          breakagePoints: 0,
+          breakageVnd: 0,
           netVnd: 3500,
         },
         {
@@ -186,6 +195,8 @@ describe('Reconciliation', () => {
           refundedVnd: 0,
           redeemedPoints: 0,
           redeemedVnd: 0,
+          breakagePoints: 0,
+          breakageVnd: 0,
           netVnd: 700,
         },
       ]);
@@ -365,6 +376,125 @@ describe('Reconciliation', () => {
           refundedVnd: 10000,
           redeemedPoints: 300,
           redeemedVnd: 30000,
+          breakagePoints: 0,
+          breakageVnd: 0,
+          netVnd: 60000,
+        },
+      ]);
+    });
+  });
+
+  describe('codes that expired unused', () => {
+    it('counts the points at the voucher merchant, without changing the net', async () => {
+      await insertEarn(shopA, 1000, '2026-10-05T03:00:00Z');
+      await insertRedemption(shopB, 500, { expiresAt: '2026-10-10T03:00:00Z' });
+
+      const res = await report('2026-10').expect(200);
+
+      expect(res.body.merchants).toEqual([
+        expect.objectContaining({
+          merchantId: shopA,
+          breakagePoints: 0,
+          netVnd: 100000,
+        }),
+        expect.objectContaining({
+          merchantId: shopB,
+          earnedPoints: 0,
+          redeemedPoints: 0,
+          breakagePoints: 500,
+          breakageVnd: 50000,
+          netVnd: 0,
+        }),
+      ]);
+    });
+
+    it('values the points at the point value of the redemption', async () => {
+      await insertRedemption(shopA, 100, {
+        pointValueVnd: 120,
+        expiresAt: '2026-10-10T03:00:00Z',
+      });
+      await dataSource.query(
+        `UPDATE program_settings SET point_value_vnd = 150 WHERE id = 1`,
+      );
+
+      const res = await report('2026-10').expect(200);
+
+      expect(res.body.merchants[0].breakageVnd).toBe(12000);
+    });
+
+    it('does not count a code that was confirmed in time', async () => {
+      await insertRedemption(shopA, 500, {
+        usedAt: '2026-10-05T03:00:00Z',
+        expiresAt: '2026-10-10T03:00:00Z',
+      });
+
+      const res = await report('2026-10').expect(200);
+
+      expect(res.body.merchants).toEqual([
+        expect.objectContaining({
+          redeemedPoints: 500,
+          breakagePoints: 0,
+          breakageVnd: 0,
+        }),
+      ]);
+    });
+
+    it.each([
+      ['2026-09-30T16:59:59Z', '2026-09'],
+      ['2026-09-30T17:00:00Z', '2026-10'],
+      ['2026-10-31T16:59:59Z', '2026-10'],
+      ['2026-10-31T17:00:00Z', '2026-11'],
+    ])('puts a code that expired at %s into %s', async (expiresAt, month) => {
+      await insertRedemption(shopA, 10, { expiresAt });
+
+      const inMonth = await report(month).expect(200);
+      expect(inMonth.body.merchants).toEqual([
+        expect.objectContaining({ breakagePoints: 10 }),
+      ]);
+
+      const other = month === '2026-10' ? '2026-09' : '2026-10';
+      const elsewhere = await report(other).expect(200);
+      expect(elsewhere.body.merchants).toEqual([]);
+    });
+
+    it('leaves a code alone until its expiry has passed', async () => {
+      await insertRedemption(shopA, 10, { expiresAt: '2026-10-10T03:00:00Z' });
+      await insertRedemption(shopA, 20, { expiresAt: '2026-10-20T03:00:00Z' });
+      const service = app.get(ReconciliationService);
+
+      const report15th = await service.report(
+        '2026-10',
+        new Date('2026-10-15T03:00:00Z'),
+      );
+      const report25th = await service.report(
+        '2026-10',
+        new Date('2026-10-25T03:00:00Z'),
+      );
+
+      expect(report15th.merchants[0]?.breakagePoints).toBe(10);
+      expect(report25th.merchants[0]?.breakagePoints).toBe(30);
+    });
+
+    it('combines with issued, refunded and redeemed points', async () => {
+      await insertEarn(shopA, 1000, '2026-10-05T03:00:00Z');
+      await insertRefund(shopA, 100, '2026-10-06T03:00:00Z');
+      await insertRedemption(shopA, 300, { usedAt: '2026-10-07T03:00:00Z' });
+      await insertRedemption(shopA, 200, { expiresAt: '2026-10-20T03:00:00Z' });
+
+      const res = await report('2026-10').expect(200);
+
+      expect(res.body.merchants).toEqual([
+        {
+          merchantId: shopA,
+          merchantName: 'Shop A',
+          earnedPoints: 1000,
+          earnedVnd: 100000,
+          refundedPoints: 100,
+          refundedVnd: 10000,
+          redeemedPoints: 300,
+          redeemedVnd: 30000,
+          breakagePoints: 200,
+          breakageVnd: 20000,
           netVnd: 60000,
         },
       ]);

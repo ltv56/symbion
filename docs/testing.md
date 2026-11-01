@@ -280,6 +280,9 @@ Requires `$TOKEN` (see Admin login) and the data from Orders, Redemptions and Re
 MONTH=$(date -u -d '+7 hours' +%Y-%m)
 curl -s -w ' [%{http_code}]\n' "localhost:3000/reconciliation?month=$MONTH" -H "Authorization: Bearer $TOKEN"
 
+# breakage: make an issued code expire (mysql client, see Migrations), then read this month -> the voucher merchant has breakagePoints > 0
+#   UPDATE redemptions SET expires_at = NOW() - INTERVAL 1 MINUTE WHERE status = 'issued' LIMIT 1;
+
 # a month without activity -> 200 {"month":"2020-01","pointValueVnd":100,"merchants":[]}
 curl -s -w ' [%{http_code}]\n' 'localhost:3000/reconciliation?month=2020-01' -H "Authorization: Bearer $TOKEN"
 

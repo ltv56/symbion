@@ -222,6 +222,6 @@ What each merchant and the app owe for one calendar month (see `docs/rules.md`).
 | ------- | ----------------------------------------------------------------------------- |
 | `month` | query, required, `YYYY-MM` from `2000-01`; the month runs in Asia/Ho_Chi_Minh |
 
-A report is `{ "month", "pointValueVnd", "merchants": [...] }`. Each merchant is `{ "merchantId", "merchantName", "earnedPoints", "earnedVnd", "refundedPoints", "refundedVnd", "redeemedPoints", "redeemedVnd", "netVnd" }`, ordered by `merchantId`. `netVnd = earnedVnd - refundedVnd - redeemedVnd`: positive means the merchant owes the app, negative means the app owes the merchant. A merchant with no points issued, refunded or redeemed in the month is left out.
+A report is `{ "month", "pointValueVnd", "merchants": [...] }`. Each merchant is `{ "merchantId", "merchantName", "earnedPoints", "earnedVnd", "refundedPoints", "refundedVnd", "redeemedPoints", "redeemedVnd", "breakagePoints", "breakageVnd", "netVnd" }`, ordered by `merchantId`. `netVnd = earnedVnd - refundedVnd - redeemedVnd`: positive means the merchant owes the app, negative means the app owes the merchant. `breakagePoints` and `breakageVnd` are the codes of the voucher merchant that expired unused in the month; they are not part of `netVnd`. A merchant with no points issued, refunded, redeemed or expired in the month is left out.
 
 Responses: `200` with the report (`merchants` is empty for a month without activity), `400` missing or malformed `month`, `401` missing, invalid or non-admin token.
