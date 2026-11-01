@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { ArrowLeft, ExternalLink, X } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Heart, X } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { useEffect, useState } from 'react';
 import type { ElementType, ReactNode } from 'react';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogPortal } from '@/components/ui/dialog';
 import { formatDate, formatPoints, formatVnd } from '@/lib/format';
 import { availability } from './availability';
+import { useFavorites, useToggleFavorite } from './useFavorites';
 import type { Voucher } from './useVouchers';
 
 type DetailVariant = 'page' | 'panel';
@@ -55,6 +56,9 @@ export function VoucherDetailView({
   voucher,
   balance,
   variant,
+  favorite,
+  favoriteDisabled,
+  onFavorite,
   onClose,
   onRedeem,
   Title = 'h2',
@@ -62,6 +66,9 @@ export function VoucherDetailView({
   voucher: Voucher;
   balance: number;
   variant: DetailVariant;
+  favorite: boolean;
+  favoriteDisabled: boolean;
+  onFavorite: () => void;
   onClose: () => void;
   onRedeem: (voucher: Voucher) => void;
   // DialogTitle in the dialog
@@ -163,25 +170,42 @@ export function VoucherDetailView({
             {points(balance)} {unit(balance)}
           </span>
         </p>
-        {kind === 'ok' && (
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            {kind === 'ok' && (
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={() => onRedeem(voucher)}
+              >
+                {t('voucherDetail.redeem')}
+              </Button>
+            )}
+            {(kind === 'short' || kind === 'negative') && (
+              <p className="wrap-anywhere">
+                <Trans
+                  i18nKey="voucherDetail.lacking"
+                  values={{ missing: points(voucher.pointsPrice - balance) }}
+                  components={{ n: <strong className="font-semibold" /> }}
+                />
+              </p>
+            )}
+            {kind === 'soldOut' && <p>{t('voucherDetail.soldOut')}</p>}
+          </div>
           <Button
-            size="lg"
-            className="w-full"
-            onClick={() => onRedeem(voucher)}
+            variant="outline"
+            size="icon"
+            aria-pressed={favorite}
+            aria-label={t('voucherDetail.favorite')}
+            disabled={favoriteDisabled}
+            onClick={onFavorite}
+            className="size-11 shrink-0"
           >
-            {t('voucherDetail.redeem')}
-          </Button>
-        )}
-        {(kind === 'short' || kind === 'negative') && (
-          <p className="wrap-anywhere">
-            <Trans
-              i18nKey="voucherDetail.lacking"
-              values={{ missing: points(voucher.pointsPrice - balance) }}
-              components={{ n: <strong className="font-semibold" /> }}
+            <Heart
+              className={cn('size-5', favorite && 'fill-current text-primary')}
             />
-          </p>
-        )}
-        {kind === 'soldOut' && <p>{t('voucherDetail.soldOut')}</p>}
+          </Button>
+        </div>
       </footer>
     </div>
   );
@@ -224,6 +248,8 @@ export function VoucherDetailDialog({
   const [shown, setShown] = useState(voucher);
   if (voucher !== null && voucher !== shown) setShown(voucher);
   const wide = useWide();
+  const favorites = useFavorites(voucher !== null);
+  const toggleFavorite = useToggleFavorite();
 
   return (
     <Dialog open={voucher !== null} onOpenChange={(next) => !next && onClose()}>
@@ -250,6 +276,14 @@ export function VoucherDetailDialog({
                 voucher={shown}
                 balance={balance}
                 variant={wide ? 'panel' : 'page'}
+                favorite={favorites.data?.has(shown.id) ?? false}
+                favoriteDisabled={favorites.isPending}
+                onFavorite={() =>
+                  toggleFavorite.mutate({
+                    voucherId: shown.id,
+                    on: !favorites.data?.has(shown.id),
+                  })
+                }
                 onClose={onClose}
                 onRedeem={onRedeem}
                 Title={DialogPrimitive.Title}

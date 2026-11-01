@@ -96,6 +96,7 @@
     "redeem": "Đổi voucher",
     "lacking": "Bạn cần thêm <n>{{missing}}</n> điểm để đổi voucher này.",
     "soldOut": "Voucher này đã hết hàng.",
+    "favorite": "Yêu thích",
     "close": "Đóng",
     "photoAlt": "Ảnh cửa hàng {{name}}"
   },

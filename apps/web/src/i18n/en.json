@@ -103,6 +103,7 @@
     "redeem": "Redeem voucher",
     "lacking": "You need <n>{{missing}}</n> more points to redeem this voucher.",
     "soldOut": "This voucher is sold out.",
+    "favorite": "Favorite",
     "close": "Close",
     "photoAlt": "Photo of {{name}}"
   },
