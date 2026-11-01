@@ -44,7 +44,7 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - Evaluated after every order and every refund, in the same transaction. The tier can go up or down.
 - The order that crosses a threshold earns at the tier the member had before it.
 - A repeated `Idempotency-Key` does not re-evaluate.
-- Known limitation: with no new order, a tier stays as it is after older orders leave the window (no nightly job).
+- Every night at 03:00 (Asia/Ho_Chi_Minh) a job re-evaluates every member above the lowest tier, so a member who stops buying drops once the old orders leave the 12-month window. It runs inside the api process, one transaction and one member lock per member, and logs how many members it checked and moved down.
 
 | Orders in the last 12 months (VND) | Tier   |
 | ---------------------------------- | ------ |
