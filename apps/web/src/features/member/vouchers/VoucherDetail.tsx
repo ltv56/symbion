@@ -202,7 +202,7 @@ export function VoucherDetailView({
             className="size-11 shrink-0"
           >
             <Heart
-              className={cn('size-5', favorite && 'fill-current text-primary')}
+              className={cn('size-5', favorite && 'fill-current text-brand')}
             />
           </Button>
         </div>
