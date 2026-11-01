@@ -163,18 +163,20 @@ Responses: `201` with the refund, `200` with the original refund when this merch
 
 Admin only. Creates a voucher on behalf of a merchant. Body:
 
-| Field         | Rule                                            |
-| ------------- | ----------------------------------------------- |
-| `merchantId`  | integer, an existing merchant                   |
-| `title`       | string, trimmed, 1-255 characters               |
-| `faceValue`   | integer VND from 1 to 9007199254740991          |
-| `pointsPrice` | integer from 1 to 9007199254740991              |
-| `stock`       | integer from 0 to 4294967295                    |
-| `validUntil`  | ISO 8601 date-time in the future, whole seconds |
+| Field         | Rule                                                               |
+| ------------- | ------------------------------------------------------------------ |
+| `merchantId`  | integer, an existing merchant                                      |
+| `title`       | string, trimmed, 1-255 characters                                  |
+| `description` | optional string, trimmed, up to 2000 characters                    |
+| `steps`       | optional array of up to 10 strings, each trimmed, 1-200 characters |
+| `faceValue`   | integer VND from 1 to 9007199254740991                             |
+| `pointsPrice` | integer from 1 to 9007199254740991                                 |
+| `stock`       | integer from 0 to 4294967295                                       |
+| `validUntil`  | ISO 8601 date-time in the future, whole seconds                    |
 
 `faceValue` must be at least `pointsPrice × point value` (`program_settings.point_value_vnd`).
 
-A voucher is `{ "id", "merchantId", "title", "faceValue", "pointsPrice", "stock", "validUntil", "status", "createdAt" }`; `status` is `active`.
+A voucher is `{ "id", "merchantId", "title", "description", "steps", "faceValue", "pointsPrice", "stock", "validUntil", "status", "createdAt" }`; `status` is `active`; `description` and `steps` are `null` when not given.
 
 Responses: `201` with the voucher, `400` validation (unknown fields included) or `faceValue` below the floor (`"message": "faceValue 49999 is below the floor 50000 (500 points x 100 VND)"`), `401` no or invalid admin token, `404` unknown merchant.
 

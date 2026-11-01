@@ -100,6 +100,8 @@ Programme-wide values. Exactly one row (`id = 1`), inserted by the migration.
 | `id`           | BIGINT UNSIGNED, PK | auto increment                                          |
 | `merchant_id`  | BIGINT UNSIGNED, FK | `merchants(id)`; the merchant where the voucher is used |
 | `title`        | VARCHAR(255)        |                                                         |
+| `description`  | TEXT, nullable      | API limit 2000 characters                               |
+| `steps`        | JSON, nullable      | array of strings (`CHECK`); API limit 10 items          |
 | `face_value`   | BIGINT UNSIGNED     | VND discount; `CHECK (face_value > 0)`                  |
 | `points_price` | BIGINT UNSIGNED     | points a member pays; `CHECK (points_price > 0)`        |
 | `stock`        | INT UNSIGNED        | vouchers left                                           |
