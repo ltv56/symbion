@@ -63,6 +63,8 @@ describe('Vouchers', () => {
       stock: 100,
       validUntil,
       status: 'active',
+      description: null,
+      steps: null,
       createdAt: expect.any(String),
     });
     const rows = await dataSource.query(
@@ -72,6 +74,39 @@ describe('Vouchers', () => {
     expect(rows).toEqual([
       { face_value: 50000, points_price: 500, status: 'active' },
     ]);
+  });
+
+  it('stores the description and steps, trimmed', async () => {
+    const res = await create(
+      body({
+        description: '  Free coffee.\nOne per visit. ',
+        steps: ['  Open the app ', 'Show the code'],
+      }),
+    ).expect(201);
+
+    expect(res.body).toMatchObject({
+      description: 'Free coffee.\nOne per visit.',
+      steps: ['Open the app', 'Show the code'],
+    });
+    const rows = await dataSource.query(
+      'SELECT description, steps FROM vouchers WHERE id = ?',
+      [res.body.id],
+    );
+    expect(rows).toEqual([
+      {
+        description: 'Free coffee.\nOne per visit.',
+        steps: ['Open the app', 'Show the code'],
+      },
+    ]);
+  });
+
+  it('accepts ten steps of 200 characters and a 2000-character description', async () => {
+    await create(
+      body({
+        description: 'a'.repeat(2000),
+        steps: Array.from({ length: 10 }, () => 'a'.repeat(200)),
+      }),
+    ).expect(201);
   });
 
   it('accepts a face value above the floor', async () => {
@@ -134,6 +169,17 @@ describe('Vouchers', () => {
       { validUntil: new Date(Date.parse(validUntil) + 500).toISOString() },
     ],
     ['a status field', { status: 'expired' }],
+    ['a description over 2000 characters', { description: 'a'.repeat(2001) }],
+    ['a numeric description', { description: 5 }],
+    ['steps that are not an array', { steps: 'Open the app' }],
+    ['a non-string step', { steps: ['Open the app', 2] }],
+    ['an empty step', { steps: ['Open the app', ''] }],
+    ['a blank step', { steps: ['   '] }],
+    ['a step over 200 characters', { steps: ['a'.repeat(201)] }],
+    [
+      'more than ten steps',
+      { steps: Array.from({ length: 11 }, (_, i) => `Step ${i}`) },
+    ],
   ])('returns 400 for %s', async (_label, overrides) => {
     await create(body(overrides)).expect(400);
   });
@@ -153,15 +199,37 @@ describe('Vouchers', () => {
 
   const insertVoucher = async (
     title: string,
-    { status = 'active', validUntil: until = new Date(validUntil) } = {},
+    {
+      status = 'active',
+      validUntil: until = new Date(validUntil),
+      description = null as string | null,
+      steps = null as string[] | null,
+    } = {},
   ): Promise<number> => {
     const res = await dataSource.query(
-      `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until, status)
-       VALUES (?, ?, 50000, 500, 10, ?, ?)`,
-      [merchantId, title, until, status],
+      `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until, status, description, steps)
+       VALUES (?, ?, 50000, 500, 10, ?, ?, ?, ?)`,
+      [
+        merchantId,
+        title,
+        until,
+        status,
+        description,
+        steps && JSON.stringify(steps),
+      ],
     );
     return Number(res.insertId);
   };
+
+  const setShopInfo = () =>
+    dataSource.query(
+      'UPDATE merchants SET photo_url = ?, address = ? WHERE id = ?',
+      [
+        'https://cdn.example.com/shop.jpg',
+        '12 Nguyen Hue, District 1',
+        merchantId,
+      ],
+    );
 
   describe('GET /vouchers', () => {
     const list = (query = '') =>
@@ -196,8 +264,44 @@ describe('Vouchers', () => {
         stock: 10,
         validUntil,
         status: 'active',
+        merchantPhotoUrl: null,
+        merchantAddress: null,
+        description: null,
+        steps: null,
         createdAt: expect.any(String),
       });
+    });
+
+    it('lists the photo and address of the merchant', async () => {
+      await setShopInfo();
+      const id = await insertVoucher('A');
+
+      const res = await list().expect(200);
+
+      expect(res.body.items).toEqual([
+        expect.objectContaining({
+          id,
+          merchantPhotoUrl: 'https://cdn.example.com/shop.jpg',
+          merchantAddress: '12 Nguyen Hue, District 1',
+        }),
+      ]);
+    });
+
+    it('lists the description and steps', async () => {
+      const id = await insertVoucher('A', {
+        description: 'Free coffee',
+        steps: ['Open the app', 'Show the code'],
+      });
+
+      const res = await list().expect(200);
+
+      expect(res.body.items).toEqual([
+        expect.objectContaining({
+          id,
+          description: 'Free coffee',
+          steps: ['Open the app', 'Show the code'],
+        }),
+      ]);
     });
 
     it('names the merchant of each voucher', async () => {
@@ -287,6 +391,32 @@ describe('Vouchers', () => {
         merchantId,
         merchantName: 'Shop A',
         title: 'A',
+        merchantPhotoUrl: null,
+        merchantAddress: null,
+        description: null,
+        steps: null,
+      });
+    });
+
+    it('gets the photo and address of the merchant', async () => {
+      await setShopInfo();
+      const id = await insertVoucher('A');
+      const res = await get(id).expect(200);
+      expect(res.body).toMatchObject({
+        merchantPhotoUrl: 'https://cdn.example.com/shop.jpg',
+        merchantAddress: '12 Nguyen Hue, District 1',
+      });
+    });
+
+    it('gets the description and steps', async () => {
+      const id = await insertVoucher('A', {
+        description: 'Free coffee',
+        steps: ['Open the app', 'Show the code'],
+      });
+      const res = await get(id).expect(200);
+      expect(res.body).toMatchObject({
+        description: 'Free coffee',
+        steps: ['Open the app', 'Show the code'],
       });
     });
 

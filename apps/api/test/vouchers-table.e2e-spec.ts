@@ -107,4 +107,25 @@ describe('vouchers and program_settings tables', () => {
       insertVoucher({ merchant: merchantId + 1000 }),
     ).rejects.toThrow();
   });
+
+  const insertSteps = (steps: string | null) =>
+    dataSource.query(
+      `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until, steps)
+       VALUES (?, 'Voucher', 50000, 500, 100, ?, ?)`,
+      [merchantId, new Date(Date.now() + 86_400_000), steps],
+    );
+
+  it.each([
+    ['null', null],
+    ['an array of strings', '["Open the app", "Show the code"]'],
+  ])('accepts steps as %s', async (_name, steps) => {
+    await insertSteps(steps);
+  });
+
+  it.each([
+    ['an object', '{"a": 1}'],
+    ['a string', '"Open the app"'],
+  ])('rejects steps as %s', async (_name, steps) => {
+    await expect(insertSteps(steps)).rejects.toThrow();
+  });
 });

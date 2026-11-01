@@ -78,6 +78,45 @@ describe('Demo history seed', () => {
     }
   });
 
+  const shopInfo = async () => ({
+    merchants: await dataSource.query(
+      'SELECT name, address FROM merchants ORDER BY name',
+    ),
+    vouchers: await dataSource.query(
+      'SELECT title, description, steps FROM vouchers ORDER BY title',
+    ),
+  });
+
+  it('gives the merchants an address and the vouchers a description and steps', async () => {
+    await seedDemoHistory(dataSource, apiKey, new Date());
+
+    const { merchants, vouchers } = await shopInfo();
+    for (const merchant of merchants) {
+      expect(merchant.address).toEqual(expect.any(String));
+    }
+    for (const voucher of vouchers) {
+      expect(voucher.description).toEqual(expect.any(String));
+      expect(voucher.steps).toEqual(
+        expect.arrayContaining([expect.any(String)]),
+      );
+      expect(voucher.steps.length).toBeLessThanOrEqual(10);
+    }
+  });
+
+  it('fills the info again on a rerun', async () => {
+    const now = new Date();
+    await seedDemoHistory(dataSource, apiKey, now);
+    const first = await shopInfo();
+    await dataSource.query('UPDATE merchants SET address = NULL');
+    await dataSource.query(
+      'UPDATE vouchers SET description = NULL, steps = NULL',
+    );
+
+    await seedDemoHistory(dataSource, apiKey, now);
+
+    expect(await shopInfo()).toEqual(first);
+  });
+
   it('dates every event in the previous month', async () => {
     const now = new Date();
     await seedDemoHistory(dataSource, apiKey, now);

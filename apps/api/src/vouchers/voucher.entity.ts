@@ -18,6 +18,12 @@ export class Voucher {
   @Column({ type: 'varchar' })
   title!: string;
 
+  @Column({ type: 'text', nullable: true })
+  description!: string | null;
+
+  @Column({ type: 'json', nullable: true })
+  steps!: string[] | null;
+
   @Column({ name: 'face_value', type: 'bigint', unsigned: true })
   faceValue!: number;
 
