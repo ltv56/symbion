@@ -87,7 +87,9 @@
     "filter": "Filter vouchers",
     "filterAll": "All",
     "needMore_one": "Need {{missing}} more point",
-    "needMore_other": "Need {{missing}} more points"
+    "needMore_other": "Need {{missing}} more points",
+    "detail": "Details",
+    "detailFor": "View details of voucher {{title}}"
   },
   "voucherDetail": {
     "value": "Worth {{value}}",

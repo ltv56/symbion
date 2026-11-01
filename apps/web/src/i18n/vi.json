@@ -80,7 +80,9 @@
     "back": "Quay lại",
     "filter": "Lọc voucher",
     "filterAll": "Tất cả",
-    "needMore_other": "Cần thêm {{missing}} điểm"
+    "needMore_other": "Cần thêm {{missing}} điểm",
+    "detail": "Chi tiết",
+    "detailFor": "Xem chi tiết voucher {{title}}"
   },
   "voucherDetail": {
     "value": "Giá trị {{value}}",
