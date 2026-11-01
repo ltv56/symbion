@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { VoucherGroups } from './availability';
 import { VoucherTicket } from './VoucherTicket';
+import type { Voucher } from './useVouchers';
 
 export const GROUPS: { key: keyof VoucherGroups; label: string }[] = [
   { key: 'ready', label: 'vouchers.groupReadyToRedeem' },
@@ -16,6 +17,7 @@ export function GroupSections({
   balance,
   loadedAt,
   headings = true,
+  onRedeem,
   onMore,
 }: {
   shown: VoucherGroups;
@@ -23,6 +25,7 @@ export function GroupSections({
   balance: number;
   loadedAt: number;
   headings?: boolean;
+  onRedeem: (voucher: Voucher) => void;
   onMore?: (key: keyof VoucherGroups) => void;
 }) {
   const { t } = useTranslation();
@@ -66,6 +69,7 @@ export function GroupSections({
                   voucher={voucher}
                   balance={balance}
                   loadedAt={loadedAt}
+                  onRedeem={onRedeem}
                 />
               ))}
             </ul>

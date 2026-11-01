@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogPortal } from '@/components/ui/dialog';
 import type { VoucherFilter, VoucherGroups } from './availability';
 import { GROUPS, GroupSections } from './GroupSections';
+import type { Voucher } from './useVouchers';
 
 const EMPTY: VoucherGroups = { ready: [], notYet: [], soldOut: [] };
 
@@ -18,6 +19,7 @@ export function AllVouchersView({
   loadedAt,
   initialFilter = 'all',
   onClose,
+  onRedeem,
   Title = 'h2',
 }: {
   groups: VoucherGroups;
@@ -26,6 +28,7 @@ export function AllVouchersView({
   // Group opened from
   initialFilter?: VoucherFilter;
   onClose: () => void;
+  onRedeem: (voucher: Voucher) => void;
   // DialogTitle in the dialog
   Title?: ElementType;
 }) {
@@ -93,6 +96,7 @@ export function AllVouchersView({
         balance={balance}
         loadedAt={loadedAt}
         headings={filter === 'all'}
+        onRedeem={onRedeem}
       />
     </div>
   );
@@ -112,6 +116,7 @@ export function AllVouchersDialog({
   balance: number;
   loadedAt: number;
   initialFilter?: VoucherFilter;
+  onRedeem: (voucher: Voucher) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>

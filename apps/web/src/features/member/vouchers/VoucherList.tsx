@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { FormError } from '@/components/FormError';
 import type { PanelQueryState } from '@/components/PanelQuery';
 import { Button } from '@/components/ui/button';
+import {
+  FALLBACK_FOCUS_ID,
+  RedeemDialog,
+} from '@/features/member/redeem/RedeemDialog';
 import { AllVouchersDialog } from './AllVouchers';
 import { groupVouchers } from './availability';
 import type { VoucherFilter, VoucherGroups } from './availability';
@@ -29,6 +33,7 @@ function Groups({
 }) {
   // Filter set = all vouchers page open
   const [filter, setFilter] = useState<VoucherFilter | null>(null);
+  const [redeem, setRedeem] = useState<Voucher | null>(null);
   const opener = useRef<Element | null>(null);
 
   const groups = groupVouchers(vouchers, balance);
@@ -45,6 +50,7 @@ function Groups({
         totals={groups}
         balance={balance}
         loadedAt={loadedAt}
+        onRedeem={setRedeem}
         onMore={(key) => {
           opener.current = document.activeElement;
           setFilter(key);
@@ -63,6 +69,12 @@ function Groups({
         groups={groups}
         balance={balance}
         loadedAt={loadedAt}
+        onRedeem={setRedeem}
+      />
+      <RedeemDialog
+        voucher={redeem}
+        balance={balance}
+        onClose={() => setRedeem(null)}
       />
     </>
   );
@@ -80,7 +92,13 @@ export function VoucherListView({
 
   return (
     <section>
-      <h2 className="mb-3 text-base font-semibold">{t('vouchers.title')}</h2>
+      <h2
+        id={FALLBACK_FOCUS_ID}
+        tabIndex={-1}
+        className="mb-3 text-base font-semibold outline-none"
+      >
+        {t('vouchers.title')}
+      </h2>
       {query.isPending && (
         <div role="status" className="space-y-3">
           <span className="sr-only">{t('member.loading')}</span>

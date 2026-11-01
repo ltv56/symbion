@@ -82,6 +82,42 @@
     "filterAll": "Tất cả",
     "needMore_other": "Cần thêm {{missing}} điểm"
   },
+  "redeem": {
+    "action": "Đổi",
+    "actionFor": "Đổi voucher {{title}}",
+    "title": "Đổi voucher này?",
+    "description": "Bạn sẽ nhận một mã để đưa cho cửa hàng.",
+    "faceValue": "Giá trị",
+    "deduct": "Điểm bị trừ",
+    "balanceAfter": "Số dư sau khi đổi",
+    "codeUntil": "Mã dùng được đến",
+    "noRefund": "Mã hết hạn thì điểm không được hoàn lại.",
+    "cancel": "Huỷ",
+    "confirm": "Xác nhận đổi",
+    "sending": "Đang đổi…",
+    "close": "Đóng",
+    "retry": "Thử lại",
+    "createdTitle": "Đã đổi xong",
+    "createdStamp": "Đã đổi",
+    "createdHint": "Đưa mã này cho cửa hàng. Dùng được đến {{date}}.",
+    "recordedTitle": "Đã ghi nhận trước đó",
+    "recordedStamp": "Đã ghi nhận",
+    "recordedHint": "Lần đổi này đã được ghi nhận, điểm chỉ bị trừ một lần. Mã dùng được đến {{date}}.",
+    "deducted": "Đã trừ",
+    "balanceNow": "Số dư mới",
+    "shortTitle": "Chưa đủ điểm",
+    "short": "Số dư hiện tại {{balance}} điểm, voucher cần {{price}} điểm.",
+    "soldOutTitle": "Voucher vừa hết hàng",
+    "soldOut": "Có người đổi voucher cuối cùng trước bạn. Điểm của bạn chưa bị trừ.",
+    "goneTitle": "Voucher không còn nữa",
+    "gone": "Voucher đã hết hạn hoặc ngừng phát hành. Điểm của bạn chưa bị trừ.",
+    "failedTitle": "Chưa đổi được",
+    "failed": "Không kết nối được. Bấm thử lại, điểm chỉ bị trừ một lần."
+  },
+  "redemptions": {
+    "copy": "Sao chép mã {{code}}",
+    "copied": "Đã sao chép mã"
+  },
   "errors": {
     "generic": "Có lỗi xảy ra. Thử lại sau."
   }

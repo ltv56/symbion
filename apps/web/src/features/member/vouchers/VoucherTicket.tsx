@@ -1,20 +1,23 @@
 import { cn } from 'cn';
 import { useTranslation } from 'react-i18next';
 import { MerchantAvatar } from '@/components/MerchantAvatar';
+import { Button } from '@/components/ui/button';
 import { formatPoints } from '@/lib/format';
 import { availability } from './availability';
 import { Meta, Price, PriceSpoken } from './TicketParts';
 import type { Voucher } from './useVouchers';
 
-// Ticket: title, merchant, price on the stub
+// Ticket: Đổi on the stub of a ready one
 export function VoucherTicket({
   voucher,
   balance,
   loadedAt,
+  onRedeem,
 }: {
   voucher: Voucher;
   balance: number;
   loadedAt: number;
+  onRedeem: (voucher: Voucher) => void;
 }) {
   const { t, i18n } = useTranslation();
   const { kind } = availability(voucher, balance);
@@ -87,6 +90,15 @@ export function VoucherTicket({
           )}
         >
           <Price points={voucher.pointsPrice} struck={soldOut} />
+          {redeemable && (
+            <Button
+              className="relative after:absolute after:-inset-1.5"
+              aria-label={t('redeem.actionFor', { title: voucher.title })}
+              onClick={() => onRedeem(voucher)}
+            >
+              {t('redeem.action')}
+            </Button>
+          )}
         </div>
         {/* notches on the perforation */}
         {redeemable ? (

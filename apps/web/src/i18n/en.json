@@ -89,6 +89,42 @@
     "needMore_one": "Need {{missing}} more point",
     "needMore_other": "Need {{missing}} more points"
   },
+  "redeem": {
+    "action": "Redeem",
+    "actionFor": "Redeem voucher {{title}}",
+    "title": "Redeem this voucher?",
+    "description": "You will get a code to show the merchant.",
+    "faceValue": "Value",
+    "deduct": "Points deducted",
+    "balanceAfter": "Balance after",
+    "codeUntil": "Code valid until",
+    "noRefund": "Points are not refunded if the code expires.",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "sending": "Redeeming…",
+    "close": "Close",
+    "retry": "Try again",
+    "createdTitle": "Redeemed",
+    "createdStamp": "Redeemed",
+    "createdHint": "Show this code to the merchant. Valid until {{date}}.",
+    "recordedTitle": "Already recorded",
+    "recordedStamp": "Recorded",
+    "recordedHint": "This redemption was already recorded and the points were deducted once. The code is valid until {{date}}.",
+    "deducted": "Deducted",
+    "balanceNow": "New balance",
+    "shortTitle": "Not enough points",
+    "short": "Your balance is {{balance}} points, the voucher costs {{price}}.",
+    "soldOutTitle": "Voucher just sold out",
+    "soldOut": "Someone redeemed the last one before you. Your points were not deducted.",
+    "goneTitle": "Voucher is gone",
+    "gone": "The voucher expired or was withdrawn. Your points were not deducted.",
+    "failedTitle": "Could not redeem",
+    "failed": "No connection. Try again, the points are deducted once."
+  },
+  "redemptions": {
+    "copy": "Copy code {{code}}",
+    "copied": "Code copied"
+  },
   "errors": {
     "generic": "Something went wrong. Try again."
   }
