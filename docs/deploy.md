@@ -20,6 +20,8 @@ Single host, Docker Compose with `nginx`, `api` and `mysql`. Nginx terminates TL
 | `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                  |
 | `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                          |
 | `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                       |
+| `DEMO_RESET`           | api     | optional, `true` resets the demo data every night (see Demo data)               |
+| `DEMO_API_KEY`         | api     | at least 16 characters; required when `DEMO_RESET=true`                         |
 
 ## First deploy
 
@@ -73,3 +75,9 @@ DEMO_API_KEY=<16+ characters> pnpm seed:demo
 ```
 
 Creates the tiers, the merchant "Demo Shop" with that API key, three members, a second merchant "Demo Cafe" (API key `<DEMO_API_KEY>-cafe`), three vouchers and nine events dated in the previous month (Asia/Ho_Chi_Minh): five orders, three redemptions (two confirmed), one refund. The month report of `GET /reconciliation` has numbers right after the seed. Safe to run twice; the events are keyed by month, so a run in a later month adds that month's events. With `NODE_ENV=production` the script refuses to run unless `--allow-production` is passed.
+
+### Nightly reset
+
+`DEMO_RESET=true` deletes every row except `migrations` and `program_settings` at 04:00 Asia/Ho_Chi_Minh and seeds the demo data again, as `pnpm seed:demo` does with `DEMO_API_KEY`. `DEMO_RESET_CRON` changes the time (cron expression, seconds allowed). Rows get new ids.
+
+The api refuses to start with `DEMO_RESET=true` unless `DEMO_MODE=true` and a `DEMO_API_KEY` of at least 16 characters are set. A failed night is logged and the next one runs; a reset that fails after the delete leaves the demo empty until then. Run it only on a demo host: it deletes all data.

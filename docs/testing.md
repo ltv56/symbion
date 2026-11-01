@@ -304,6 +304,22 @@ E2E tests (`pnpm check`) delete all rows in `vouchers`, `ledger_lots`, `orders`,
 
 Ledger MySQL tests require applied migrations (`pnpm db:migrate`). Run only these: `pnpm --filter @symbion/api test ledger-mysql`.
 
+## Demo reset (MySQL)
+
+Needs `$TOKEN` (see Admin login). The job runs every 20 seconds here.
+
+```sh
+# start the api with the job on (DEMO_MODE=true is required)
+DEMO_RESET=true DEMO_MODE=true DEMO_API_KEY=demo-key-demo-key-1234 DEMO_RESET_CRON='*/20 * * * * *' pnpm dev
+
+# create a merchant, wait for the next tick: it is gone, "Demo Shop" and "Demo Cafe" are back
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"name":"Visitor Shop"}'
+curl -s localhost:3000/merchants -H "Authorization: Bearer $TOKEN"
+
+# error path: the api exits at start (DEMO_MODE is not true)
+DEMO_RESET=true DEMO_MODE=false DEMO_API_KEY=demo-key-demo-key-1234 pnpm dev
+```
+
 ## Migrations
 
 ```sh
