@@ -118,17 +118,19 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 
 `net = issued − refunded − redeemed` (VND)
 
-| Line     | Points                                                            | VND                                    |
-| -------- | ----------------------------------------------------------------- | -------------------------------------- |
-| Issued   | `earn` lots created at the merchant's shop in the month           | points × current point value           |
-| Refunded | `points_deducted` of refunds made in the month by the merchant    | points × current point value           |
-| Redeemed | `points` of codes confirmed `used` in the month, voucher merchant | points × point value on the redemption |
+| Line     | Points                                                               | VND                                    |
+| -------- | -------------------------------------------------------------------- | -------------------------------------- |
+| Issued   | `earn` lots created at the merchant's shop in the month              | points × current point value           |
+| Refunded | `points_deducted` of refunds made in the month by the merchant       | points × current point value           |
+| Redeemed | `points` of codes confirmed `used` in the month, voucher merchant    | points × point value on the redemption |
+| Breakage | `points` of codes that expired unused in the month, voucher merchant | points × point value on the redemption |
 
 - `net > 0`: the merchant owes the app. `net < 0`: the app owes the merchant.
 - The merchant pays for every point issued at its shop, base and tier bonus alike. The app pays the merchant for every code confirmed at its counter, whichever merchant issued the points.
 - Each event counts in the month it happened: a refund of an old order counts in the month of the refund, and a code counts in the month it was confirmed. A closed month does not change.
-- Codes that expired unused are not listed (the app keeps those points).
-- A merchant with no points issued, refunded or redeemed in the month is left out.
+- Breakage is not part of `net`. The app pays nothing for a code that expired, so the points merchants issued for it stay with the app.
+- A code counts as breakage in the month of its `expires_at`, once that time has passed. A code confirmed before it expired is `used`, not breakage.
+- A merchant with no points issued, refunded, redeemed or expired in the month is left out.
 - Known limitation: lots and refunds don't store the point value, so changing `program_settings.point_value_vnd` also changes the VND of closed months for those two lines. Redemptions keep their own value.
 
 | Issued | Refunded | Redeemed | Net (VND at 100 per point) |
