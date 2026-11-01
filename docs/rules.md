@@ -84,6 +84,13 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - A code expires 30 days after redemption, or at the voucher's `valid_until` if that is sooner (`expires_at`). An unused code past `expires_at` shows status `expired`.
 - Confirming an expired code is rejected (`409`). Its points are not returned. A used code stays `used`.
 
+## Favorites
+
+- A member may mark any listed voucher as a favorite (`PUT /me/favorites/:voucherId`) and unmark it (`DELETE`). Both are repeatable without error.
+- A favorite is one row per member and voucher; the same voucher is never listed twice.
+- `GET /me/favorites` returns only vouchers that are still listed, newest favorite first. A favorite whose voucher expires disappears from the list and comes back only if the voucher is listed again.
+- Favorites do not affect redemption, points or stock.
+
 ## Refunds
 
 `points deducted = ceil(points earned by the order × total refunded ÷ order amount) − points deducted by earlier refunds`

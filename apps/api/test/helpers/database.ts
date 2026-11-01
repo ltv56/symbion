@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 const TABLES = [
   'refunds',
   'redemptions',
+  'voucher_favorites',
   'vouchers',
   'orders',
   'ledger_lots',

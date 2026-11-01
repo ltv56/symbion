@@ -247,6 +247,29 @@ docker compose -f infra/compose.yaml exec -T mysql sh -c 'mysql -uroot -p"$MYSQL
 curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $VKEY"
 ```
 
+## Favorites (MySQL)
+
+Requires `$MTOKEN` (see Member login) and an active voucher `$VID` (see Vouchers).
+
+```sh
+# add -> 204; again -> 204, still one row
+curl -s -w ' [%{http_code}]\n' -X PUT localhost:3000/me/favorites/$VID -H "Authorization: Bearer $MTOKEN"
+curl -s -w ' [%{http_code}]\n' -X PUT localhost:3000/me/favorites/$VID -H "Authorization: Bearer $MTOKEN"
+
+# list -> 200 [{"voucherId":<VID>,"createdAt":"<time>"}]
+curl -s localhost:3000/me/favorites -H "Authorization: Bearer $MTOKEN"
+
+# remove -> 204; again -> 204; list -> []
+curl -s -w ' [%{http_code}]\n' -X DELETE localhost:3000/me/favorites/$VID -H "Authorization: Bearer $MTOKEN"
+curl -s -w ' [%{http_code}]\n' -X DELETE localhost:3000/me/favorites/$VID -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 404 {"message":"Voucher with id 999999 not found",...}
+curl -s -w ' [%{http_code}]\n' -X PUT localhost:3000/me/favorites/999999 -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 401 (admin token instead of a member token)
+curl -s -w ' [%{http_code}]\n' -X PUT localhost:3000/me/favorites/$VID -H "Authorization: Bearer $TOKEN"
+```
+
 ## Refunds (MySQL)
 
 Requires `$KEY` and member `an@x.com` (see Members).

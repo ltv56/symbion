@@ -1,9 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
   Post,
+  Put,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +17,8 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiHeader,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -20,6 +27,7 @@ import { IdempotencyKey } from '../common/idempotency-key.decorator';
 import { RedeemVoucherDto } from '../redemptions/dto/create-redemption.dto';
 import { Redemption } from '../redemptions/redemption.entity';
 import { RedemptionsService } from '../redemptions/redemptions.service';
+import { Favorite, FavoritesService } from './favorites.service';
 import {
   HistoryEntry,
   MemberRedemption,
@@ -36,6 +44,7 @@ export class MeController {
   constructor(
     private readonly me: MeService,
     private readonly redemptions: RedemptionsService,
+    private readonly favorites: FavoritesService,
   ) {}
 
   @Get()
@@ -72,6 +81,35 @@ export class MeController {
   @ApiOkResponse({ description: 'Every merchant of the programme, by name' })
   partners(): Promise<Partner[]> {
     return this.me.partners();
+  }
+
+  @Get('favorites')
+  @ApiOkResponse({
+    description: 'Favorite vouchers that are still listed, newest first',
+  })
+  favoriteList(@CurrentMemberId() memberId: number): Promise<Favorite[]> {
+    return this.favorites.list(memberId);
+  }
+
+  @Put('favorites/:voucherId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Favorite added, or already there' })
+  @ApiNotFoundResponse({ description: 'Voucher unknown or not listed' })
+  addFavorite(
+    @CurrentMemberId() memberId: number,
+    @Param('voucherId', ParseIntPipe) voucherId: number,
+  ): Promise<void> {
+    return this.favorites.add(memberId, voucherId);
+  }
+
+  @Delete('favorites/:voucherId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Favorite removed, or was not there' })
+  removeFavorite(
+    @CurrentMemberId() memberId: number,
+    @Param('voucherId', ParseIntPipe) voucherId: number,
+  ): Promise<void> {
+    return this.favorites.remove(memberId, voucherId);
   }
 
   @Post('redemptions')
