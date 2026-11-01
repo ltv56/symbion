@@ -111,3 +111,10 @@ Several refunds of an order of 250,000 that earned 25:
 | 83,333       | 166,666        | 17              | 8        |
 | 83,334       | 250,000        | 25              | 8        |
 | 1            | 250,001        | —               | `422`    |
+
+## Member app
+
+- The balance is the sum of the member's unexpired lots (`GET /me`). After a refund it can be negative: it is shown with a minus sign and redemption is blocked (see Redemption).
+- Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
+- The expiry calendar covers the next 12 months, the longest a lot lives (see Earning).
+- The tier bar shows the 12-month spend and the spend still needed for the next tier; the top tier has no next tier.
