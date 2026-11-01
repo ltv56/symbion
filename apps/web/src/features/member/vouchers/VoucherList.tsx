@@ -13,6 +13,7 @@ import type { VoucherFilter, VoucherGroups } from './availability';
 import { GroupSections } from './GroupSections';
 import { useVouchers } from './useVouchers';
 import type { Voucher } from './useVouchers';
+import { VoucherDetailDialog } from './VoucherDetail';
 
 // Tickets shown per group
 const SHOWN: Record<keyof VoucherGroups, number> = {
@@ -20,6 +21,22 @@ const SHOWN: Record<keyof VoucherGroups, number> = {
   notYet: 3,
   soldOut: 2,
 };
+
+// Return focus to the opener
+function useReturnFocus() {
+  const from = useRef<Element | null>(null);
+  return {
+    remember: () => {
+      from.current = document.activeElement;
+    },
+    restore: () => {
+      const element = from.current;
+      if (element instanceof HTMLElement && element.isConnected) {
+        element.focus();
+      }
+    },
+  };
+}
 
 // Groups and their pages
 function Groups({
@@ -33,14 +50,22 @@ function Groups({
 }) {
   // Filter set = all vouchers page open
   const [filter, setFilter] = useState<VoucherFilter | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
   const [redeem, setRedeem] = useState<Voucher | null>(null);
-  const opener = useRef<Element | null>(null);
+  const pageFocus = useReturnFocus();
+  const detailFocus = useReturnFocus();
 
   const groups = groupVouchers(vouchers, balance);
   const shown: VoucherGroups = {
     ready: groups.ready.slice(0, SHOWN.ready),
     notYet: groups.notYet.slice(0, SHOWN.notYet),
     soldOut: groups.soldOut.slice(0, SHOWN.soldOut),
+  };
+  const detail = vouchers.find((voucher) => voucher.id === detailId) ?? null;
+
+  const openDetail = (voucher: Voucher) => {
+    detailFocus.remember();
+    setDetailId(voucher.id);
   };
 
   return (
@@ -50,9 +75,10 @@ function Groups({
         totals={groups}
         balance={balance}
         loadedAt={loadedAt}
+        onOpen={openDetail}
         onRedeem={setRedeem}
         onMore={(key) => {
-          opener.current = document.activeElement;
+          pageFocus.remember();
           setFilter(key);
         }}
       />
@@ -60,15 +86,18 @@ function Groups({
         open={filter !== null}
         initialFilter={filter ?? 'all'}
         onClose={() => setFilter(null)}
-        onCloseFocus={() => {
-          const element = opener.current;
-          if (element instanceof HTMLElement && element.isConnected) {
-            element.focus();
-          }
-        }}
+        onCloseFocus={pageFocus.restore}
         groups={groups}
         balance={balance}
         loadedAt={loadedAt}
+        onOpen={openDetail}
+        onRedeem={setRedeem}
+      />
+      <VoucherDetailDialog
+        voucher={detail}
+        balance={balance}
+        onClose={() => setDetailId(null)}
+        onCloseFocus={detailFocus.restore}
         onRedeem={setRedeem}
       />
       <RedeemDialog

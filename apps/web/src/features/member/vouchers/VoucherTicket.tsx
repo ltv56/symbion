@@ -7,16 +7,18 @@ import { availability } from './availability';
 import { Meta, Price, PriceSpoken } from './TicketParts';
 import type { Voucher } from './useVouchers';
 
-// Ticket: Đổi on the stub of a ready one
+// Ticket: title opens the detail, Đổi on the stub of a ready one
 export function VoucherTicket({
   voucher,
   balance,
   loadedAt,
+  onOpen,
   onRedeem,
 }: {
   voucher: Voucher;
   balance: number;
   loadedAt: number;
+  onOpen: (voucher: Voucher) => void;
   onRedeem: (voucher: Voucher) => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -51,16 +53,21 @@ export function VoucherTicket({
           className={cn(
             'min-w-0 flex-1',
             soldOut &&
-              '[&_p]:text-muted-foreground/[88%] dark:[&_p]:text-muted-foreground/70',
+              '[&_button]:text-muted-foreground/[88%] [&_p]:text-muted-foreground/[88%] dark:[&_button]:text-muted-foreground/70 dark:[&_p]:text-muted-foreground/70',
           )}
         >
           {/* title 15px, 14px below 22rem, 13px below 17.5rem */}
-          <p
+          <button
+            type="button"
+            aria-haspopup="dialog"
             title={voucher.title}
-            className="line-clamp-3 text-[15px] leading-snug font-medium wrap-anywhere @max-[22rem]:text-sm @max-[17.5rem]:text-[13px]"
+            onClick={() => onOpen(voucher)}
+            className="group/title relative block w-full text-left outline-offset-2 after:absolute after:inset-x-0 after:-inset-y-3 focus-visible:outline-2 focus-visible:outline-current"
           >
-            {voucher.title}
-          </p>
+            <span className="line-clamp-3 text-[15px] leading-snug font-medium wrap-anywhere group-hover/title:underline group-focus-visible/title:underline @max-[22rem]:text-sm @max-[17.5rem]:text-[13px]">
+              {voucher.title}
+            </span>
+          </button>
           <PriceSpoken points={voucher.pointsPrice} />
           <div className="@max-[22rem]:[&_p]:text-[13px] @max-[17.5rem]:[&_p]:text-xs">
             <Meta voucher={voucher} loadedAt={loadedAt} />
