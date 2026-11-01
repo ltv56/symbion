@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import { demoApiKey, seedDemo } from '../src/seed-demo';
+import { resetDatabase } from './helpers/database';
 
 describe('Demo seed', () => {
   let dataSource: DataSource;
@@ -19,11 +20,7 @@ describe('Demo seed', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM orders');
-    await dataSource.query('DELETE FROM ledger_lots');
-    await dataSource.query('DELETE FROM members');
-    await dataSource.query('DELETE FROM tiers');
-    await dataSource.query('DELETE FROM merchants');
+    await resetDatabase(dataSource);
   });
 
   afterAll(async () => {
