@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { useAdminToken } from '@/lib/adminAuth';
 import { AdminLayout } from './AdminLayout';
+import { CounterPage } from './counter/CounterPage';
 import { AdminLoginPage } from './login/AdminLoginPage';
 import { MembersPage } from './members/MembersPage';
 import { MerchantsPage } from './merchants/MerchantsPage';
@@ -20,6 +21,7 @@ export function AdminApp() {
         <Route path="programme" element={<ProgrammePage />} />
         <Route path="vouchers" element={<VouchersPage />} />
         <Route path="members" element={<MembersPage />} />
+        <Route path="counter" element={<CounterPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
     </Routes>

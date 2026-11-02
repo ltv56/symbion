@@ -1,4 +1,11 @@
-import { Coins, ReceiptText, Store, Ticket, Users } from 'lucide-react';
+import {
+  Calculator,
+  Coins,
+  ReceiptText,
+  Store,
+  Ticket,
+  Users,
+} from 'lucide-react';
 
 // The sections of the console, in ruler order
 export const ADMIN_NAV = [
@@ -7,4 +14,5 @@ export const ADMIN_NAV = [
   { to: '/admin/programme', label: 'admin.nav.programme', icon: Coins },
   { to: '/admin/vouchers', label: 'admin.nav.vouchers', icon: Ticket },
   { to: '/admin/members', label: 'admin.nav.members', icon: Users },
+  { to: '/admin/counter', label: 'admin.nav.counter', icon: Calculator },
 ] as const;

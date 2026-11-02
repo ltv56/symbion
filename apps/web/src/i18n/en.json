@@ -265,7 +265,8 @@
       "merchants": "Merchants",
       "programme": "Programme",
       "vouchers": "Vouchers",
-      "members": "Members"
+      "members": "Members",
+      "counter": "Counter"
     },
     "statement": {
       "title": "Monthly statement",
@@ -557,6 +558,68 @@
       "history": {
         "title": "Recent point history",
         "empty": "No point movement yet."
+      }
+    },
+    "counter": {
+      "title": "Counter",
+      "subtitle": "Calls the API as a merchant's POS does: same addresses, same key, same answers.",
+      "merchant": "Merchant",
+      "apiKey": "Merchant API key",
+      "apiKeyHint": "Only a hash of the key is stored, so it cannot be read back. Paste the key shown when it was created or replaced; it is remembered in this tab only.",
+      "operations": "Operations",
+      "pickVoucher": "Choose a voucher",
+      "newKey": "New idempotency key",
+      "keyHint": "Sending again with the same key must not create a second record.",
+      "needKey": "Enter the merchant's API key to send.",
+      "send": "Send",
+      "sending": "Sending…",
+      "field": {
+        "email": "Member email",
+        "name": "Name",
+        "amount": "Amount (₫)",
+        "orderId": "Order ID",
+        "voucherId": "Voucher",
+        "code": "Voucher code",
+        "key": "Idempotency-Key"
+      },
+      "suggest": {
+        "orderId": "Use the order just sent (#{{value}})",
+        "code": "Use the code just issued ({{value}})"
+      },
+      "op": {
+        "member": {
+          "name": "Create a member",
+          "text": "Registers a new member for the merchant.",
+          "route": "POST /members"
+        },
+        "order": {
+          "name": "Send an order",
+          "text": "Earns points for a paid order.",
+          "route": "POST /orders"
+        },
+        "refund": {
+          "name": "Refund an order",
+          "text": "Partial or full; the points earned are deducted in proportion.",
+          "route": "POST /orders/:id/refunds"
+        },
+        "redeem": {
+          "name": "Redeem for a member",
+          "text": "Spends points, takes one from stock and issues a code.",
+          "route": "POST /redemptions"
+        },
+        "confirm": {
+          "name": "Confirm a code",
+          "text": "The merchant that owns the voucher confirms the code at the till.",
+          "route": "POST /redemptions/:code/confirm"
+        }
+      },
+      "tape": {
+        "title": "Receipt tape",
+        "empty": "No call yet. Each send appears here, newest first.",
+        "clear": "Clear the tape",
+        "request": "Request body",
+        "response": "Response",
+        "replayed": "Same Idempotency-Key: the server returned the earlier result."
       }
     }
   }

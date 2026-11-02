@@ -248,7 +248,8 @@
       "merchants": "Cửa hàng",
       "programme": "Chương trình",
       "vouchers": "Voucher",
-      "members": "Thành viên"
+      "members": "Thành viên",
+      "counter": "Quầy thử"
     },
     "statement": {
       "title": "Quyết toán tháng",
@@ -533,6 +534,68 @@
       "history": {
         "title": "Lịch sử điểm gần đây",
         "empty": "Chưa có biến động điểm."
+      }
+    },
+    "counter": {
+      "title": "Quầy thử",
+      "subtitle": "Gọi API như máy POS của một cửa hàng: cùng địa chỉ, cùng khóa, cùng phản hồi.",
+      "merchant": "Cửa hàng",
+      "apiKey": "Khóa API của cửa hàng",
+      "apiKeyHint": "Hệ thống chỉ lưu bản băm nên không đọc lại được khóa. Dán khóa hiện khi tạo hoặc đổi khóa; khóa chỉ nhớ trong tab này.",
+      "operations": "Thao tác",
+      "pickVoucher": "Chọn voucher",
+      "newKey": "Tạo khóa chống trùng mới",
+      "keyHint": "Gửi lại với cùng khóa này thì không được tạo bản ghi thứ hai.",
+      "needKey": "Nhập khóa API của cửa hàng để gửi.",
+      "send": "Gửi",
+      "sending": "Đang gửi…",
+      "field": {
+        "email": "Email thành viên",
+        "name": "Tên",
+        "amount": "Số tiền (₫)",
+        "orderId": "Mã đơn",
+        "voucherId": "Voucher",
+        "code": "Mã voucher",
+        "key": "Idempotency-Key"
+      },
+      "suggest": {
+        "orderId": "Dùng đơn vừa gửi (#{{value}})",
+        "code": "Dùng mã vừa đổi ({{value}})"
+      },
+      "op": {
+        "member": {
+          "name": "Tạo thành viên",
+          "text": "Đăng ký thành viên mới cho cửa hàng.",
+          "route": "POST /members"
+        },
+        "order": {
+          "name": "Gửi đơn hàng",
+          "text": "Tính điểm cho một đơn đã thanh toán.",
+          "route": "POST /orders"
+        },
+        "refund": {
+          "name": "Hoàn đơn",
+          "text": "Hoàn một phần hoặc toàn bộ; điểm đã cộng bị trừ theo tỉ lệ.",
+          "route": "POST /orders/:id/refunds"
+        },
+        "redeem": {
+          "name": "Đổi voucher cho thành viên",
+          "text": "Trừ điểm, giảm kho và phát mã.",
+          "route": "POST /redemptions"
+        },
+        "confirm": {
+          "name": "Xác nhận mã",
+          "text": "Cửa hàng sở hữu voucher xác nhận mã tại quầy.",
+          "route": "POST /redemptions/:code/confirm"
+        }
+      },
+      "tape": {
+        "title": "Băng biên lai",
+        "empty": "Chưa có lệnh nào. Mỗi lần gửi sẽ hiện ở đây, mới nhất trên cùng.",
+        "clear": "Xóa băng",
+        "request": "Nội dung gửi",
+        "response": "Phản hồi",
+        "replayed": "Cùng Idempotency-Key: máy chủ trả lại kết quả cũ."
       }
     }
   }
