@@ -246,7 +246,8 @@
       "console": "Quản trị",
       "statement": "Quyết toán",
       "merchants": "Cửa hàng",
-      "programme": "Chương trình"
+      "programme": "Chương trình",
+      "vouchers": "Voucher"
     },
     "statement": {
       "title": "Quyết toán tháng",
@@ -385,6 +386,46 @@
         },
         "conflictName": "Tên hạng này đã có.",
         "conflictSpend": "Đã có hạng bắt đầu ở mức chi tiêu này."
+      }
+    },
+    "vouchers": {
+      "title": "Voucher",
+      "count_other": "{{count}} voucher",
+      "countMore_other": "Đang hiện {{count}} voucher, còn nữa",
+      "list": "Danh sách voucher",
+      "empty": "Không có voucher nào khớp.",
+      "more": "Tải thêm",
+      "loading": "Đang tải…",
+      "filter": {
+        "merchant": "Cửa hàng",
+        "allMerchants": "Tất cả cửa hàng",
+        "status": "Trạng thái",
+        "allStatus": "Tất cả",
+        "active": "Chưa ngừng bán",
+        "retired": "Đã ngừng bán"
+      },
+      "row": {
+        "stock": "Còn {{stock}} · đã đổi {{redeemed}}",
+        "price": "{{points}} điểm"
+      },
+      "state": {
+        "live": "Đang bán",
+        "soldOut": "Hết hàng",
+        "ended": "Hết hạn",
+        "retired": "Ngừng bán"
+      },
+      "detail": {
+        "state": "Tình trạng",
+        "faceValue": "Giá trị voucher",
+        "pointsPrice": "Giá đổi",
+        "payout": "App trả cửa hàng mỗi mã",
+        "payoutNote": "Tính theo giá trị điểm hiện tại; mã đã đổi dùng giá trị lúc đổi.",
+        "stock": "Còn lại",
+        "redeemed": "Mã đã phát",
+        "validUntil": "Bán đến",
+        "created": "Ngày tạo",
+        "description": "Mô tả",
+        "steps": "Cách dùng"
       }
     }
   }

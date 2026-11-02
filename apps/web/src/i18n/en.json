@@ -263,7 +263,8 @@
       "console": "Admin",
       "statement": "Statement",
       "merchants": "Merchants",
-      "programme": "Programme"
+      "programme": "Programme",
+      "vouchers": "Vouchers"
     },
     "statement": {
       "title": "Monthly statement",
@@ -405,6 +406,48 @@
         },
         "conflictName": "A tier already has this name.",
         "conflictSpend": "A tier already starts at this spend."
+      }
+    },
+    "vouchers": {
+      "title": "Vouchers",
+      "count_one": "{{count}} voucher",
+      "count_other": "{{count}} vouchers",
+      "countMore_one": "Showing {{count}} voucher, more to load",
+      "countMore_other": "Showing {{count}} vouchers, more to load",
+      "list": "Voucher list",
+      "empty": "No voucher matches.",
+      "more": "Load more",
+      "loading": "Loading…",
+      "filter": {
+        "merchant": "Merchant",
+        "allMerchants": "All merchants",
+        "status": "Status",
+        "allStatus": "All",
+        "active": "Not retired",
+        "retired": "Retired"
+      },
+      "row": {
+        "stock": "{{stock}} left · {{redeemed}} redeemed",
+        "price": "{{points}} points"
+      },
+      "state": {
+        "live": "On sale",
+        "soldOut": "Sold out",
+        "ended": "Ended",
+        "retired": "Retired"
+      },
+      "detail": {
+        "state": "State",
+        "faceValue": "Face value",
+        "pointsPrice": "Points price",
+        "payout": "App pays the merchant per code",
+        "payoutNote": "At today's point value; codes already issued keep the value from when they were issued.",
+        "stock": "Stock left",
+        "redeemed": "Codes issued",
+        "validUntil": "On sale until",
+        "created": "Created",
+        "description": "Description",
+        "steps": "How to use"
       }
     }
   }
