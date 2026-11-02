@@ -1,8 +1,10 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanelQuery } from '@/components/PanelQuery';
 import { formatVnd, signed } from '@/lib/format';
+import { PageHeader, TwoHalves } from '../layout';
+import { useDetailScroll } from '../useDetailScroll';
 import { currentMonth } from './month';
 import { MonthSwitch } from './MonthSwitch';
 import { StatementDetail } from './StatementDetail';
@@ -14,45 +16,35 @@ export function StatementPage() {
   const { t, i18n } = useTranslation();
   const [month, setMonth] = useState(currentMonth);
   const [picked, setPicked] = useState<number | null>(null);
-  const detail = useRef<HTMLElement>(null);
+  const { detail, reveal } = useDetailScroll();
   const query = useStatement(month);
   const data = query.data;
   const selected =
     data?.merchants.find((row) => row.merchantId === picked) ??
     data?.merchants[0];
 
-  // Stacked, the detail sits below the list
   function pick(id: number) {
     setPicked(id);
-    if (window.matchMedia('(min-width: 1024px)').matches) return;
-    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    detail.current?.scrollIntoView({
-      block: 'nearest',
-      behavior: calm ? 'auto' : 'smooth',
-    });
+    reveal();
   }
 
   return (
     <div className="space-y-6 py-6">
-      <div
-        data-surface="ground"
-        className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4"
-      >
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t('admin.statement.title')}
-          </h1>
-          <p className="mt-1 min-h-5 text-sm text-muted-foreground">
+      <PageHeader
+        title={t('admin.statement.title')}
+        subtitle={
+          <>
             {data &&
               t('admin.statement.rate', {
                 value: formatVnd(data.pointValueVnd, i18n.language),
               })}
             {month === currentMonth() && ` · ${t('admin.statement.open')}`}
-          </p>
-        </div>
+          </>
+        }
+      >
         <MonthSwitch month={month} onChange={setMonth} />
-      </div>
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
+      </PageHeader>
+      <TwoHalves>
         <PanelQuery
           title={t('admin.statement.merchants')}
           query={query}
@@ -115,7 +107,7 @@ export function StatementPage() {
           }}
         </PanelQuery>
         {selected && <StatementDetail ref={detail} row={selected} />}
-      </div>
+      </TwoHalves>
     </div>
   );
 }

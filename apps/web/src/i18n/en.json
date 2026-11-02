@@ -261,7 +261,8 @@
     "nav": {
       "label": "Admin sections",
       "console": "Admin",
-      "statement": "Statement"
+      "statement": "Statement",
+      "merchants": "Merchants"
     },
     "statement": {
       "title": "Monthly statement",
@@ -294,6 +295,64 @@
         "even": "The merchant and the app owe each other nothing this month",
         "breakage_one": "Expired unused: {{points}} point ({{amount}}), not part of the net.",
         "breakage_other": "Expired unused: {{points}} points ({{amount}}), not part of the net."
+      }
+    },
+    "merchants": {
+      "title": "Merchants",
+      "count_one": "{{count}} partner merchant",
+      "count_other": "{{count}} partner merchants",
+      "add": "Add merchant",
+      "list": "Merchant list",
+      "empty": "No merchants yet.",
+      "noAddress": "No address yet",
+      "cancel": "Cancel",
+      "detail": {
+        "id": "ID",
+        "created": "Created",
+        "address": "Address",
+        "photo": "Photo",
+        "none": "None yet",
+        "edit": "Edit details",
+        "apiKey": "API key",
+        "apiKeyText": "Only a hash of the key is stored, so it cannot be shown again. The key appears once, when it is created or replaced.",
+        "rotate": "Replace API key",
+        "photoAlt": "Photo of {{name}}"
+      },
+      "create": {
+        "title": "Add merchant",
+        "description": "The system creates an API key for the merchant. The key is shown once.",
+        "name": "Merchant name",
+        "submit": "Add",
+        "submitting": "Adding…",
+        "validation": {
+          "name": "Enter the merchant name, up to 255 characters."
+        }
+      },
+      "edit": {
+        "title": "Edit {{name}}",
+        "description": "The photo and address show to members on the voucher page.",
+        "photo": "Photo link",
+        "photoHint": "Starts with http:// or https://. Leave empty to remove the photo.",
+        "address": "Address",
+        "save": "Save",
+        "saving": "Saving…",
+        "validation": {
+          "photo": "Enter a valid http or https link, up to 2048 characters.",
+          "address": "The address is at most 255 characters."
+        }
+      },
+      "rotate": {
+        "title": "Replace the API key?",
+        "description": "The current key of {{name}} stops working at once. The merchant must use the new key to send orders and confirm codes.",
+        "confirm": "Replace key",
+        "working": "Replacing…"
+      },
+      "key": {
+        "title": "API key of {{name}}",
+        "description": "Copy the key now. Once you close this dialog it cannot be shown again.",
+        "copy": "Copy API key",
+        "copied": "API key copied",
+        "done": "I saved the key, close"
       }
     }
   }
