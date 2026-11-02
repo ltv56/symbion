@@ -12,7 +12,7 @@ export default defineConfig({
     // Same prefix as the nginx proxy in prod, so the api needs no CORS
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000',
         rewrite: (url) => url.replace(/^\/api/, ''),
       },
     },

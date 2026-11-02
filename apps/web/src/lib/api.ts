@@ -1,3 +1,4 @@
+import { adminSignOut, getAdminToken } from './adminAuth';
 import { getToken, signOut } from './auth';
 
 export class ApiError extends Error {
@@ -10,15 +11,17 @@ export class ApiError extends Error {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
+  // The admin session instead of the member one
+  as?: 'admin';
 }
 
 export async function api<T>(
   path: string,
-  { method = 'GET', body }: RequestOptions = {},
+  { method = 'GET', body, as }: RequestOptions = {},
 ): Promise<T> {
-  const token = getToken();
+  const token = as === 'admin' ? getAdminToken() : getToken();
   const res = await fetch(`/api${path}`, {
     method,
     headers: {
@@ -30,7 +33,10 @@ export async function api<T>(
 
   if (!res.ok) {
     // 401 without a token: wrong code; with one: expired session
-    if (res.status === 401 && token) signOut();
+    if (res.status === 401 && token) {
+      if (as === 'admin') adminSignOut();
+      else signOut();
+    }
     const error: { message?: string } | null = await res
       .json()
       .catch(() => null);

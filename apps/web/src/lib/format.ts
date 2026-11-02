@@ -10,6 +10,12 @@ export function formatVnd(value: number, locale: string): string {
   }).format(value);
 }
 
+// The sign is part of the figure: "+" and "−" (U+2212)
+export function signed(value: number, format: (n: number) => string): string {
+  if (value === 0) return format(0);
+  return `${value > 0 ? '+' : '−'}${format(Math.abs(value))}`;
+}
+
 // English spells the month
 export function formatDate(value: string | Date, locale: string): string {
   const options: Intl.DateTimeFormatOptions = locale.startsWith('en')

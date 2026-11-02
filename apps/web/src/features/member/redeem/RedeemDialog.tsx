@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { DialogShell } from '@/components/DialogShell';
 import type { Voucher } from '@/features/member/vouchers/useVouchers';
 import { RedeemPanel } from './RedeemPanel';
-import { RedeemShell } from './RedeemShell';
 import { useRedeem } from './useRedeem';
 
 // Focus fallback
@@ -34,7 +34,7 @@ export function RedeemDialog({
   }, [voucherId, reset]);
 
   return (
-    <RedeemShell
+    <DialogShell
       open={voucher !== null}
       locked={view.kind === 'sending'}
       onClose={onClose}
@@ -56,6 +56,6 @@ export function RedeemDialog({
           onClose={onClose}
         />
       )}
-    </RedeemShell>
+    </DialogShell>
   );
 }

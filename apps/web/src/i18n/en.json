@@ -243,5 +243,385 @@
     "favoritesTitle": "Favorite vouchers",
     "favoritesEmpty": "No favorite vouchers yet. Press the heart on a voucher page to save it.",
     "favoritesAll": "See all {{n}} favorite vouchers"
+  },
+  "admin": {
+    "login": {
+      "title": "Admin console",
+      "intro": "Sign in with the programme administrator account.",
+      "email": "Email",
+      "password": "Password",
+      "signIn": "Sign in",
+      "signingIn": "Signing in…",
+      "wrong": "Wrong email or password.",
+      "validation": {
+        "email": "Enter a valid email address.",
+        "password": "Enter your password."
+      }
+    },
+    "nav": {
+      "label": "Admin sections",
+      "console": "Admin",
+      "statement": "Statement",
+      "merchants": "Merchants",
+      "programme": "Programme",
+      "vouchers": "Vouchers",
+      "members": "Members",
+      "counter": "Counter"
+    },
+    "statement": {
+      "title": "Monthly statement",
+      "rate": "1 point = {{value}}",
+      "open": "The month is still open, figures run to now",
+      "previous": "Previous month",
+      "next": "Next month",
+      "pickMonth": "Choose a month",
+      "merchants": "Merchants",
+      "merchantSide": "Merchant owes app",
+      "appSide": "App owes merchant",
+      "merchantPays": "merchant pays",
+      "appPays": "app pays",
+      "even": "even",
+      "total": "Total",
+      "collects": "app collects",
+      "paysOut": "app pays out",
+      "empty": "No activity in the selected month.",
+      "detail": {
+        "lines": "Statement lines",
+        "line": "Line",
+        "points": "Points",
+        "vnd": "VND",
+        "issued": "Points issued at the shop",
+        "refunded": "Refunded orders",
+        "redeemed": "Vouchers confirmed at the counter",
+        "net": "Net",
+        "merchantPays": "The merchant pays the app {{amount}}",
+        "appPays": "The app pays the merchant {{amount}}",
+        "even": "The merchant and the app owe each other nothing this month",
+        "breakage_one": "Expired unused: {{points}} point ({{amount}}), not part of the net.",
+        "breakage_other": "Expired unused: {{points}} points ({{amount}}), not part of the net."
+      },
+      "download": "Download CSV"
+    },
+    "merchants": {
+      "title": "Merchants",
+      "count_one": "{{count}} partner merchant",
+      "count_other": "{{count}} partner merchants",
+      "add": "Add merchant",
+      "list": "Merchant list",
+      "empty": "No merchants yet.",
+      "noAddress": "No address yet",
+      "cancel": "Cancel",
+      "detail": {
+        "id": "ID",
+        "created": "Created",
+        "address": "Address",
+        "photo": "Photo",
+        "none": "None yet",
+        "edit": "Edit details",
+        "apiKey": "API key",
+        "apiKeyText": "Only a hash of the key is stored, so it cannot be shown again. The key appears once, when it is created or replaced.",
+        "rotate": "Replace API key",
+        "photoAlt": "Photo of {{name}}"
+      },
+      "create": {
+        "title": "Add merchant",
+        "description": "The system creates an API key for the merchant. The key is shown once.",
+        "name": "Merchant name",
+        "submit": "Add",
+        "submitting": "Adding…",
+        "validation": {
+          "name": "Enter the merchant name, up to 255 characters."
+        }
+      },
+      "edit": {
+        "title": "Edit {{name}}",
+        "description": "The photo and address show to members on the voucher page.",
+        "photo": "Photo link",
+        "photoHint": "Starts with http:// or https://. Leave empty to remove the photo.",
+        "address": "Address",
+        "save": "Save",
+        "saving": "Saving…",
+        "validation": {
+          "photo": "Enter a valid http or https link, up to 2048 characters.",
+          "address": "The address is at most 255 characters."
+        }
+      },
+      "rotate": {
+        "title": "Replace the API key?",
+        "description": "The current key of {{name}} stops working at once. The merchant must use the new key to send orders and confirm codes.",
+        "confirm": "Replace key",
+        "working": "Replacing…"
+      },
+      "key": {
+        "title": "API key of {{name}}",
+        "description": "Copy the key now. Once you close this dialog it cannot be shown again.",
+        "copy": "Copy API key",
+        "copied": "API key copied",
+        "done": "I saved the key, close"
+      }
+    },
+    "programme": {
+      "title": "Programme",
+      "count_one": "{{count}} member tier",
+      "count_other": "{{count}} member tiers",
+      "cancel": "Cancel",
+      "rate": {
+        "title": "Value of a point",
+        "text": "The app pays a merchant this amount for each point a member redeems, and it is the price floor of vouchers.",
+        "change": "Change point value",
+        "dialogTitle": "Change the point value",
+        "dialogText": "Today 1 point = {{value}}.",
+        "field": "1 point equals (₫)",
+        "validation": "Enter a whole number from 1 to 100,000.",
+        "effectVouchers": "Vouchers on sale must still meet their floor (the voucher value at least points price times point value), otherwise the change is refused.",
+        "effectClosed": "Closed months of the statement are recomputed at the new value on the issued and refunded lines.",
+        "refused": "Not changed: a voucher on sale would fall under its floor.",
+        "apply": "Apply",
+        "applying": "Applying…"
+      },
+      "tiers": {
+        "title": "Member tiers",
+        "empty": "No tiers yet.",
+        "columnTier": "Tier",
+        "columnRate": "Multiplier",
+        "from": "from {{spend}} spent in 12 months",
+        "fromStart": "starting tier, no spend needed"
+      },
+      "tier": {
+        "add": "Add tier",
+        "addTitle": "Add tier",
+        "editTitle": "Edit {{name}}",
+        "edit": "Edit tier",
+        "description": "A tier sets the multiplier on the points a member earns for each order.",
+        "name": "Tier name",
+        "minSpend": "Minimum 12-month spend (₫)",
+        "minSpendHint": "Members who spent this much or more are placed in the tier. 0 is the starting tier.",
+        "earnRate": "Multiplier",
+        "earnRateHint": "From 0.01 to 999.99, at most two decimals. 1.5 means points times 1.5.",
+        "effect": "Members keep their current tier until their next evaluation (an order, a refund or the nightly job). New orders use the new multiplier at once.",
+        "meaning": "A member who spent {{spend}} in 12 months reaches this tier, and each point earned is multiplied by {{rate}}.",
+        "save": "Save",
+        "saving": "Saving…",
+        "validation": {
+          "name": "Enter a tier name, up to 255 characters.",
+          "minSpend": "Enter a whole number from 0 to 9,999,999,999.",
+          "earnRate": "Enter a number from 0.01 to 999.99, at most two decimals."
+        },
+        "conflictName": "A tier already has this name.",
+        "conflictSpend": "A tier already starts at this spend."
+      }
+    },
+    "vouchers": {
+      "title": "Vouchers",
+      "count_one": "{{count}} voucher",
+      "count_other": "{{count}} vouchers",
+      "countMore_one": "Showing {{count}} voucher, more to load",
+      "countMore_other": "Showing {{count}} vouchers, more to load",
+      "list": "Voucher list",
+      "empty": "No voucher matches.",
+      "more": "Load more",
+      "loading": "Loading…",
+      "filter": {
+        "merchant": "Merchant",
+        "allMerchants": "All merchants",
+        "status": "Status",
+        "allStatus": "All",
+        "active": "Not retired",
+        "retired": "Retired"
+      },
+      "row": {
+        "stock": "{{stock}} left · {{redeemed}} redeemed",
+        "price": "{{points}} points"
+      },
+      "state": {
+        "live": "On sale",
+        "soldOut": "Sold out",
+        "ended": "Ended",
+        "retired": "Retired"
+      },
+      "detail": {
+        "state": "State",
+        "faceValue": "Face value",
+        "pointsPrice": "Points price",
+        "payout": "App pays the merchant per code",
+        "payoutNote": "At today's point value; codes already issued keep the value from when they were issued.",
+        "stock": "Stock left",
+        "redeemed": "Codes issued",
+        "validUntil": "On sale until",
+        "created": "Created",
+        "description": "Description",
+        "steps": "How to use",
+        "edit": "Edit stock and date",
+        "retire": "Retire"
+      },
+      "add": "Add voucher",
+      "create": {
+        "title": "Add voucher",
+        "description": "Creates a voucher on behalf of a merchant. The price and the face value cannot change afterwards.",
+        "merchant": "Merchant",
+        "pickMerchant": "Choose a merchant",
+        "titleField": "Voucher title",
+        "descriptionField": "Description (optional)",
+        "stepsField": "How to use (optional)",
+        "stepsHint": "One step per line, up to 10 steps.",
+        "pointsPrice": "Points price",
+        "faceValue": "Face value (₫)",
+        "floorHint": "At least {{floor}} (points price × {{value}} ₫ per point).",
+        "stock": "Stock",
+        "validUntil": "On sale until",
+        "submit": "Add",
+        "submitting": "Adding…",
+        "refused": "The system refused this voucher.",
+        "validation": {
+          "merchant": "Choose a merchant.",
+          "title": "Enter the voucher title, up to 255 characters.",
+          "description": "The description is at most 2,000 characters.",
+          "steps": "Up to 10 steps, each at most 200 characters.",
+          "faceValue": "Enter a positive whole number.",
+          "pointsPrice": "Enter a positive whole number.",
+          "stock": "Enter a whole number from 0 to 4,294,967,295.",
+          "validUntil": "Choose a time in the future.",
+          "floor": "The face value must cover what the merchant is paid: at least points price × point value."
+        }
+      },
+      "edit": {
+        "title": "Edit {{title}}",
+        "description": "The price and the face value stay as issued: members redeemed at that price.",
+        "stock": "Stock left",
+        "stockHint": "Set to 0 to stop issuing codes while the voucher stays listed.",
+        "validUntil": "On sale until",
+        "save": "Save",
+        "saving": "Saving…",
+        "validation": {
+          "stock": "Enter a whole number from 0 to 4,294,967,295.",
+          "validUntil": "Choose a time in the future."
+        }
+      },
+      "retire": {
+        "title": "Retire {{title}}?",
+        "description": "A retired voucher is never offered again.",
+        "effectList": "The voucher leaves the member list and no new code is issued.",
+        "effectCodes": "Codes already issued stay valid until their own expiry.",
+        "effectFinal": "This cannot be undone.",
+        "confirm": "Retire",
+        "working": "Retiring…"
+      }
+    },
+    "members": {
+      "title": "Members",
+      "count_one": "{{count}} member",
+      "count_other": "{{count}} members",
+      "countMore_one": "Showing {{count}} member, more to load",
+      "countMore_other": "Showing {{count}} members, more to load",
+      "list": "Member list",
+      "empty": "No member matches.",
+      "more": "Load more",
+      "loading": "Loading…",
+      "negative": "Negative",
+      "filter": {
+        "search": "Search by name or email",
+        "merchant": "Merchant",
+        "allMerchants": "All merchants",
+        "tier": "Tier",
+        "allTiers": "All tiers"
+      },
+      "row": {
+        "where": "{{merchant}} · {{tier}}",
+        "balance": "{{points}} points"
+      },
+      "detail": {
+        "merchant": "Joined through",
+        "tier": "Tier",
+        "balance": "Balance",
+        "spend": "Spend, last 12 months",
+        "nextTier": "Next tier",
+        "toNext": "{{amount}} more for {{tier}}",
+        "topTier": "At the top tier",
+        "joined": "Joined"
+      },
+      "fold": {
+        "more": "Show all {{count}}",
+        "less": "Show less"
+      },
+      "lots": {
+        "title": "Spendable points",
+        "empty": "No points left.",
+        "until": "Expires {{date}}",
+        "noExpiry": "Does not expire"
+      },
+      "codes": {
+        "title": "Redeemed codes",
+        "empty": "No voucher redeemed yet.",
+        "issued": "Unused",
+        "used": "Used",
+        "expired": "Expired"
+      },
+      "history": {
+        "title": "Recent point history",
+        "empty": "No point movement yet."
+      }
+    },
+    "counter": {
+      "title": "Counter",
+      "subtitle": "Calls the API as a merchant's POS does: same addresses, same key, same answers.",
+      "merchant": "Merchant",
+      "apiKey": "Merchant API key",
+      "apiKeyHint": "Only a hash of the key is stored, so it cannot be read back. Paste the key shown when it was created or replaced; it is remembered in this tab only.",
+      "operations": "Operations",
+      "pickVoucher": "Choose a voucher",
+      "newKey": "New idempotency key",
+      "keyHint": "Sending again with the same key must not create a second record.",
+      "needKey": "Enter the merchant's API key to send.",
+      "send": "Send",
+      "sending": "Sending…",
+      "field": {
+        "email": "Member email",
+        "name": "Name",
+        "amount": "Amount (₫)",
+        "orderId": "Order ID",
+        "voucherId": "Voucher",
+        "code": "Voucher code",
+        "key": "Idempotency-Key"
+      },
+      "suggest": {
+        "orderId": "Use the order just sent (#{{value}})",
+        "code": "Use the code just issued ({{value}})"
+      },
+      "op": {
+        "member": {
+          "name": "Create a member",
+          "text": "Registers a new member for the merchant.",
+          "route": "POST /members"
+        },
+        "order": {
+          "name": "Send an order",
+          "text": "Earns points for a paid order.",
+          "route": "POST /orders"
+        },
+        "refund": {
+          "name": "Refund an order",
+          "text": "Partial or full; the points earned are deducted in proportion.",
+          "route": "POST /orders/:id/refunds"
+        },
+        "redeem": {
+          "name": "Redeem for a member",
+          "text": "Spends points, takes one from stock and issues a code.",
+          "route": "POST /redemptions"
+        },
+        "confirm": {
+          "name": "Confirm a code",
+          "text": "The merchant that owns the voucher confirms the code at the till.",
+          "route": "POST /redemptions/:code/confirm"
+        }
+      },
+      "tape": {
+        "title": "Receipt tape",
+        "empty": "No call yet. Each send appears here, newest first.",
+        "clear": "Clear the tape",
+        "request": "Request body",
+        "response": "Response",
+        "replayed": "Same Idempotency-Key: the server returned the earlier result."
+      }
+    }
   }
 }

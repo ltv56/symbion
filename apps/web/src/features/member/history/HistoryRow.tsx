@@ -5,7 +5,7 @@ import { formatSigned } from './formatSigned';
 import type { HistoryEntry } from './useHistory';
 
 // The most specific label first, then the plain type
-function kindKeys(entry: HistoryEntry): string[] {
+export function kindKeys(entry: HistoryEntry): string[] {
   return [
     `history.kind.${entry.type}_${entry.ref?.type ?? 'none'}`,
     `history.kind.${entry.type}`,

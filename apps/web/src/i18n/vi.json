@@ -226,5 +226,378 @@
     "favoritesTitle": "Voucher yêu thích",
     "favoritesEmpty": "Chưa có voucher yêu thích. Bấm biểu tượng tim ở trang chi tiết voucher để lưu lại.",
     "favoritesAll": "Xem tất cả {{n}} voucher yêu thích"
+  },
+  "admin": {
+    "login": {
+      "title": "Quản trị",
+      "intro": "Đăng nhập bằng tài khoản quản trị chương trình.",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "signIn": "Đăng nhập",
+      "signingIn": "Đang đăng nhập…",
+      "wrong": "Email hoặc mật khẩu không đúng.",
+      "validation": {
+        "email": "Nhập một địa chỉ email hợp lệ.",
+        "password": "Nhập mật khẩu."
+      }
+    },
+    "nav": {
+      "label": "Các mục quản trị",
+      "console": "Quản trị",
+      "statement": "Quyết toán",
+      "merchants": "Cửa hàng",
+      "programme": "Chương trình",
+      "vouchers": "Voucher",
+      "members": "Thành viên",
+      "counter": "Quầy thử"
+    },
+    "statement": {
+      "title": "Quyết toán tháng",
+      "rate": "1 điểm = {{value}}",
+      "open": "Tháng chưa kết thúc, số liệu đến hiện tại",
+      "previous": "Tháng trước",
+      "next": "Tháng sau",
+      "pickMonth": "Chọn tháng",
+      "merchants": "Cửa hàng",
+      "merchantSide": "Cửa hàng nợ app",
+      "appSide": "App nợ cửa hàng",
+      "merchantPays": "cửa hàng trả",
+      "appPays": "app trả",
+      "even": "cân bằng",
+      "total": "Tổng",
+      "collects": "app thu về",
+      "paysOut": "app chi ra",
+      "empty": "Không có hoạt động nào trong tháng đã chọn.",
+      "detail": {
+        "lines": "Các dòng quyết toán",
+        "line": "Dòng",
+        "points": "Điểm",
+        "vnd": "VND",
+        "issued": "Điểm phát hành tại cửa hàng",
+        "refunded": "Đơn hoàn",
+        "redeemed": "Voucher xác nhận tại quầy",
+        "net": "Ròng",
+        "merchantPays": "Cửa hàng trả app {{amount}}",
+        "appPays": "App trả cửa hàng {{amount}}",
+        "even": "Cửa hàng và app không nợ nhau trong tháng này",
+        "breakage_other": "Mã hết hạn chưa dùng: {{points}} điểm ({{amount}}), không tính vào ròng."
+      },
+      "download": "Tải CSV"
+    },
+    "merchants": {
+      "title": "Cửa hàng",
+      "count_other": "{{count}} cửa hàng đối tác",
+      "add": "Thêm cửa hàng",
+      "list": "Danh sách cửa hàng",
+      "empty": "Chưa có cửa hàng nào.",
+      "noAddress": "Chưa có địa chỉ",
+      "cancel": "Hủy",
+      "detail": {
+        "id": "Mã",
+        "created": "Ngày tạo",
+        "address": "Địa chỉ",
+        "photo": "Ảnh",
+        "none": "Chưa có",
+        "edit": "Sửa thông tin",
+        "apiKey": "Khóa API",
+        "apiKeyText": "Hệ thống chỉ lưu bản băm của khóa, nên không xem lại được. Khóa chỉ hiện một lần khi tạo hoặc đổi.",
+        "rotate": "Đổi khóa API",
+        "photoAlt": "Ảnh cửa hàng {{name}}"
+      },
+      "create": {
+        "title": "Thêm cửa hàng",
+        "description": "Hệ thống tạo khóa API cho cửa hàng. Khóa chỉ hiện một lần.",
+        "name": "Tên cửa hàng",
+        "submit": "Thêm",
+        "submitting": "Đang thêm…",
+        "validation": {
+          "name": "Nhập tên cửa hàng, tối đa 255 ký tự."
+        }
+      },
+      "edit": {
+        "title": "Sửa thông tin {{name}}",
+        "description": "Ảnh và địa chỉ hiện cho thành viên ở trang voucher.",
+        "photo": "Đường dẫn ảnh",
+        "photoHint": "Bắt đầu bằng http:// hoặc https://. Để trống để xóa ảnh.",
+        "address": "Địa chỉ",
+        "save": "Lưu",
+        "saving": "Đang lưu…",
+        "validation": {
+          "photo": "Nhập một đường dẫn http hoặc https hợp lệ, tối đa 2048 ký tự.",
+          "address": "Địa chỉ tối đa 255 ký tự."
+        }
+      },
+      "rotate": {
+        "title": "Đổi khóa API?",
+        "description": "Khóa hiện tại của {{name}} ngừng hoạt động ngay. Cửa hàng phải dùng khóa mới để gửi đơn và xác nhận mã.",
+        "confirm": "Đổi khóa",
+        "working": "Đang đổi…"
+      },
+      "key": {
+        "title": "Khóa API của {{name}}",
+        "description": "Sao chép khóa ngay. Đóng hộp thoại là không xem lại được.",
+        "copy": "Sao chép khóa API",
+        "copied": "Đã sao chép khóa API",
+        "done": "Đã lưu khóa, đóng"
+      }
+    },
+    "programme": {
+      "title": "Chương trình",
+      "count_other": "{{count}} hạng thành viên",
+      "cancel": "Hủy",
+      "rate": {
+        "title": "Giá trị mỗi điểm",
+        "text": "App trả cửa hàng số tiền này cho mỗi điểm khách đổi, và đây là sàn giá của voucher.",
+        "change": "Đổi giá trị điểm",
+        "dialogTitle": "Đổi giá trị điểm",
+        "dialogText": "Hiện tại 1 điểm = {{value}}.",
+        "field": "1 điểm bằng (₫)",
+        "validation": "Nhập số nguyên từ 1 đến 100.000.",
+        "effectVouchers": "Voucher đang bán phải còn đạt sàn giá (giá trị voucher ít nhất bằng điểm đổi nhân giá trị điểm), nếu không thay đổi bị từ chối.",
+        "effectClosed": "Các tháng đã đóng của bản quyết toán được tính lại ở dòng điểm phát hành và hoàn đơn theo giá trị mới.",
+        "refused": "Không đổi được: có voucher đang bán sẽ thấp hơn sàn giá.",
+        "apply": "Áp dụng",
+        "applying": "Đang áp dụng…"
+      },
+      "tiers": {
+        "title": "Hạng thành viên",
+        "empty": "Chưa có hạng nào.",
+        "columnTier": "Hạng",
+        "columnRate": "Hệ số điểm",
+        "from": "từ {{spend}} chi tiêu 12 tháng",
+        "fromStart": "hạng khởi đầu, không cần chi tiêu"
+      },
+      "tier": {
+        "add": "Thêm hạng",
+        "addTitle": "Thêm hạng",
+        "editTitle": "Sửa hạng {{name}}",
+        "edit": "Sửa hạng",
+        "description": "Hạng quyết định hệ số nhân điểm thành viên nhận cho mỗi đơn.",
+        "name": "Tên hạng",
+        "minSpend": "Chi tiêu 12 tháng tối thiểu (₫)",
+        "minSpendHint": "Thành viên chi tiêu từ mức này trở lên được xếp vào hạng. 0 là hạng khởi đầu.",
+        "earnRate": "Hệ số điểm",
+        "earnRateHint": "Từ 0,01 đến 999,99, tối đa hai chữ số thập phân. 1,5 nghĩa là điểm nhân 1,5.",
+        "effect": "Thành viên giữ hạng hiện tại đến lần đánh giá kế tiếp (đơn, hoàn đơn hoặc job ban đêm). Đơn mới dùng hệ số mới ngay.",
+        "meaning": "Thành viên chi tiêu từ {{spend}} trong 12 tháng thì lên hạng này, mỗi điểm cộng được nhân {{rate}}.",
+        "save": "Lưu",
+        "saving": "Đang lưu…",
+        "validation": {
+          "name": "Nhập tên hạng, tối đa 255 ký tự.",
+          "minSpend": "Nhập số nguyên từ 0 đến 9.999.999.999.",
+          "earnRate": "Nhập số từ 0,01 đến 999,99, tối đa hai chữ số thập phân."
+        },
+        "conflictName": "Tên hạng này đã có.",
+        "conflictSpend": "Đã có hạng bắt đầu ở mức chi tiêu này."
+      }
+    },
+    "vouchers": {
+      "title": "Voucher",
+      "count_other": "{{count}} voucher",
+      "countMore_other": "Đang hiện {{count}} voucher, còn nữa",
+      "list": "Danh sách voucher",
+      "empty": "Không có voucher nào khớp.",
+      "more": "Tải thêm",
+      "loading": "Đang tải…",
+      "filter": {
+        "merchant": "Cửa hàng",
+        "allMerchants": "Tất cả cửa hàng",
+        "status": "Trạng thái",
+        "allStatus": "Tất cả",
+        "active": "Chưa ngừng bán",
+        "retired": "Đã ngừng bán"
+      },
+      "row": {
+        "stock": "Còn {{stock}} · đã đổi {{redeemed}}",
+        "price": "{{points}} điểm"
+      },
+      "state": {
+        "live": "Đang bán",
+        "soldOut": "Hết hàng",
+        "ended": "Hết hạn",
+        "retired": "Ngừng bán"
+      },
+      "detail": {
+        "state": "Tình trạng",
+        "faceValue": "Giá trị voucher",
+        "pointsPrice": "Giá đổi",
+        "payout": "App trả cửa hàng mỗi mã",
+        "payoutNote": "Tính theo giá trị điểm hiện tại; mã đã đổi dùng giá trị lúc đổi.",
+        "stock": "Còn lại",
+        "redeemed": "Mã đã phát",
+        "validUntil": "Bán đến",
+        "created": "Ngày tạo",
+        "description": "Mô tả",
+        "steps": "Cách dùng",
+        "edit": "Sửa số lượng và hạn",
+        "retire": "Ngừng bán"
+      },
+      "add": "Thêm voucher",
+      "create": {
+        "title": "Thêm voucher",
+        "description": "Tạo voucher thay mặt cửa hàng. Giá đổi và giá trị voucher không sửa được sau khi tạo.",
+        "merchant": "Cửa hàng",
+        "pickMerchant": "Chọn cửa hàng",
+        "titleField": "Tên voucher",
+        "descriptionField": "Mô tả (không bắt buộc)",
+        "stepsField": "Cách dùng (không bắt buộc)",
+        "stepsHint": "Mỗi dòng một bước, tối đa 10 bước.",
+        "pointsPrice": "Giá đổi (điểm)",
+        "faceValue": "Giá trị voucher (₫)",
+        "floorHint": "Tối thiểu {{floor}} (giá đổi × {{value}} ₫ mỗi điểm).",
+        "stock": "Số lượng",
+        "validUntil": "Bán đến",
+        "submit": "Thêm",
+        "submitting": "Đang thêm…",
+        "refused": "Hệ thống từ chối voucher này.",
+        "validation": {
+          "merchant": "Chọn một cửa hàng.",
+          "title": "Nhập tên voucher, tối đa 255 ký tự.",
+          "description": "Mô tả tối đa 2.000 ký tự.",
+          "steps": "Tối đa 10 bước, mỗi bước tối đa 200 ký tự.",
+          "faceValue": "Nhập số nguyên dương.",
+          "pointsPrice": "Nhập số nguyên dương.",
+          "stock": "Nhập số nguyên từ 0 đến 4.294.967.295.",
+          "validUntil": "Chọn một thời điểm trong tương lai.",
+          "floor": "Giá trị voucher phải đủ trả cho cửa hàng: ít nhất giá đổi × giá trị điểm."
+        }
+      },
+      "edit": {
+        "title": "Sửa {{title}}",
+        "description": "Giá đổi và giá trị voucher giữ nguyên vì thành viên đã đổi theo giá đó.",
+        "stock": "Số lượng còn lại",
+        "stockHint": "Đặt về 0 để ngừng phát mã mới mà vẫn giữ voucher trong danh sách.",
+        "validUntil": "Bán đến",
+        "save": "Lưu",
+        "saving": "Đang lưu…",
+        "validation": {
+          "stock": "Nhập số nguyên từ 0 đến 4.294.967.295.",
+          "validUntil": "Chọn một thời điểm trong tương lai."
+        }
+      },
+      "retire": {
+        "title": "Ngừng bán {{title}}?",
+        "description": "Voucher ngừng bán không bao giờ được bán lại.",
+        "effectList": "Voucher rời danh sách của thành viên và không phát thêm mã mới.",
+        "effectCodes": "Mã đã phát vẫn dùng được đến hạn mã.",
+        "effectFinal": "Không hoàn tác được.",
+        "confirm": "Ngừng bán",
+        "working": "Đang xử lý…"
+      }
+    },
+    "members": {
+      "title": "Thành viên",
+      "count_other": "{{count}} thành viên",
+      "countMore_other": "Đang hiện {{count}} thành viên, còn nữa",
+      "list": "Danh sách thành viên",
+      "empty": "Không có thành viên nào khớp.",
+      "more": "Tải thêm",
+      "loading": "Đang tải…",
+      "negative": "Số dư âm",
+      "filter": {
+        "search": "Tìm theo tên hoặc email",
+        "merchant": "Cửa hàng",
+        "allMerchants": "Tất cả cửa hàng",
+        "tier": "Hạng",
+        "allTiers": "Tất cả hạng"
+      },
+      "row": {
+        "where": "{{merchant}} · {{tier}}",
+        "balance": "{{points}} điểm"
+      },
+      "detail": {
+        "merchant": "Cửa hàng đăng ký",
+        "tier": "Hạng",
+        "balance": "Số dư",
+        "spend": "Chi tiêu 12 tháng",
+        "nextTier": "Hạng kế tiếp",
+        "toNext": "Còn {{amount}} để lên {{tier}}",
+        "topTier": "Đã ở hạng cao nhất",
+        "joined": "Ngày tham gia"
+      },
+      "fold": {
+        "more": "Xem tất cả {{count}}",
+        "less": "Thu gọn"
+      },
+      "lots": {
+        "title": "Điểm còn dùng được",
+        "empty": "Không còn điểm nào.",
+        "until": "Hết hạn {{date}}",
+        "noExpiry": "Không hết hạn"
+      },
+      "codes": {
+        "title": "Mã đã đổi",
+        "empty": "Chưa đổi voucher nào.",
+        "issued": "Chưa dùng",
+        "used": "Đã dùng",
+        "expired": "Hết hạn"
+      },
+      "history": {
+        "title": "Lịch sử điểm gần đây",
+        "empty": "Chưa có biến động điểm."
+      }
+    },
+    "counter": {
+      "title": "Quầy thử",
+      "subtitle": "Gọi API như máy POS của một cửa hàng: cùng địa chỉ, cùng khóa, cùng phản hồi.",
+      "merchant": "Cửa hàng",
+      "apiKey": "Khóa API của cửa hàng",
+      "apiKeyHint": "Hệ thống chỉ lưu bản băm nên không đọc lại được khóa. Dán khóa hiện khi tạo hoặc đổi khóa; khóa chỉ nhớ trong tab này.",
+      "operations": "Thao tác",
+      "pickVoucher": "Chọn voucher",
+      "newKey": "Tạo khóa chống trùng mới",
+      "keyHint": "Gửi lại với cùng khóa này thì không được tạo bản ghi thứ hai.",
+      "needKey": "Nhập khóa API của cửa hàng để gửi.",
+      "send": "Gửi",
+      "sending": "Đang gửi…",
+      "field": {
+        "email": "Email thành viên",
+        "name": "Tên",
+        "amount": "Số tiền (₫)",
+        "orderId": "Mã đơn",
+        "voucherId": "Voucher",
+        "code": "Mã voucher",
+        "key": "Idempotency-Key"
+      },
+      "suggest": {
+        "orderId": "Dùng đơn vừa gửi (#{{value}})",
+        "code": "Dùng mã vừa đổi ({{value}})"
+      },
+      "op": {
+        "member": {
+          "name": "Tạo thành viên",
+          "text": "Đăng ký thành viên mới cho cửa hàng.",
+          "route": "POST /members"
+        },
+        "order": {
+          "name": "Gửi đơn hàng",
+          "text": "Tính điểm cho một đơn đã thanh toán.",
+          "route": "POST /orders"
+        },
+        "refund": {
+          "name": "Hoàn đơn",
+          "text": "Hoàn một phần hoặc toàn bộ; điểm đã cộng bị trừ theo tỉ lệ.",
+          "route": "POST /orders/:id/refunds"
+        },
+        "redeem": {
+          "name": "Đổi voucher cho thành viên",
+          "text": "Trừ điểm, giảm kho và phát mã.",
+          "route": "POST /redemptions"
+        },
+        "confirm": {
+          "name": "Xác nhận mã",
+          "text": "Cửa hàng sở hữu voucher xác nhận mã tại quầy.",
+          "route": "POST /redemptions/:code/confirm"
+        }
+      },
+      "tape": {
+        "title": "Băng biên lai",
+        "empty": "Chưa có lệnh nào. Mỗi lần gửi sẽ hiện ở đây, mới nhất trên cùng.",
+        "clear": "Xóa băng",
+        "request": "Nội dung gửi",
+        "response": "Phản hồi",
+        "replayed": "Cùng Idempotency-Key: máy chủ trả lại kết quả cũ."
+      }
+    }
   }
 }
