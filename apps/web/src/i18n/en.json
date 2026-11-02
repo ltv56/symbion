@@ -243,5 +243,58 @@
     "favoritesTitle": "Favorite vouchers",
     "favoritesEmpty": "No favorite vouchers yet. Press the heart on a voucher page to save it.",
     "favoritesAll": "See all {{n}} favorite vouchers"
+  },
+  "admin": {
+    "login": {
+      "title": "Admin console",
+      "intro": "Sign in with the programme administrator account.",
+      "email": "Email",
+      "password": "Password",
+      "signIn": "Sign in",
+      "signingIn": "Signing in…",
+      "wrong": "Wrong email or password.",
+      "validation": {
+        "email": "Enter a valid email address.",
+        "password": "Enter your password."
+      }
+    },
+    "nav": {
+      "label": "Admin sections",
+      "console": "Admin",
+      "statement": "Statement"
+    },
+    "statement": {
+      "title": "Monthly statement",
+      "rate": "1 point = {{value}}",
+      "open": "The month is still open, figures run to now",
+      "previous": "Previous month",
+      "next": "Next month",
+      "pickMonth": "Choose a month",
+      "merchants": "Merchants",
+      "merchantSide": "Merchant owes app",
+      "appSide": "App owes merchant",
+      "merchantPays": "merchant pays",
+      "appPays": "app pays",
+      "even": "even",
+      "total": "Total",
+      "collects": "app collects",
+      "paysOut": "app pays out",
+      "empty": "No activity in the selected month.",
+      "detail": {
+        "lines": "Statement lines",
+        "line": "Line",
+        "points": "Points",
+        "vnd": "VND",
+        "issued": "Points issued at the shop",
+        "refunded": "Refunded orders",
+        "redeemed": "Vouchers confirmed at the counter",
+        "net": "Net",
+        "merchantPays": "The merchant pays the app {{amount}}",
+        "appPays": "The app pays the merchant {{amount}}",
+        "even": "The merchant and the app owe each other nothing this month",
+        "breakage_one": "Expired unused: {{points}} point ({{amount}}), not part of the net.",
+        "breakage_other": "Expired unused: {{points}} points ({{amount}}), not part of the net."
+      }
+    }
   }
 }

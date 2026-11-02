@@ -226,5 +226,57 @@
     "favoritesTitle": "Voucher yêu thích",
     "favoritesEmpty": "Chưa có voucher yêu thích. Bấm biểu tượng tim ở trang chi tiết voucher để lưu lại.",
     "favoritesAll": "Xem tất cả {{n}} voucher yêu thích"
+  },
+  "admin": {
+    "login": {
+      "title": "Quản trị",
+      "intro": "Đăng nhập bằng tài khoản quản trị chương trình.",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "signIn": "Đăng nhập",
+      "signingIn": "Đang đăng nhập…",
+      "wrong": "Email hoặc mật khẩu không đúng.",
+      "validation": {
+        "email": "Nhập một địa chỉ email hợp lệ.",
+        "password": "Nhập mật khẩu."
+      }
+    },
+    "nav": {
+      "label": "Các mục quản trị",
+      "console": "Quản trị",
+      "statement": "Quyết toán"
+    },
+    "statement": {
+      "title": "Quyết toán tháng",
+      "rate": "1 điểm = {{value}}",
+      "open": "Tháng chưa kết thúc, số liệu đến hiện tại",
+      "previous": "Tháng trước",
+      "next": "Tháng sau",
+      "pickMonth": "Chọn tháng",
+      "merchants": "Cửa hàng",
+      "merchantSide": "Cửa hàng nợ app",
+      "appSide": "App nợ cửa hàng",
+      "merchantPays": "cửa hàng trả",
+      "appPays": "app trả",
+      "even": "cân bằng",
+      "total": "Tổng",
+      "collects": "app thu về",
+      "paysOut": "app chi ra",
+      "empty": "Không có hoạt động nào trong tháng đã chọn.",
+      "detail": {
+        "lines": "Các dòng quyết toán",
+        "line": "Dòng",
+        "points": "Điểm",
+        "vnd": "VND",
+        "issued": "Điểm phát hành tại cửa hàng",
+        "refunded": "Đơn hoàn",
+        "redeemed": "Voucher xác nhận tại quầy",
+        "net": "Ròng",
+        "merchantPays": "Cửa hàng trả app {{amount}}",
+        "appPays": "App trả cửa hàng {{amount}}",
+        "even": "Cửa hàng và app không nợ nhau trong tháng này",
+        "breakage_other": "Mã hết hạn chưa dùng: {{points}} điểm ({{amount}}), không tính vào ròng."
+      }
+    }
   }
 }
