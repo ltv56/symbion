@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { MerchantAvatar } from '@/components/MerchantAvatar';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/format';
+import { Fact } from '../Fact';
 import { useDialog } from '../useDialog';
 import { OUTLINE } from '../styles';
 import { EditShopDialog } from './EditShopDialog';
@@ -22,17 +23,6 @@ function ShopPhoto({ src, name }: { src: string | null; name: string }) {
         onError={() => setFailed(true)}
         className="size-full object-cover"
       />
-    </div>
-  );
-}
-
-function Fact({ label, children }: { label: string; children: string }) {
-  return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-4 py-2.5">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="ml-auto max-w-full text-right wrap-anywhere">
-        {children}
-      </dd>
     </div>
   );
 }

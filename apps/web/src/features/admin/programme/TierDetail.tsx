@@ -4,22 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { TierSeal } from '@/features/member/tier/TierSeal';
 import { Button } from '@/components/ui/button';
 import { formatVnd } from '@/lib/format';
+import { Fact } from '../Fact';
 import { OUTLINE } from '../styles';
 import { useDialog } from '../useDialog';
 import { formatRate } from './formatRate';
 import { TierDialog } from './TierDialog';
 import type { Tier } from './useProgramme';
-
-function Fact({ label, children }: { label: string; children: string }) {
-  return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-4 py-2.5">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="ml-auto max-w-full text-right font-mono tabular-nums wrap-anywhere">
-        {children}
-      </dd>
-    </div>
-  );
-}
 
 // One tier on the ground: its seal, the two numbers, and what they do
 export function TierDetail({
@@ -50,10 +40,10 @@ export function TierDetail({
         </h2>
       </div>
       <dl className="mt-4 divide-y border-y text-sm">
-        <Fact label={t('admin.programme.tier.minSpend')}>
+        <Fact label={t('admin.programme.tier.minSpend')} mono>
           {formatVnd(tier.minSpend, i18n.language)}
         </Fact>
-        <Fact label={t('admin.programme.tier.earnRate')}>
+        <Fact label={t('admin.programme.tier.earnRate')} mono>
           {formatRate(tier.earnRate, i18n.language)}
         </Fact>
       </dl>
