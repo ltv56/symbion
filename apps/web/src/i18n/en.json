@@ -178,5 +178,21 @@
     "empty": "No partner merchants yet.",
     "showAll": "Show all {{n}} merchants",
     "showLess": "Show less"
+  },
+  "history": {
+    "title": "Point history",
+    "empty": "No activity yet.",
+    "limit": "Showing the latest {{count}} entries.",
+    "showAll": "Show all {{n}} entries",
+    "showLess": "Show fewer",
+    "earned": "Earned {{n}} points",
+    "spent": "Spent {{n}} points",
+    "kind": {
+      "earn": "Points earned",
+      "spend": "Points spent",
+      "earn_order": "Earned on an order",
+      "spend_redemption": "Voucher redeemed",
+      "spend_refund": "Refund deduction"
+    }
   }
 }

@@ -167,4 +167,5 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 - "My codes" lists the member's latest 50 codes (`GET /me/redemptions`): unused codes first, the one that ends soonest on top, then used and expired codes in the order the api returns them. A redemption reloads the list.
 - An unused code shows the full date and time it ends, and the time left when it ends within 7 days (hours when under a day). Only an unused code has a copy button.
 - The list shows 10 codes; "Show all" shows the rest.
+- "Point history" is closed by default and loads when opened (`GET /me/history`): the latest 50 ledger entries, newest first, each with the merchant, a label by source (order, voucher redeemed, refund deduction; plain earned or spent when the source is unknown), the date and the signed amount. 10 are shown, "Show all" shows the rest.
 - "Partner merchants" lists every merchant of the programme (`GET /me/partners`), ordered by name: 8 are shown, "Show all" shows the rest.
