@@ -7,20 +7,20 @@ import { inHorizon, monthsAhead } from '../expiry';
 
 // Six months; a year opens its 12 months, a month its days
 export function ExpiryCalendar({
-  lots,
+  marks,
   loadedAt,
-  activeId,
-  selectedId,
+  activeKey,
+  selectedKey,
   onActiveChange,
   onPick,
 }: Base & { loadedAt: number }) {
   const [view, setView] = useState<CalendarView>({ kind: 'window' });
-  const [seen, setSeen] = useState(selectedId);
+  const [seen, setSeen] = useState(selectedKey);
   const now = new Date(loadedAt);
-  // Selecting a lot jumps to its day
-  if (selectedId !== seen) {
-    setSeen(selectedId);
-    const expires = lots.find((lot) => lot.id === selectedId)?.expiresAt;
+  // Selecting a mark jumps to its day
+  if (selectedKey !== seen) {
+    setSeen(selectedKey);
+    const expires = marks.find((mark) => mark.key === selectedKey)?.expiresAt;
     if (expires) {
       const date = new Date(expires);
       const year = date.getFullYear();
@@ -37,9 +37,9 @@ export function ExpiryCalendar({
       }
     }
   }
-  const base = { lots, activeId, selectedId, onActiveChange, onPick };
+  const base = { marks, activeKey, selectedKey, onActiveChange, onPick };
   return (
-    <div className="text-card-foreground">
+    <div data-surface="ground" className="text-foreground">
       {view.kind === 'window' && (
         <WindowView base={base} now={now} open={setView} />
       )}

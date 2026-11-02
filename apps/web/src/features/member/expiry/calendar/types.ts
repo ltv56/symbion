@@ -1,4 +1,4 @@
-import type { Lot } from '../useLots';
+import type { Mark } from '../marks';
 
 export type CalendarView =
   | { kind: 'window' }
@@ -8,16 +8,16 @@ export type CalendarView =
       year: number;
       month: number;
       from: 'window' | 'year';
-      // the lot whose marker was pressed
-      focus?: number;
+      // the mark that was pressed
+      focus?: string;
     };
 
-// Pointing lights a marker and its row; pressing a day or a row picks its lot
+// Pointing lights a marker and its row; pressing a day or a row picks its mark
 type Link = {
-  activeId: number | null;
-  selectedId: number | null;
-  onActiveChange: (id: number | null) => void;
-  onPick: (id: number) => void;
+  activeKey: string | null;
+  selectedKey: string | null;
+  onActiveChange: (key: string | null) => void;
+  onPick: (key: string) => void;
 };
-export type Base = Link & { lots: Lot[] };
+export type Base = Link & { marks: Mark[] };
 export type Open = (view: CalendarView) => void;
