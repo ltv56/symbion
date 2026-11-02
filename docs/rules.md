@@ -157,6 +157,9 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 - Vouchers are grouped: ready to redeem (stock left and balance covers the price), not enough points (including a negative balance), sold out. Not-enough-points vouchers are ordered by price, so the smallest shortfall comes first.
 - The home page shows 4 / 3 / 2 vouchers of the three groups; "See more" opens the all-vouchers page filtered to that group (filter: All, or one group).
 - A voucher not covered by the balance shows how many points are missing.
+- A ticket title, and "Details" on tickets that cannot be redeemed, open the voucher detail: a side panel from 768px wide, a full-screen page below.
+- The detail shows the merchant photo (initial letter when unset or failing to load), value, valid-until date and the member's balance; address (with a map link), description and steps appear only when set.
+- The heart in the detail adds the voucher to the member's favorites or removes it (see Favorites). The state is kept on the account, so it shows on every device.
 - Redeem asks for confirmation: value, points deducted, balance after, code valid until (see Redemption), no refund if the code expires.
 - The app sends one `Idempotency-Key` per voucher until the server answers; a retry after a lost response repeats it. `200` shows "already recorded", points are deducted once.
 - A `409` reloads the balance and the vouchers: the dialog then says sold out, not enough points or voucher gone.

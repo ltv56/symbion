@@ -80,7 +80,25 @@
     "back": "Quay lại",
     "filter": "Lọc voucher",
     "filterAll": "Tất cả",
-    "needMore_other": "Cần thêm {{missing}} điểm"
+    "needMore_other": "Cần thêm {{missing}} điểm",
+    "detail": "Chi tiết",
+    "detailFor": "Xem chi tiết voucher {{title}}"
+  },
+  "voucherDetail": {
+    "value": "Giá trị {{value}}",
+    "until": "Đổi được đến {{date}}",
+    "address": "Địa chỉ",
+    "map": "Mở Google Maps",
+    "newTab": "(mở tab mới)",
+    "about": "Mô tả",
+    "steps": "Cách dùng",
+    "balance": "Số dư của bạn",
+    "redeem": "Đổi voucher",
+    "lacking": "Bạn cần thêm <n>{{missing}}</n> điểm để đổi voucher này.",
+    "soldOut": "Voucher này đã hết hàng.",
+    "favorite": "Yêu thích",
+    "close": "Đóng",
+    "photoAlt": "Ảnh cửa hàng {{name}}"
   },
   "redeem": {
     "action": "Đổi",

@@ -1,4 +1,5 @@
 import { cn } from 'cn';
+import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MerchantAvatar } from '@/components/MerchantAvatar';
 import { Button } from '@/components/ui/button';
@@ -7,16 +8,18 @@ import { availability } from './availability';
 import { Meta, Price, PriceSpoken } from './TicketParts';
 import type { Voucher } from './useVouchers';
 
-// Ticket: Đổi on the stub of a ready one
+// Ticket: title and Chi tiết open the detail, Đổi on the stub
 export function VoucherTicket({
   voucher,
   balance,
   loadedAt,
+  onOpen,
   onRedeem,
 }: {
   voucher: Voucher;
   balance: number;
   loadedAt: number;
+  onOpen: (voucher: Voucher) => void;
   onRedeem: (voucher: Voucher) => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -51,16 +54,21 @@ export function VoucherTicket({
           className={cn(
             'min-w-0 flex-1',
             soldOut &&
-              '[&_p]:text-muted-foreground/[88%] dark:[&_p]:text-muted-foreground/70',
+              '[&_button]:text-muted-foreground/[88%] [&_p]:text-muted-foreground/[88%] dark:[&_button]:text-muted-foreground/70 dark:[&_p]:text-muted-foreground/70',
           )}
         >
           {/* title 15px, 14px below 22rem, 13px below 17.5rem */}
-          <p
+          <button
+            type="button"
+            aria-haspopup="dialog"
             title={voucher.title}
-            className="line-clamp-3 text-[15px] leading-snug font-medium wrap-anywhere @max-[22rem]:text-sm @max-[17.5rem]:text-[13px]"
+            onClick={() => onOpen(voucher)}
+            className="group/title relative block w-full text-left outline-offset-2 after:absolute after:inset-x-0 after:-inset-y-3 focus-visible:outline-2 focus-visible:outline-current"
           >
-            {voucher.title}
-          </p>
+            <span className="line-clamp-3 text-[15px] leading-snug font-medium wrap-anywhere group-hover/title:underline group-focus-visible/title:underline @max-[22rem]:text-sm @max-[17.5rem]:text-[13px]">
+              {voucher.title}
+            </span>
+          </button>
           <PriceSpoken points={voucher.pointsPrice} />
           <div className="@max-[22rem]:[&_p]:text-[13px] @max-[17.5rem]:[&_p]:text-xs">
             <Meta voucher={voucher} loadedAt={loadedAt} />
@@ -86,11 +94,11 @@ export function VoucherTicket({
           className={cn(
             'flex flex-col items-center gap-2',
             soldOut &&
-              '[&_span]:text-muted-foreground/[88%] dark:[&_span]:text-muted-foreground/70',
+              '[&_button]:text-muted-foreground/[88%] [&_span]:text-muted-foreground/[88%] dark:[&_button]:text-muted-foreground/70 dark:[&_span]:text-muted-foreground/70',
           )}
         >
           <Price points={voucher.pointsPrice} struck={soldOut} />
-          {redeemable && (
+          {redeemable ? (
             <Button
               className="relative after:absolute after:-inset-1.5"
               aria-label={t('redeem.actionFor', { title: voucher.title })}
@@ -98,6 +106,17 @@ export function VoucherTicket({
             >
               {t('redeem.action')}
             </Button>
+          ) : (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-label={t('vouchers.detailFor', { title: voucher.title })}
+              onClick={() => onOpen(voucher)}
+              className="relative flex items-center gap-0.5 text-[13px] font-medium underline underline-offset-4 outline-offset-2 after:absolute after:-inset-x-2 after:-inset-y-3 focus-visible:outline-2 focus-visible:outline-current"
+            >
+              {t('vouchers.detail')}
+              <ChevronRight aria-hidden className="size-3.5" />
+            </button>
           )}
         </div>
         {/* notches on the perforation */}

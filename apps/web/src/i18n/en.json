@@ -87,7 +87,25 @@
     "filter": "Filter vouchers",
     "filterAll": "All",
     "needMore_one": "Need {{missing}} more point",
-    "needMore_other": "Need {{missing}} more points"
+    "needMore_other": "Need {{missing}} more points",
+    "detail": "Details",
+    "detailFor": "View details of voucher {{title}}"
+  },
+  "voucherDetail": {
+    "value": "Worth {{value}}",
+    "until": "Redeemable until {{date}}",
+    "address": "Address",
+    "map": "Open in Google Maps",
+    "newTab": "(opens in a new tab)",
+    "about": "About",
+    "steps": "How to use",
+    "balance": "Your balance",
+    "redeem": "Redeem voucher",
+    "lacking": "You need <n>{{missing}}</n> more points to redeem this voucher.",
+    "soldOut": "This voucher is sold out.",
+    "favorite": "Favorite",
+    "close": "Close",
+    "photoAlt": "Photo of {{name}}"
   },
   "redeem": {
     "action": "Redeem",

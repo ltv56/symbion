@@ -10,6 +10,10 @@ export interface Voucher {
   pointsPrice: number;
   stock: number;
   validUntil: string;
+  merchantPhotoUrl: string | null;
+  merchantAddress: string | null;
+  description: string | null;
+  steps: string[] | null;
 }
 
 interface VoucherPage {

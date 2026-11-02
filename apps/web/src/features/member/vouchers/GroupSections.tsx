@@ -17,6 +17,7 @@ export function GroupSections({
   balance,
   loadedAt,
   headings = true,
+  onOpen,
   onRedeem,
   onMore,
 }: {
@@ -25,6 +26,7 @@ export function GroupSections({
   balance: number;
   loadedAt: number;
   headings?: boolean;
+  onOpen: (voucher: Voucher) => void;
   onRedeem: (voucher: Voucher) => void;
   onMore?: (key: keyof VoucherGroups) => void;
 }) {
@@ -69,6 +71,7 @@ export function GroupSections({
                   voucher={voucher}
                   balance={balance}
                   loadedAt={loadedAt}
+                  onOpen={onOpen}
                   onRedeem={onRedeem}
                 />
               ))}

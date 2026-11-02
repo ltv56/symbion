@@ -19,6 +19,7 @@ export function AllVouchersView({
   loadedAt,
   initialFilter = 'all',
   onClose,
+  onOpen,
   onRedeem,
   Title = 'h2',
 }: {
@@ -28,6 +29,7 @@ export function AllVouchersView({
   // Group opened from
   initialFilter?: VoucherFilter;
   onClose: () => void;
+  onOpen: (voucher: Voucher) => void;
   onRedeem: (voucher: Voucher) => void;
   // DialogTitle in the dialog
   Title?: ElementType;
@@ -96,6 +98,7 @@ export function AllVouchersView({
         balance={balance}
         loadedAt={loadedAt}
         headings={filter === 'all'}
+        onOpen={onOpen}
         onRedeem={onRedeem}
       />
     </div>
@@ -116,6 +119,7 @@ export function AllVouchersDialog({
   balance: number;
   loadedAt: number;
   initialFilter?: VoucherFilter;
+  onOpen: (voucher: Voucher) => void;
   onRedeem: (voucher: Voucher) => void;
 }) {
   return (
