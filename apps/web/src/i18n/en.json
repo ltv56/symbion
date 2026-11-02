@@ -264,7 +264,8 @@
       "statement": "Statement",
       "merchants": "Merchants",
       "programme": "Programme",
-      "vouchers": "Vouchers"
+      "vouchers": "Vouchers",
+      "members": "Members"
     },
     "statement": {
       "title": "Monthly statement",
@@ -502,6 +503,39 @@
         "effectFinal": "This cannot be undone.",
         "confirm": "Retire",
         "working": "Retiring…"
+      }
+    },
+    "members": {
+      "title": "Members",
+      "count_one": "{{count}} member",
+      "count_other": "{{count}} members",
+      "countMore_one": "Showing {{count}} member, more to load",
+      "countMore_other": "Showing {{count}} members, more to load",
+      "list": "Member list",
+      "empty": "No member matches.",
+      "more": "Load more",
+      "loading": "Loading…",
+      "negative": "Negative",
+      "filter": {
+        "search": "Search by name or email",
+        "merchant": "Merchant",
+        "allMerchants": "All merchants",
+        "tier": "Tier",
+        "allTiers": "All tiers"
+      },
+      "row": {
+        "where": "{{merchant}} · {{tier}}",
+        "balance": "{{points}} points"
+      },
+      "detail": {
+        "merchant": "Joined through",
+        "tier": "Tier",
+        "balance": "Balance",
+        "spend": "Spend, last 12 months",
+        "nextTier": "Next tier",
+        "toNext": "{{amount}} more for {{tier}}",
+        "topTier": "At the top tier",
+        "joined": "Joined"
       }
     }
   }

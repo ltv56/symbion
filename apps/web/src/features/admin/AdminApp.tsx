@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router';
 import { useAdminToken } from '@/lib/adminAuth';
 import { AdminLayout } from './AdminLayout';
 import { AdminLoginPage } from './login/AdminLoginPage';
+import { MembersPage } from './members/MembersPage';
 import { MerchantsPage } from './merchants/MerchantsPage';
 import { ProgrammePage } from './programme/ProgrammePage';
 import { StatementPage } from './statement/StatementPage';
@@ -18,6 +19,7 @@ export function AdminApp() {
         <Route path="merchants" element={<MerchantsPage />} />
         <Route path="programme" element={<ProgrammePage />} />
         <Route path="vouchers" element={<VouchersPage />} />
+        <Route path="members" element={<MembersPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
     </Routes>

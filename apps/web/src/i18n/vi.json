@@ -247,7 +247,8 @@
       "statement": "Quyết toán",
       "merchants": "Cửa hàng",
       "programme": "Chương trình",
-      "vouchers": "Voucher"
+      "vouchers": "Voucher",
+      "members": "Thành viên"
     },
     "statement": {
       "title": "Quyết toán tháng",
@@ -480,6 +481,37 @@
         "effectFinal": "Không hoàn tác được.",
         "confirm": "Ngừng bán",
         "working": "Đang xử lý…"
+      }
+    },
+    "members": {
+      "title": "Thành viên",
+      "count_other": "{{count}} thành viên",
+      "countMore_other": "Đang hiện {{count}} thành viên, còn nữa",
+      "list": "Danh sách thành viên",
+      "empty": "Không có thành viên nào khớp.",
+      "more": "Tải thêm",
+      "loading": "Đang tải…",
+      "negative": "Số dư âm",
+      "filter": {
+        "search": "Tìm theo tên hoặc email",
+        "merchant": "Cửa hàng",
+        "allMerchants": "Tất cả cửa hàng",
+        "tier": "Hạng",
+        "allTiers": "Tất cả hạng"
+      },
+      "row": {
+        "where": "{{merchant}} · {{tier}}",
+        "balance": "{{points}} điểm"
+      },
+      "detail": {
+        "merchant": "Cửa hàng đăng ký",
+        "tier": "Hạng",
+        "balance": "Số dư",
+        "spend": "Chi tiêu 12 tháng",
+        "nextTier": "Hạng kế tiếp",
+        "toNext": "Còn {{amount}} để lên {{tier}}",
+        "topTier": "Đã ở hạng cao nhất",
+        "joined": "Ngày tham gia"
       }
     }
   }
