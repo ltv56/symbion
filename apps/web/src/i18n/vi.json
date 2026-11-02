@@ -36,7 +36,11 @@
     "back": "Quay lại",
     "prev": "Trước",
     "next": "Sau",
-    "monthLots_other": "{{month}}, {{count}} khoản điểm"
+    "calendarTitle": "Hạn dùng",
+    "markPoints_other": "{{count}} khoản điểm",
+    "markCodes_other": "{{count}} mã",
+    "markNone": "không có hạn nào",
+    "monthMarks": "{{month}}, {{summary}}"
   },
   "header": {
     "menu": "Menu",

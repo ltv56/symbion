@@ -9,9 +9,11 @@ import { ExpiryCalendar } from './calendar/ExpiryCalendar';
 import { ExpiryDivider } from './divider/ExpiryDivider';
 import { byExpiry, daysOf, EXPIRING_SOON_DAYS, isSoon } from './expiry';
 import { LotList } from './LotList';
-import { useActiveLot } from './useActiveLot';
+import { marksOf } from './marks';
+import { useActiveMark } from './useActiveMark';
 import { useLots } from './useLots';
 import type { Lot } from './useLots';
+import { useRedemptions } from '../redemptions/useRedemptions';
 
 // Lots shown after the soon group
 const LATER_SHOWN = 3;
@@ -53,11 +55,18 @@ function AtRisk({ points }: { points: number }) {
   );
 }
 
-// Points at risk and the stamp, the calendar, then the rows. `loadedAt` is "today"
-function Groups({ lots, loadedAt }: { lots: Lot[]; loadedAt: number }) {
+// Points at risk and the stamp, then the rows. `loadedAt` is "today"
+function Groups({
+  lots,
+  loadedAt,
+  link,
+}: {
+  lots: Lot[];
+  loadedAt: number;
+  link: ReturnType<typeof useActiveMark>;
+}) {
   const { t } = useTranslation();
   const rows = useRows(lots, loadedAt);
-  const link = useActiveLot();
   const nearest = rows.soon[0] ? daysOf(rows.soon[0], loadedAt) : null;
   const atRisk = rows.soon.reduce((sum, lot) => sum + lot.remaining, 0);
 
@@ -76,9 +85,6 @@ function Groups({ lots, loadedAt }: { lots: Lot[]; loadedAt: number }) {
           </RubberStamp>
         </div>
       )}
-      <div className={rows.soon.length > 0 ? 'mt-2' : 'mt-3'}>
-        <ExpiryCalendar lots={lots} loadedAt={loadedAt} {...link.calendar} />
-      </div>
       <LotList
         lots={rows.soon}
         loadedAt={loadedAt}
@@ -104,15 +110,28 @@ function Groups({ lots, loadedAt }: { lots: Lot[]; loadedAt: number }) {
 export function ExpiryTimeline() {
   const { t } = useTranslation();
   const lots = useLots();
+  const redemptions = useRedemptions();
+  const link = useActiveMark();
+  const [openedAt] = useState(Date.now);
+  const loadedAt = lots.dataUpdatedAt || redemptions.dataUpdatedAt || openedAt;
+  const marks = marksOf(lots.data ?? [], redemptions.data ?? [], loadedAt);
 
   return (
-    <PanelQuery
-      title={t('timeline.title')}
-      query={lots}
-      isEmpty={(data) => data.length === 0}
-      emptyText={t('timeline.empty')}
-    >
-      {(data, loadedAt) => <Groups lots={data} loadedAt={loadedAt} />}
-    </PanelQuery>
+    <div className="space-y-6">
+      <section data-surface="ground">
+        <h2 className="mb-2 text-base font-semibold">
+          {t('timeline.calendarTitle')}
+        </h2>
+        <ExpiryCalendar marks={marks} loadedAt={loadedAt} {...link.calendar} />
+      </section>
+      <PanelQuery
+        title={t('timeline.title')}
+        query={lots}
+        isEmpty={(data) => data.length === 0}
+        emptyText={t('timeline.empty')}
+      >
+        {(data, at) => <Groups lots={data} loadedAt={at} link={link} />}
+      </PanelQuery>
+    </div>
   );
 }

@@ -29,7 +29,7 @@ export function WindowView({
     <div className="relative">
       {change > 0 && (
         <span
-          className="absolute inset-y-0 w-0 -translate-x-1/2 border-l-2 border-dashed border-card-foreground/70"
+          className="absolute inset-y-0 w-0 -translate-x-1/2 border-l-2 border-dashed border-foreground/70"
           style={{ left: `${(change / WINDOW) * 100}%` }}
           aria-hidden
         />
@@ -47,8 +47,8 @@ export function WindowView({
               'group relative flex min-h-11 items-center gap-0.5 rounded-b-lg px-2 pt-1 text-sm font-semibold',
               index > 0 && 'ml-1.5',
               index < years.length - 1 && 'mr-1.5',
-              'before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-card-foreground/70',
-              'before:transition-colors hover:before:bg-card-foreground focus-visible:before:bg-card-foreground motion-reduce:before:transition-none',
+              'before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-foreground/70',
+              'before:transition-colors hover:before:bg-foreground focus-visible:before:bg-foreground motion-reduce:before:transition-none',
               PRESS,
             )}
             style={{ gridColumn: `${y.start + 1} / span ${y.count}` }}

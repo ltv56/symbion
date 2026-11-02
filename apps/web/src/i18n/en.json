@@ -39,8 +39,13 @@
     "back": "Back",
     "prev": "Previous",
     "next": "Next",
-    "monthLots_one": "{{month}}, {{count}} batch",
-    "monthLots_other": "{{month}}, {{count}} batches"
+    "calendarTitle": "Expiry",
+    "markPoints_one": "{{count}} batch",
+    "markPoints_other": "{{count}} batches",
+    "markCodes_one": "{{count}} code",
+    "markCodes_other": "{{count}} codes",
+    "markNone": "nothing ends",
+    "monthMarks": "{{month}}, {{summary}}"
   },
   "header": {
     "menu": "Menu",

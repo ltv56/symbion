@@ -38,8 +38,8 @@ export function SandHourglass({
       aria-hidden
       className={cn(
         lit
-          ? 'hg text-destructive'
-          : 'text-card-foreground transition-colors duration-150 motion-reduce:transition-none',
+          ? 'hg text-brand'
+          : 'text-foreground transition-colors duration-150 motion-reduce:transition-none',
         className,
       )}
     >

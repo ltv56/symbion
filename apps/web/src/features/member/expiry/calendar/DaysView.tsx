@@ -9,8 +9,9 @@ import {
   monthsAhead,
   sameDay,
 } from '../expiry';
-import { SandHourglass } from './SandHourglass';
+import { MarkGlyph, useMarkSummary } from './MarkGlyph';
 import { moreLabel } from './layout';
+import { byMark } from '../marks';
 import { NavBar } from './NavBar';
 import type { Base, CalendarView, Open } from './types';
 
@@ -25,7 +26,8 @@ export function DaysView({
   now: Date;
   open: Open;
 }) {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
+  const summary = useMarkSummary();
   const lang = i18n.language;
   const { year, month, from } = view;
   const first = new Date(year, month, 1);
@@ -76,13 +78,13 @@ export function DaysView({
         {Array.from({ length: total }, (_, i) => {
           const date = new Date(year, month, i + 1);
           const diff = Math.round((date.getTime() - today.getTime()) / DAY_MS);
-          const here = base.lots.filter(
-            (lot) => lot.expiresAt && sameDay(new Date(lot.expiresAt), date),
-          );
+          const here = base.marks
+            .filter((mark) => sameDay(new Date(mark.expiresAt), date))
+            .sort(byMark);
           const first = here[0];
-          const picked = here.some((lot) => lot.id === base.selectedId);
+          const picked = here.some((mark) => mark.key === base.selectedKey);
           const pick = () => {
-            if (first) base.onPick(first.id);
+            if (first) base.onPick(first.key);
           };
           return (
             <div
@@ -104,20 +106,20 @@ export function DaysView({
                 '@container flex flex-col items-center self-start rounded-lg py-1.5 text-sm tabular-nums',
                 diff < 0 && 'opacity-40',
                 diff === EXPIRING_SOON_DAYS &&
-                  'outline-2 -outline-offset-2 outline-dashed outline-destructive',
+                  'outline-2 -outline-offset-2 outline-dashed outline-brand',
                 first &&
-                  'transition-colors hover:bg-card-foreground/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-card-foreground motion-reduce:transition-none',
+                  'transition-colors hover:bg-foreground/10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground motion-reduce:transition-none',
                 picked &&
-                  'bg-card-foreground/10 inset-ring-1 inset-ring-card-foreground/25',
+                  'bg-foreground/10 inset-ring-1 inset-ring-foreground/25',
                 view.focus !== undefined &&
-                  here.some((lot) => lot.id === view.focus) &&
+                  here.some((mark) => mark.key === view.focus) &&
                   'day-flash',
               )}
             >
               <span
                 className={cn(
                   'grid size-7 place-items-center rounded-full',
-                  diff === 0 && 'bg-card-foreground font-semibold text-card',
+                  diff === 0 && 'bg-foreground font-semibold text-background',
                 )}
               >
                 {i + 1}
@@ -127,24 +129,25 @@ export function DaysView({
                   className="mt-1 flex h-4 items-center justify-center"
                   aria-hidden
                 >
-                  {here.map((lot, i) => (
+                  {here.map((mark, i) => (
                     <span
-                      key={lot.id}
+                      key={mark.key}
                       className={cn(
                         'pointer-events-none grid size-4 cursor-pointer place-items-center md:pointer-events-auto',
-                        // three or more lots show two and a count
+                        // three or more marks show two and a count
                         here.length > 2 && i > 1 && 'hidden',
                         here.length > 2 && i === 1 && '@max-[3.5rem]:hidden',
                       )}
-                      onPointerEnter={() => base.onActiveChange(lot.id)}
+                      onPointerEnter={() => base.onActiveChange(mark.key)}
                       onPointerLeave={() => base.onActiveChange(null)}
                       onClick={(event) => {
                         event.stopPropagation();
-                        base.onPick(lot.id);
+                        base.onPick(mark.key);
                       }}
                     >
-                      <SandHourglass
-                        lit={base.activeId === lot.id}
+                      <MarkGlyph
+                        mark={mark}
+                        lit={base.activeKey === mark.key}
                         className="size-4"
                       />
                     </span>
@@ -162,9 +165,7 @@ export function DaysView({
                 </span>
               )}
               {here.length > 0 && (
-                <span className="sr-only">
-                  {t('timeline.lots', { count: here.length })}
-                </span>
+                <span className="sr-only">{summary(here)}</span>
               )}
             </div>
           );
