@@ -194,5 +194,54 @@
       "spend_redemption": "Voucher redeemed",
       "spend_refund": "Refund deduction"
     }
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "personal": "Personal"
+  },
+  "dashboard": {
+    "voucherTitle": "Vouchers",
+    "seeAllVouchers": "See all ({{count}})",
+    "noReady": "No voucher is within reach yet. The closest one:",
+    "merchantsTitle": "Merchants",
+    "merchantReady_one": "{{count}} redeemable",
+    "merchantReady_other": "{{count}} redeemable",
+    "merchantTotal_one": "{{count}} voucher",
+    "merchantTotal_other": "{{count}} vouchers",
+    "merchantsAll_one": "See all {{count}} merchant",
+    "merchantsAll_other": "See all {{count}} merchants",
+    "filterMerchant": "Merchant: {{name}}",
+    "clearMerchant": "Clear merchant filter",
+    "merchantEmpty": "This merchant has no vouchers yet."
+  },
+  "personal": {
+    "calendar": "Calendar",
+    "calendarMonth": "Month",
+    "calendarYear": "Year",
+    "calendarExpand": "Show the month",
+    "calendarCollapse": "Collapse",
+    "monthWithMarks": "{{name}} ({{count}})",
+    "tabPoints": "Points",
+    "tabCodes": "My vouchers",
+    "tabHistory": "History",
+    "tabsLabel": "Points, my vouchers or history",
+    "markEarn_one": "{{count}} earned",
+    "markEarn_other": "{{count}} earned",
+    "markSpend_one": "{{count}} spent",
+    "markSpend_other": "{{count}} spent",
+    "dayFilter": "Day {{date}}",
+    "dayCount_one": "{{count}} transaction",
+    "dayCount_other": "{{count}} transactions",
+    "clearDay": "Clear day filter",
+    "dayEmpty": "No transactions on this day.",
+    "pickDay": "Press a marked day to see only that day.",
+    "title": "Personal",
+    "prev": "Previous page",
+    "next": "Next page",
+    "page": "Page {{page}} / {{pages}}",
+    "favoritesTitle": "Favorite vouchers",
+    "favoritesEmpty": "No favorite vouchers yet. Press the heart on a voucher page to save it.",
+    "favoritesAll": "See all {{n}} favorite vouchers"
   }
 }
