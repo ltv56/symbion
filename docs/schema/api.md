@@ -146,7 +146,13 @@ Admin only. Body:
 | `minSpend` | integer VND from 0 to 9,999,999,999, unique    |
 | `earnRate` | number from 0.01 to 999.99, at most 2 decimals |
 
-Responses: `201` with the tier, `400` validation (unknown fields included), `401` no or invalid admin token, `409` name or `minSpend` already used. There is no update or delete.
+Responses: `201` with the tier, `400` validation (unknown fields included), `401` no or invalid admin token, `409` name or `minSpend` already used. There is no delete.
+
+## PATCH /tiers/:id
+
+Admin only. Body with the same fields and rules as `POST /tiers`, every field optional; a missing field is kept and `null` is not accepted. An empty body changes nothing. A tier may keep its own `name` and `minSpend`.
+
+Responses: `200` with the tier, `400` validation (unknown fields included) or the id is not an integer, `401` no or invalid admin token, `404` unknown tier, `409` name or `minSpend` used by another tier.
 
 ## GET /settings, PATCH /settings
 

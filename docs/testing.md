@@ -98,6 +98,17 @@ curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Aut
 curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"Platinum","minSpend":20000000,"earnRate":2}'
 
+# update (admin) -> 200 with the tier; send only the fields to change
+curl -s -X PATCH localhost:3000/tiers/4 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"earnRate":2.5}'
+
+# error path -> 409 (another tier has this name or minSpend)
+curl -s -X PATCH localhost:3000/tiers/4 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Gold"}'
+
+# error path -> 404
+curl -s -X PATCH localhost:3000/tiers/999999 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"earnRate":2}'
+
 # error path -> 401 (no token)
 curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -d '{"name":"X","minSpend":1,"earnRate":1}'
 
