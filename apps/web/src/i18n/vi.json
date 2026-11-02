@@ -245,7 +245,8 @@
       "label": "Các mục quản trị",
       "console": "Quản trị",
       "statement": "Quyết toán",
-      "merchants": "Cửa hàng"
+      "merchants": "Cửa hàng",
+      "programme": "Chương trình"
     },
     "statement": {
       "title": "Quyết toán tháng",
@@ -334,6 +335,56 @@
         "copy": "Sao chép khóa API",
         "copied": "Đã sao chép khóa API",
         "done": "Đã lưu khóa, đóng"
+      }
+    },
+    "programme": {
+      "title": "Chương trình",
+      "count_other": "{{count}} hạng thành viên",
+      "cancel": "Hủy",
+      "rate": {
+        "title": "Giá trị mỗi điểm",
+        "text": "App trả cửa hàng số tiền này cho mỗi điểm khách đổi, và đây là sàn giá của voucher.",
+        "change": "Đổi giá trị điểm",
+        "dialogTitle": "Đổi giá trị điểm",
+        "dialogText": "Hiện tại 1 điểm = {{value}}.",
+        "field": "1 điểm bằng (₫)",
+        "validation": "Nhập số nguyên từ 1 đến 100.000.",
+        "effectVouchers": "Voucher đang bán phải còn đạt sàn giá (giá trị voucher ít nhất bằng điểm đổi nhân giá trị điểm), nếu không thay đổi bị từ chối.",
+        "effectClosed": "Các tháng đã đóng của bản quyết toán được tính lại ở dòng điểm phát hành và hoàn đơn theo giá trị mới.",
+        "refused": "Không đổi được: có voucher đang bán sẽ thấp hơn sàn giá.",
+        "apply": "Áp dụng",
+        "applying": "Đang áp dụng…"
+      },
+      "tiers": {
+        "title": "Hạng thành viên",
+        "empty": "Chưa có hạng nào.",
+        "columnTier": "Hạng",
+        "columnRate": "Hệ số điểm",
+        "from": "từ {{spend}} chi tiêu 12 tháng",
+        "fromStart": "hạng khởi đầu, không cần chi tiêu"
+      },
+      "tier": {
+        "add": "Thêm hạng",
+        "addTitle": "Thêm hạng",
+        "editTitle": "Sửa hạng {{name}}",
+        "edit": "Sửa hạng",
+        "description": "Hạng quyết định hệ số nhân điểm thành viên nhận cho mỗi đơn.",
+        "name": "Tên hạng",
+        "minSpend": "Chi tiêu 12 tháng tối thiểu (₫)",
+        "minSpendHint": "Thành viên chi tiêu từ mức này trở lên được xếp vào hạng. 0 là hạng khởi đầu.",
+        "earnRate": "Hệ số điểm",
+        "earnRateHint": "Từ 0,01 đến 999,99, tối đa hai chữ số thập phân. 1,5 nghĩa là điểm nhân 1,5.",
+        "effect": "Thành viên giữ hạng hiện tại đến lần đánh giá kế tiếp (đơn, hoàn đơn hoặc job ban đêm). Đơn mới dùng hệ số mới ngay.",
+        "meaning": "Thành viên chi tiêu từ {{spend}} trong 12 tháng thì lên hạng này, mỗi điểm cộng được nhân {{rate}}.",
+        "save": "Lưu",
+        "saving": "Đang lưu…",
+        "validation": {
+          "name": "Nhập tên hạng, tối đa 255 ký tự.",
+          "minSpend": "Nhập số nguyên từ 0 đến 9.999.999.999.",
+          "earnRate": "Nhập số từ 0,01 đến 999,99, tối đa hai chữ số thập phân."
+        },
+        "conflictName": "Tên hạng này đã có.",
+        "conflictSpend": "Đã có hạng bắt đầu ở mức chi tiêu này."
       }
     }
   }
