@@ -168,6 +168,28 @@ The change is refused when a sellable voucher (`status` `active`, `valid_until` 
 
 Responses: `200` with the settings, `400` validation (unknown fields included), `401` no or invalid admin token, `409` `"message": "Point value 101 puts 1 voucher under their floor: #7 \"50k off\" (500 points x 101 VND > 50000)"` (up to 5 vouchers named, then `, and N more`). `GET` returns `200` or `401`.
 
+## GET /admin/members
+
+Admin only. Members of every merchant, newest id first. Query, all optional:
+
+| Param        | Rule                                                                                                                                                |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`      | 1-100, default 20                                                                                                                                   |
+| `after`      | cursor: the `nextCursor` of the previous page                                                                                                       |
+| `merchantId` | positive integer, members registered at that merchant                                                                                               |
+| `tierId`     | positive integer, members on that tier                                                                                                              |
+| `q`          | trimmed, up to 100 characters, part of the name or the email (case and accent insensitive; `%` and `_` are plain characters); empty means no filter |
+
+Response `200`: `{ "items": [...], "nextCursor": <id or null> }`. A member is `{ "id", "merchantId", "merchantName", "email", "name", "tier": { "id", "name" }, "balance", "createdAt" }`; `name` may be `null`; `balance` is the sum of the unexpired lots, as in `GET /me`, and may be negative.
+
+Responses: `400` a query value is out of range, `401` no or invalid admin token (a member token is refused too).
+
+## GET /admin/members/:id
+
+Admin only. One member with what `GET /me*` shows that member: the member as above plus `spend12m` and `nextTier` (as in `GET /me`), `lots` (unspent lots, as in `GET /me/lots`), `history` (the latest 50 entries, as in `GET /me/history`) and `redemptions` (the latest 50, as in `GET /me/redemptions`).
+
+Responses: `200`, `400` the id is not an integer, `401` no or invalid admin token, `404` unknown member.
+
 ## POST /members
 
 Creates a member on the lowest tier (smallest `min_spend`). Responses: `201`, `400` validation, `401` bad key, `409` email already registered, `503` (`"message": "No tiers configured"`) when the `tiers` table is empty.
