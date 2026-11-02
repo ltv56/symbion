@@ -391,7 +391,7 @@ Needs `$TOKEN` (see Admin login). The job runs every 20 seconds here.
 # start the api with the job on (DEMO_MODE=true is required)
 DEMO_RESET=true DEMO_MODE=true DEMO_API_KEY=demo-key-demo-key-1234 DEMO_RESET_CRON='*/20 * * * * *' pnpm dev
 
-# create a merchant, wait for the next tick: it is gone, "Demo Shop" and "Demo Cafe" are back
+# create a merchant, wait for the next tick: it is gone, the six demo merchants are back
 curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"name":"Visitor Shop"}'
 curl -s localhost:3000/merchants -H "Authorization: Bearer $TOKEN"
 
@@ -407,7 +407,7 @@ pnpm db:up
 pnpm db:migrate          # build, then apply pending migrations
 pnpm db:migrate:revert   # undo the last migration
 pnpm db:seed             # build, then upsert the default tiers (Bronze, Silver, Gold); safe to re-run
-DEMO_API_KEY=demo-key-demo-key-1234 pnpm seed:demo   # tiers, merchants "Demo Shop" (key from DEMO_API_KEY, 16+ chars) and "Demo Cafe" (key DEMO_API_KEY + "-cafe"), 3 members, 3 vouchers, 9 events in the previous month; safe to re-run
+DEMO_API_KEY=demo-key-demo-key-1234 pnpm seed:demo   # tiers, 6 merchants (first key from DEMO_API_KEY, 16+ chars; others DEMO_API_KEY + "-cafe", "-bakery", "-book", "-pho", "-tea"), 10 members, 15 vouchers, 94 events over 13 months; safe to re-run
 NODE_ENV=production DEMO_API_KEY=... pnpm seed:demo  # refused: add --allow-production to the script arguments to run it
 
 docker compose -f infra/compose.yaml exec mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW CREATE TABLE members\G"'

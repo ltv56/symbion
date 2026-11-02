@@ -115,7 +115,22 @@ DEMO_API_KEY=<16+ characters> pnpm seed:demo
 docker compose -f infra/compose.yaml run --rm api node dist/seed-demo.js --allow-production
 ```
 
-Creates the tiers, the merchant "Demo Shop" with that API key, three members, a second merchant "Demo Cafe" (API key `<DEMO_API_KEY>-cafe`), three vouchers (with description and steps, in Vietnamese) and nine events dated in the previous month (Asia/Ho_Chi_Minh): five orders, three redemptions (two confirmed), one refund. Both merchants get a Vietnamese address and no photo; set one with `PATCH /merchants/:id`. The month report of `GET /reconciliation` has numbers right after the seed. Safe to run twice; the events are keyed by month, so a run in a later month adds that month's events. With `NODE_ENV=production` the script refuses to run unless `--allow-production` is passed. With `DEMO_RESET=true` the first reset happens at the next 04:00; run the seed once after the first deploy so the demo is not empty until then.
+Creates the tiers, six merchants, 15 vouchers (description and steps in Vietnamese), ten members and 94 events (78 orders, 9 redemptions of which 7 confirmed, 7 refunds) dated back 13 months (Asia/Ho_Chi_Minh). The first merchant, "Tạp Hoá Cây Me", uses `<DEMO_API_KEY>`; the others use `<DEMO_API_KEY>-cafe`, `-bakery`, `-book`, `-pho`, `-tea`. Merchants get a Vietnamese address and no photo; set one with `PATCH /merchants/:id`. `GET /reconciliation` has numbers for each of the last five months. Vouchers: one sold out, one with 2 left, one ending in 9 days, one stopped.
+
+| Member | Tier   | Shows                                                      |
+| ------ | ------ | ---------------------------------------------------------- |
+| 1      | Bronze | small history, one refund                                  |
+| 2      | Silver | points that expire in about two weeks                      |
+| 3      | Gold   | 57 history rows (a second page), a valid code, 3 favorites |
+| 4      | Bronze | negative balance: refund after the points were spent       |
+| 5      | Bronze | a voucher code that expired unused                         |
+| 6      | Bronze | points that already expired                                |
+| 7      | Silver | 97% of the Gold threshold                                  |
+| 8      | Silver | qualifying orders about to leave the 12-month window       |
+| 9      | Bronze | no events                                                  |
+| 10     | Gold   | three partial refunds of one order                         |
+
+Safe to run twice; the events are keyed by the month they fall in, so a run in a later month adds that month's events. With `NODE_ENV=production` the script refuses to run unless `--allow-production` is passed. With `DEMO_RESET=true` the first reset happens at the next 04:00; run the seed once after the first deploy so the demo is not empty until then.
 
 ### Nightly reset
 
