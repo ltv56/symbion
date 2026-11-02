@@ -11,20 +11,9 @@ import {
   MaxLength,
   Min,
   MinDate,
-  ValidateBy,
 } from 'class-validator';
 import { trim } from '../../common/dto';
-
-// TIMESTAMP column has no fraction
-const IsWholeSeconds = () =>
-  ValidateBy({
-    name: 'isWholeSeconds',
-    validator: {
-      validate: (value: unknown) =>
-        value instanceof Date && value.getMilliseconds() === 0,
-      defaultMessage: () => '$property must be in whole seconds',
-    },
-  });
+import { IsWholeSeconds } from './is-whole-seconds';
 
 export class CreateVoucherDto {
   @IsInt()

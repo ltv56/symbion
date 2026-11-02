@@ -98,6 +98,17 @@ curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Aut
 curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"Platinum","minSpend":20000000,"earnRate":2}'
 
+# update (admin) -> 200 with the tier; send only the fields to change
+curl -s -X PATCH localhost:3000/tiers/4 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"earnRate":2.5}'
+
+# error path -> 409 (another tier has this name or minSpend)
+curl -s -X PATCH localhost:3000/tiers/4 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Gold"}'
+
+# error path -> 404
+curl -s -X PATCH localhost:3000/tiers/999999 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"earnRate":2}'
+
 # error path -> 401 (no token)
 curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -d '{"name":"X","minSpend":1,"earnRate":1}'
 
@@ -111,7 +122,22 @@ curl -s localhost:3000/tiers/999999
 
 ## Vouchers (MySQL)
 
-Point value: `SELECT point_value_vnd FROM program_settings` (default 100).
+Point value: `GET /settings` or `SELECT point_value_vnd FROM program_settings` (default 100).
+
+```sh
+# read, change (admin) -> 200
+curl -s localhost:3000/settings -H "Authorization: Bearer $TOKEN"
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":120}'
+
+# error path -> 409 (a sellable voucher would fall under its floor; create a 500-point voucher at 50000 first)
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":101}'
+
+# error path -> 400 (not a positive integer)
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":0}'
+```
 
 ```sh
 # create (admin) -> 201, faceValue at the floor (500 x 100)
@@ -125,6 +151,21 @@ curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "
 # error path -> 404 (unknown merchant)
 curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"merchantId":999999,"title":"X","faceValue":50000,"pointsPrice":500,"stock":1,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# admin list, every state, with merchantName and redeemedCount (filters: merchantId, status)
+curl -s 'localhost:3000/admin/vouchers?limit=2&status=active' -H "Authorization: Bearer $TOKEN"
+
+# change stock and end date (admin) -> 200 with the voucher
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"stock":25,"validUntil":"2031-01-01T00:00:00Z"}'
+
+# retire for good -> 200; sending {"status":"active"} is a 400
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"status":"expired"}'
+
+# error path -> 400 (price is fixed) / 404 (unknown id)
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"pointsPrice":1}'
+curl -s -X PATCH localhost:3000/vouchers/999999 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"stock":1}'
 
 # list (public), newest id first -> {"items":[...],"nextCursor":<id|null>}
 curl -s 'localhost:3000/vouchers?limit=2'
@@ -173,6 +214,12 @@ curl -s localhost:3000/members/abc -H "x-api-key: $KEY"
 
 # error path -> 400 (name and email are required)
 curl -s -X POST localhost:3000/members -H 'content-type: application/json' -H "x-api-key: $KEY" -d '{}'
+
+# admin list across merchants (filters: merchantId, tierId, q for name or email), with balance
+curl -s 'localhost:3000/admin/members?limit=5&q=an' -H "Authorization: Bearer $TOKEN"
+
+# admin detail: profile, lots, latest history and redemptions -> 200; unknown id -> 404
+curl -s localhost:3000/admin/members/1 -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Orders (MySQL)

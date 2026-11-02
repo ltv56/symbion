@@ -4,7 +4,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { adminToken } from './helpers/admin-token';
-import { resetDatabase } from './helpers/database';
+import { insertMerchant, resetDatabase } from './helpers/database';
 
 describe('Tiers', () => {
   let app: INestApplication;
@@ -198,5 +198,210 @@ describe('Tiers', () => {
     const req = request(app.getHttpServer()).post('/tiers');
     if (header) req.set('Authorization', header);
     await req.send({ name: 'T', minSpend: 1, earnRate: 1 }).expect(401);
+  });
+
+  describe('PATCH /tiers/:id', () => {
+    const patch = (id: number | string, body: Record<string, unknown>) =>
+      request(app.getHttpServer())
+        .patch(`/tiers/${id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+
+    const insertTier = async (
+      name: string,
+      minSpend: number,
+      earnRate: number,
+    ): Promise<number> => {
+      const result = await dataSource.query(
+        `INSERT INTO tiers (name, min_spend, earn_rate) VALUES (?, ?, ?)`,
+        [name, minSpend, earnRate],
+      );
+      return Number(result.insertId);
+    };
+
+    const stored = async (id: number) => {
+      const [row] = await dataSource.query(
+        `SELECT name, min_spend, earn_rate FROM tiers WHERE id = ?`,
+        [id],
+      );
+      return {
+        name: row.name,
+        minSpend: Number(row.min_spend),
+        earnRate: Number(row.earn_rate),
+      };
+    };
+
+    it('changes every field', async () => {
+      const id = await insertTier('Silver', 1_000_000, 1.25);
+
+      const res = await patch(id, {
+        name: '  Argent ',
+        minSpend: 2_000_000,
+        earnRate: 1.4,
+      }).expect(200);
+
+      expect(res.body).toEqual({
+        id,
+        name: 'Argent',
+        minSpend: 2_000_000,
+        earnRate: 1.4,
+      });
+      expect(await stored(id)).toEqual({
+        name: 'Argent',
+        minSpend: 2_000_000,
+        earnRate: 1.4,
+      });
+    });
+
+    it('keeps the fields that are not sent', async () => {
+      const id = await insertTier('Silver', 1_000_000, 1.25);
+
+      await patch(id, { earnRate: 1.5 }).expect(200);
+
+      expect(await stored(id)).toEqual({
+        name: 'Silver',
+        minSpend: 1_000_000,
+        earnRate: 1.5,
+      });
+    });
+
+    it('accepts an empty body and changes nothing', async () => {
+      const id = await insertTier('Silver', 1_000_000, 1.25);
+
+      const res = await patch(id, {}).expect(200);
+
+      expect(res.body).toEqual({
+        id,
+        name: 'Silver',
+        minSpend: 1_000_000,
+        earnRate: 1.25,
+      });
+    });
+
+    it('lets a tier keep its own name and min_spend', async () => {
+      const id = await insertTier('Silver', 1_000_000, 1.25);
+
+      await patch(id, { name: 'Silver', minSpend: 1_000_000 }).expect(200);
+    });
+
+    it('returns 404 for an unknown id', async () => {
+      await patch(999_999, { earnRate: 2 }).expect(404);
+    });
+
+    it('returns 400 when the id is not an integer', async () => {
+      await patch('abc', { earnRate: 2 }).expect(400);
+    });
+
+    it.each([
+      ['a blank name', { name: '   ' }],
+      ['a null name', { name: null }],
+      ['a name over 255 characters', { name: 'a'.repeat(256) }],
+      ['a null minSpend', { minSpend: null }],
+      ['a negative minSpend', { minSpend: -1 }],
+      ['a fractional minSpend', { minSpend: 1.5 }],
+      ['a string minSpend', { minSpend: '10' }],
+      ['a minSpend over 9999999999', { minSpend: 10_000_000_000 }],
+      ['a null earnRate', { earnRate: null }],
+      ['a zero earnRate', { earnRate: 0 }],
+      ['an earnRate over 999.99', { earnRate: 1000 }],
+      ['an earnRate with 3 decimals', { earnRate: 1.234 }],
+      ['a string earnRate', { earnRate: '1.5' }],
+      ['an unknown field', { id: 7 }],
+    ])('returns 400 for %s', async (_label, body) => {
+      const id = await insertTier('Silver', 1_000_000, 1.25);
+
+      await patch(id, body).expect(400);
+
+      expect(await stored(id)).toEqual({
+        name: 'Silver',
+        minSpend: 1_000_000,
+        earnRate: 1.25,
+      });
+    });
+
+    it('returns 409 for a name another tier uses', async () => {
+      await insertTier('Silver', 1_000_000, 1.25);
+      const gold = await insertTier('Gold', 5_000_000, 1.5);
+
+      const res = await patch(gold, { name: 'Silver' }).expect(409);
+
+      expect(res.body.message).toBe('Tier name Silver is already used');
+      expect((await stored(gold)).name).toBe('Gold');
+    });
+
+    it('returns 409 for a min_spend another tier uses', async () => {
+      await insertTier('Silver', 1_000_000, 1.25);
+      const gold = await insertTier('Gold', 5_000_000, 1.5);
+
+      const res = await patch(gold, { minSpend: 1_000_000 }).expect(409);
+
+      expect(res.body.message).toBe('A tier already starts at 1000000 VND');
+      expect((await stored(gold)).minSpend).toBe(5_000_000);
+    });
+
+    it('moves two tiers to the same min_spend in parallel only once', async () => {
+      const a = await insertTier('A', 100, 1);
+      const b = await insertTier('B', 200, 1);
+
+      const responses = await Promise.all([
+        patch(a, { minSpend: 300 }),
+        patch(b, { minSpend: 300 }),
+      ]);
+
+      expect(responses.map((res) => res.status).sort((x, y) => x - y)).toEqual([
+        200, 409,
+      ]);
+    });
+
+    it.each([
+      ['no token', undefined],
+      ['a malformed token', 'Bearer nope'],
+    ])('returns 401 for %s', async (_label, header) => {
+      const id = await insertTier('Silver', 1_000_000, 1.25);
+      const req = request(app.getHttpServer()).patch(`/tiers/${id}`);
+      if (header) req.set('Authorization', header);
+
+      await req.send({ earnRate: 2 }).expect(401);
+
+      expect((await stored(id)).earnRate).toBe(1.25);
+    });
+
+    it('leaves members on their tier until their next evaluation', async () => {
+      const gold = await insertTier('Gold', 5_000_000, 1.5);
+      const merchantId = await insertMerchant(dataSource, 'tier-key');
+      await dataSource.query(
+        `INSERT INTO members (merchant_id, tier_id, email, name) VALUES (?, ?, 'a@example.com', 'A')`,
+        [merchantId, gold],
+      );
+
+      await patch(gold, { minSpend: 9_000_000 }).expect(200);
+
+      const [member] = await dataSource.query(
+        `SELECT tier_id FROM members WHERE email = 'a@example.com'`,
+      );
+      expect(Number(member.tier_id)).toBe(gold);
+    });
+
+    it('applies a new earn rate to the next order', async () => {
+      const bronze = await insertTier('Bronze', 0, 1);
+      const merchantId = await insertMerchant(dataSource, 'rate-key');
+      await dataSource.query(
+        `INSERT INTO members (merchant_id, tier_id, email, name) VALUES (?, ?, 'a@example.com', 'A')`,
+        [merchantId, bronze],
+      );
+      await patch(bronze, { earnRate: 2 }).expect(200);
+
+      await request(app.getHttpServer())
+        .post('/orders')
+        .set('x-api-key', 'rate-key')
+        .set('Idempotency-Key', 'order-1')
+        .send({ memberEmail: 'a@example.com', amount: 1_000_000 })
+        .expect(201);
+
+      const [lot] = await dataSource.query(
+        `SELECT points FROM ledger_lots WHERE type = 'earn'`,
+      );
+      expect(Number(lot.points)).toBe(200);
+    });
   });
 });

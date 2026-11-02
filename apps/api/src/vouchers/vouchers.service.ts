@@ -8,7 +8,9 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Merchant } from '../merchants/merchant.entity';
 import { MerchantsService } from '../merchants/merchants.service';
 import { ProgramSettings } from '../settings/program-settings.entity';
+import { AdminListVouchersQuery } from './dto/admin-list-vouchers.query';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
+import { UpdateVoucherDto } from './dto/update-voucher.dto';
 import { Voucher } from './voucher.entity';
 
 export type VoucherView = Voucher & {
@@ -22,12 +24,21 @@ export interface VoucherPage {
   nextCursor: number | null;
 }
 
+// A voucher in any state, with how many codes were issued for it
+export type AdminVoucherView = Voucher & {
+  merchantName: string;
+  redeemedCount: number;
+};
+
+export interface AdminVoucherPage {
+  items: AdminVoucherView[];
+  nextCursor: number | null;
+}
+
 @Injectable()
 export class VouchersService {
   constructor(
     @InjectRepository(Voucher) private readonly vouchers: Repository<Voucher>,
-    @InjectRepository(ProgramSettings)
-    private readonly settings: Repository<ProgramSettings>,
     private readonly merchants: MerchantsService,
   ) {}
 
@@ -38,19 +49,75 @@ export class VouchersService {
       );
     }
 
-    // The app pays the merchant pointsPrice x point value, so the discount must cover it.
-    const { pointValueVnd } = await this.settings.findOneByOrFail({ id: 1 });
-    const floor = dto.pointsPrice * pointValueVnd;
-    if (dto.faceValue < floor) {
-      throw new BadRequestException(
-        `faceValue ${dto.faceValue} is below the floor ${floor} (${dto.pointsPrice} points x ${pointValueVnd} VND)`,
-      );
-    }
+    return this.vouchers.manager.transaction(async (tx) => {
+      // Shared lock: waits for a point value change in flight
+      const { pointValueVnd } = await tx.findOneOrFail(ProgramSettings, {
+        where: { id: 1 },
+        lock: { mode: 'pessimistic_read' },
+      });
+      // The app pays the merchant pointsPrice x point value, so the discount must cover it.
+      const floor = dto.pointsPrice * pointValueVnd;
+      if (dto.faceValue < floor) {
+        throw new BadRequestException(
+          `faceValue ${dto.faceValue} is below the floor ${floor} (${dto.pointsPrice} points x ${pointValueVnd} VND)`,
+        );
+      }
 
-    const saved = await this.vouchers.save(this.vouchers.create(dto));
-    // save() keeps the insertId as the driver returns it (a string)
-    saved.id = Number(saved.id);
-    return saved;
+      const saved = await tx.save(tx.create(Voucher, dto));
+      // save() keeps the insertId as the driver returns it (a string)
+      saved.id = Number(saved.id);
+      return saved;
+    });
+  }
+
+  // Stock is set, not counted: a redemption holds the row lock, so a change and a redemption queue up.
+  async update(id: number, dto: UpdateVoucherDto): Promise<Voucher | null> {
+    if (!(await this.vouchers.existsBy({ id }))) {
+      return null;
+    }
+    const { stock, validUntil, status } = dto;
+    // update() throws when every value is undefined
+    if (stock !== undefined || validUntil !== undefined || status) {
+      await this.vouchers.update(id, { stock, validUntil, status });
+    }
+    return this.vouchers.findOneBy({ id });
+  }
+
+  // Every state, newest first; the same keyset as the public list
+  async listAll(query: AdminListVouchersQuery): Promise<AdminVoucherPage> {
+    const { limit, after, merchantId, status } = query;
+    const builder = this.vouchers
+      .createQueryBuilder('v')
+      .innerJoin(Merchant, 'm', 'm.id = v.merchantId')
+      .addSelect('m.name', 'merchantName')
+      .addSelect(
+        '(SELECT COUNT(*) FROM redemptions r WHERE r.voucher_id = v.id)',
+        'redeemedCount',
+      )
+      .orderBy('v.id', 'DESC')
+      .limit(limit + 1);
+    if (after) builder.andWhere('v.id < :after', { after });
+    if (merchantId)
+      builder.andWhere('v.merchantId = :merchantId', { merchantId });
+    if (status) builder.andWhere('v.status = :status', { status });
+
+    // The join is one-to-one, so entities and raw rows line up by index
+    const { entities, raw } = await builder.getRawAndEntities<{
+      merchantName: string;
+      redeemedCount: string | number;
+    }>();
+    const rows = entities.map((voucher, i) =>
+      Object.assign(voucher, {
+        merchantName: raw[i]!.merchantName,
+        redeemedCount: Number(raw[i]!.redeemedCount),
+      }),
+    );
+    const items = rows.slice(0, limit);
+    const last = items[items.length - 1];
+    return {
+      items,
+      nextCursor: rows.length > limit && last ? last.id : null,
+    };
   }
 
   // Keyset pagination; one extra row tells whether another page exists

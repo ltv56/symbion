@@ -11,5 +11,6 @@ import { MeService } from './me.service';
   imports: [AuthModule, LedgerModule, RedemptionsModule, VouchersModule],
   controllers: [MeController],
   providers: [MeService, FavoritesService],
+  exports: [MeService],
 })
 export class MeModule {}
