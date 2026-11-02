@@ -69,6 +69,7 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 - Created by the app admin on behalf of a merchant (`POST /vouchers`), `active` from creation.
 - A new point value is refused when a sellable voucher (`active`, `valid_until` in the future) would fall under its floor. Expired and retired vouchers are not checked. Lowering the value is always accepted.
 - Changing the value also changes the VND of closed months for the issued and refunded lines of the reconciliation (see Reconciliation).
+- The app admin can set a voucher's stock and end date and retire it (`PATCH /vouchers/:id`). Price and face value never change. Retiring is one way: the voucher leaves the list, no new code is issued, codes already issued stay valid. Stock 0 refuses new codes. The admin list (`GET /admin/vouchers`) shows every voucher with the codes issued for it.
 - Listed (`GET /vouchers`) while `status` is `active` and `valid_until` is in the future. A voucher with stock 0 stays listed.
 - A voucher may carry a `description` and the `steps` to redeem it; both are optional and returned by `GET /vouchers*`.
 - A merchant may carry a shop photo URL and an address, set by the app admin (`PATCH /merchants/:id`); `GET /vouchers*` returns them with each voucher.
