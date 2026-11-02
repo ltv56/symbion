@@ -17,6 +17,9 @@ const ENV_KEYS = [
   'DEMO_API_KEY',
 ] as const;
 
+// A reset replays the whole seed
+jest.setTimeout(60_000);
+
 describe('Demo reset job', () => {
   let app: INestApplication | undefined;
   const saved = new Map<string, string | undefined>();
@@ -78,12 +81,12 @@ describe('Demo reset job', () => {
       const result = await service.reset(new Date());
 
       const state = await counts(ds);
-      expect(state.merchants).toBe(2);
-      expect(state.members).toBe(3);
+      expect(state.merchants).toBe(6);
+      expect(state.members).toBe(10);
       expect(state.tiers).toBe(3);
-      expect(state.vouchers).toBe(3);
-      expect(state.orders).toBe(5);
-      expect(result.steps).toBe(9);
+      expect(state.vouchers).toBe(15);
+      expect(state.orders).toBe(78);
+      expect(result.steps).toBe(94);
     });
 
     it('removes what visitors created and keeps the demo merchant key working', async () => {
@@ -133,7 +136,7 @@ describe('Demo reset job', () => {
       );
       expect([Number(visitor.n), Number(platinum.n)]).toEqual([0, 0]);
       const [shop] = await ds.query(
-        `SELECT api_key_hash FROM merchants WHERE name = 'Demo Shop'`,
+        `SELECT api_key_hash FROM merchants WHERE name = 'Tạp Hoá Cây Me'`,
       );
       expect(shop.api_key_hash).toBe(
         createHash('sha256').update(API_KEY).digest('hex'),

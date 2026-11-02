@@ -41,7 +41,7 @@ describe('Demo seed', () => {
     const members = await dataSource.query(
       `SELECT m.merchant_id, t.name AS tier FROM members m JOIN tiers t ON t.id = m.tier_id`,
     );
-    expect(members.length).toBeGreaterThan(0);
+    expect(members).toHaveLength(10);
     for (const member of members) {
       expect(Number(member.merchant_id)).toBe(Number(merchants[0].id));
       expect(member.tier).toBe('Bronze');
