@@ -55,7 +55,7 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 
 ## Vouchers
 
-- Point value: 100 VND per point (`program_settings.point_value_vnd`). Changed only by SQL; no endpoint yet.
+- Point value: 100 VND per point (`program_settings.point_value_vnd`). Changed by the app admin (`PATCH /settings`, 1 to 100,000).
 - The app pays the merchant `points_price × point value` for each redeemed voucher.
 - Floor: `face_value ≥ points_price × point value`. A discount above the floor is paid by the merchant.
 
@@ -66,7 +66,8 @@ Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 | 500            | 49,999       | no       |
 
 - Created by the app admin on behalf of a merchant (`POST /vouchers`), `active` from creation.
-- Existing vouchers are not re-checked when the point value changes.
+- A new point value is refused when a sellable voucher (`active`, `valid_until` in the future) would fall under its floor. Expired and retired vouchers are not checked. Lowering the value is always accepted.
+- Changing the value also changes the VND of closed months for the issued and refunded lines of the reconciliation (see Reconciliation).
 - Listed (`GET /vouchers`) while `status` is `active` and `valid_until` is in the future. A voucher with stock 0 stays listed.
 - A voucher may carry a `description` and the `steps` to redeem it; both are optional and returned by `GET /vouchers*`.
 - A merchant may carry a shop photo URL and an address, set by the app admin (`PATCH /merchants/:id`); `GET /vouchers*` returns them with each voucher.

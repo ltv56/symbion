@@ -21,6 +21,7 @@ import { OrdersModule } from './orders/orders.module';
 import { ReconciliationModule } from './reconciliation/reconciliation.module';
 import { RedemptionsModule } from './redemptions/redemptions.module';
 import { RefundsModule } from './refunds/refunds.module';
+import { SettingsModule } from './settings/settings.module';
 import { TiersModule } from './tiers/tiers.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 
@@ -58,6 +59,7 @@ import { VouchersModule } from './vouchers/vouchers.module';
     ReconciliationModule,
     RedemptionsModule,
     RefundsModule,
+    SettingsModule,
     TiersModule,
     VouchersModule,
   ],
