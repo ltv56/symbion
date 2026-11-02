@@ -262,7 +262,8 @@
       "label": "Admin sections",
       "console": "Admin",
       "statement": "Statement",
-      "merchants": "Merchants"
+      "merchants": "Merchants",
+      "programme": "Programme"
     },
     "statement": {
       "title": "Monthly statement",
@@ -353,6 +354,57 @@
         "copy": "Copy API key",
         "copied": "API key copied",
         "done": "I saved the key, close"
+      }
+    },
+    "programme": {
+      "title": "Programme",
+      "count_one": "{{count}} member tier",
+      "count_other": "{{count}} member tiers",
+      "cancel": "Cancel",
+      "rate": {
+        "title": "Value of a point",
+        "text": "The app pays a merchant this amount for each point a member redeems, and it is the price floor of vouchers.",
+        "change": "Change point value",
+        "dialogTitle": "Change the point value",
+        "dialogText": "Today 1 point = {{value}}.",
+        "field": "1 point equals (₫)",
+        "validation": "Enter a whole number from 1 to 100,000.",
+        "effectVouchers": "Vouchers on sale must still meet their floor (the voucher value at least points price times point value), otherwise the change is refused.",
+        "effectClosed": "Closed months of the statement are recomputed at the new value on the issued and refunded lines.",
+        "refused": "Not changed: a voucher on sale would fall under its floor.",
+        "apply": "Apply",
+        "applying": "Applying…"
+      },
+      "tiers": {
+        "title": "Member tiers",
+        "empty": "No tiers yet.",
+        "columnTier": "Tier",
+        "columnRate": "Multiplier",
+        "from": "from {{spend}} spent in 12 months",
+        "fromStart": "starting tier, no spend needed"
+      },
+      "tier": {
+        "add": "Add tier",
+        "addTitle": "Add tier",
+        "editTitle": "Edit {{name}}",
+        "edit": "Edit tier",
+        "description": "A tier sets the multiplier on the points a member earns for each order.",
+        "name": "Tier name",
+        "minSpend": "Minimum 12-month spend (₫)",
+        "minSpendHint": "Members who spent this much or more are placed in the tier. 0 is the starting tier.",
+        "earnRate": "Multiplier",
+        "earnRateHint": "From 0.01 to 999.99, at most two decimals. 1.5 means points times 1.5.",
+        "effect": "Members keep their current tier until their next evaluation (an order, a refund or the nightly job). New orders use the new multiplier at once.",
+        "meaning": "A member who spent {{spend}} in 12 months reaches this tier, and each point earned is multiplied by {{rate}}.",
+        "save": "Save",
+        "saving": "Saving…",
+        "validation": {
+          "name": "Enter a tier name, up to 255 characters.",
+          "minSpend": "Enter a whole number from 0 to 9,999,999,999.",
+          "earnRate": "Enter a number from 0.01 to 999.99, at most two decimals."
+        },
+        "conflictName": "A tier already has this name.",
+        "conflictSpend": "A tier already starts at this spend."
       }
     }
   }
