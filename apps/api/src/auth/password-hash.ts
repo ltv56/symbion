@@ -18,10 +18,7 @@ export async function hashPassword(password: string): Promise<string> {
   return `scrypt$${salt.toString('hex')}$${hash.toString('hex')}`;
 }
 
-export async function verifyPassword(
-  password: string,
-  stored: string,
-): Promise<boolean> {
+function parseStored(stored: string): { salt: Buffer; hash: Buffer } | null {
   const parts = stored.split('$');
   const [scheme, saltHex, hashHex] = parts;
   if (
@@ -32,11 +29,29 @@ export async function verifyPassword(
     !HEX.test(saltHex) ||
     !HEX.test(hashHex)
   ) {
+    return null;
+  }
+  return {
+    salt: Buffer.from(saltHex, 'hex'),
+    hash: Buffer.from(hashHex, 'hex'),
+  };
+}
+
+export function isPasswordHash(stored: string): boolean {
+  return parseStored(stored) !== null;
+}
+
+export async function verifyPassword(
+  password: string,
+  stored: string,
+): Promise<boolean> {
+  const parsed = parseStored(stored);
+  if (!parsed) {
     return false;
   }
 
-  const expected = Buffer.from(hashHex, 'hex');
-  const actual = await derive(password, Buffer.from(saltHex, 'hex'));
+  const expected = parsed.hash;
+  const actual = await derive(password, parsed.salt);
   // timingSafeEqual throws on a length mismatch
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }

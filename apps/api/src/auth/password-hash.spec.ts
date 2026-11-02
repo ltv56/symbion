@@ -1,4 +1,23 @@
-import { hashPassword, verifyPassword } from './password-hash';
+import { hashPassword, isPasswordHash, verifyPassword } from './password-hash';
+
+describe('isPasswordHash', () => {
+  it('accepts what hashPassword produces', async () => {
+    expect(isPasswordHash(await hashPassword('x'))).toBe(true);
+  });
+
+  it.each([
+    ['an empty string', ''],
+    ['the placeholder', 'change-me'],
+    ['only the scheme', 'scrypt'],
+    ['a missing hash', 'scrypt$aabb'],
+    ['a hash with an empty part', 'scrypt$aabb$'],
+    ['another scheme', 'bcrypt$aa$bb'],
+    ['non-hex parts', 'scrypt$zz$yy'],
+    ['an extra part', 'scrypt$aa$bb$cc'],
+  ])('rejects %s', (_label, bad) => {
+    expect(isPasswordHash(bad)).toBe(false);
+  });
+});
 
 describe('password hash', () => {
   it('verifies the password it hashed', async () => {
