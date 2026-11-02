@@ -194,5 +194,25 @@
       "spend_redemption": "Voucher redeemed",
       "spend_refund": "Refund deduction"
     }
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "personal": "Personal"
+  },
+  "dashboard": {
+    "voucherTitle": "Vouchers",
+    "seeAllVouchers": "See all ({{count}})",
+    "noReady": "No voucher is within reach yet. The closest one:",
+    "merchantsTitle": "Merchants",
+    "merchantReady_one": "{{count}} redeemable",
+    "merchantReady_other": "{{count}} redeemable",
+    "merchantTotal_one": "{{count}} voucher",
+    "merchantTotal_other": "{{count}} vouchers",
+    "merchantsAll_one": "See all {{count}} merchant",
+    "merchantsAll_other": "See all {{count}} merchants",
+    "filterMerchant": "Merchant: {{name}}",
+    "clearMerchant": "Clear merchant filter",
+    "merchantEmpty": "This merchant has no vouchers yet."
   }
 }

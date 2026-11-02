@@ -183,5 +183,22 @@
       "spend_redemption": "Đổi voucher",
       "spend_refund": "Trừ do hoàn đơn"
     }
+  },
+  "nav": {
+    "label": "Điều hướng chính",
+    "home": "Trang chủ",
+    "personal": "Cá nhân"
+  },
+  "dashboard": {
+    "voucherTitle": "Voucher",
+    "seeAllVouchers": "Xem tất cả ({{count}})",
+    "noReady": "Chưa có voucher nào đủ điểm. Voucher gần đủ nhất:",
+    "merchantsTitle": "Cửa hàng",
+    "merchantReady_other": "{{count}} voucher đổi được",
+    "merchantTotal_other": "{{count}} voucher",
+    "merchantsAll_other": "Xem tất cả {{count}} cửa hàng",
+    "filterMerchant": "Cửa hàng: {{name}}",
+    "clearMerchant": "Bỏ lọc cửa hàng",
+    "merchantEmpty": "Cửa hàng này chưa có voucher."
   }
 }

@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { useState } from 'react';
 import type { ElementType } from 'react';
@@ -12,23 +12,40 @@ import type { Voucher } from './useVouchers';
 
 const EMPTY: VoucherGroups = { ready: [], notYet: [], soldOut: [] };
 
-// All vouchers page
+export interface MerchantFilter {
+  id: number;
+  name: string;
+}
+
+function ofMerchant(groups: VoucherGroups, id: number): VoucherGroups {
+  return {
+    ready: groups.ready.filter((voucher) => voucher.merchantId === id),
+    notYet: groups.notYet.filter((voucher) => voucher.merchantId === id),
+    soldOut: groups.soldOut.filter((voucher) => voucher.merchantId === id),
+  };
+}
+
+// All vouchers page, optionally for one merchant
 export function AllVouchersView({
-  groups,
+  groups: everything,
+  merchant = null,
   balance,
   loadedAt,
   initialFilter = 'all',
   onClose,
+  onClearMerchant,
   onOpen,
   onRedeem,
   Title = 'h2',
 }: {
   groups: VoucherGroups;
+  merchant?: MerchantFilter | null;
   balance: number;
   loadedAt: number;
   // Group opened from
   initialFilter?: VoucherFilter;
   onClose: () => void;
+  onClearMerchant?: () => void;
   onOpen: (voucher: Voucher) => void;
   onRedeem: (voucher: Voucher) => void;
   // DialogTitle in the dialog
@@ -36,6 +53,7 @@ export function AllVouchersView({
 }) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<VoucherFilter>(initialFilter);
+  const groups = merchant ? ofMerchant(everything, merchant.id) : everything;
   const total =
     groups.ready.length + groups.notYet.length + groups.soldOut.length;
   const options: { key: VoucherFilter; label: string; count: number }[] = [
@@ -44,8 +62,10 @@ export function AllVouchersView({
       ({ key, label }) => ({ key, label: t(label), count: groups[key].length }),
     ),
   ];
+  // A group that is empty for this merchant falls back to all
+  const active = options.some(({ key }) => key === filter) ? filter : 'all';
   const shown =
-    filter === 'all' ? groups : { ...EMPTY, [filter]: groups[filter] };
+    active === 'all' ? groups : { ...EMPTY, [active]: groups[active] };
 
   return (
     <div className="space-y-4">
@@ -63,6 +83,25 @@ export function AllVouchersView({
           {t('vouchers.allTitle')}
         </Title>
       </div>
+      {merchant && onClearMerchant && (
+        <div
+          data-surface="ground"
+          className="flex items-center justify-between gap-1 rounded-lg border border-foreground/25 pl-3"
+        >
+          <p className="line-clamp-2 min-w-0 py-1 text-sm font-medium wrap-anywhere">
+            {t('dashboard.filterMerchant', { name: merchant.name })}
+          </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-foreground/10"
+            onClick={onClearMerchant}
+          >
+            <X aria-hidden />
+            <span className="sr-only">{t('dashboard.clearMerchant')}</span>
+          </Button>
+        </div>
+      )}
       {options.length > 2 && (
         <div
           role="group"
@@ -74,14 +113,14 @@ export function AllVouchersView({
             <button
               key={key}
               type="button"
-              aria-pressed={filter === key}
+              aria-pressed={active === key}
               onClick={() => setFilter(key)}
               className="flex min-h-11 items-center text-sm font-medium outline-offset-2 focus-visible:outline-2 focus-visible:outline-current"
             >
               <span
                 className={cn(
                   'border-b-2 py-0.5 tabular-nums',
-                  filter === key
+                  active === key
                     ? 'border-current'
                     : 'border-transparent text-muted-foreground',
                 )}
@@ -92,15 +131,21 @@ export function AllVouchersView({
           ))}
         </div>
       )}
-      <GroupSections
-        shown={shown}
-        totals={groups}
-        balance={balance}
-        loadedAt={loadedAt}
-        headings={filter === 'all'}
-        onOpen={onOpen}
-        onRedeem={onRedeem}
-      />
+      {total === 0 ? (
+        <p data-surface="ground" className="text-sm text-muted-foreground">
+          {t('dashboard.merchantEmpty')}
+        </p>
+      ) : (
+        <GroupSections
+          shown={shown}
+          totals={groups}
+          balance={balance}
+          loadedAt={loadedAt}
+          headings={active === 'all'}
+          onOpen={onOpen}
+          onRedeem={onRedeem}
+        />
+      )}
     </div>
   );
 }
@@ -116,9 +161,11 @@ export function AllVouchersDialog({
   // Focus target on close
   onCloseFocus: () => void;
   groups: VoucherGroups;
+  merchant?: MerchantFilter | null;
   balance: number;
   loadedAt: number;
   initialFilter?: VoucherFilter;
+  onClearMerchant?: () => void;
   onOpen: (voucher: Voucher) => void;
   onRedeem: (voucher: Voucher) => void;
 }) {
