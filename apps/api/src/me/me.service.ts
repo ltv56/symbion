@@ -4,7 +4,6 @@ import { DataSource, EntityManager } from 'typeorm';
 import { RedemptionStatus } from '../redemptions/redemption.entity';
 import { spendLast12Months } from '../tiers/spend';
 
-const HISTORY_LIMIT = 50;
 const REDEMPTIONS_LIMIT = 50;
 
 export type Profile = {
@@ -139,7 +138,11 @@ export class MeService {
     }));
   }
 
-  async history(memberId: number): Promise<HistoryEntry[]> {
+  async history(
+    memberId: number,
+    limit: number,
+    after?: number,
+  ): Promise<HistoryEntry[]> {
     const rows: {
       id: number;
       type: 'earn' | 'spend';
@@ -154,10 +157,10 @@ export class MeService {
       `SELECT l.id, l.type, l.points, l.merchant_id, mc.name AS merchant_name,
         l.ref_type, l.ref_id, l.expires_at, l.created_at
       FROM ledger_lots l JOIN merchants mc ON mc.id = l.merchant_id
-      WHERE l.member_id = ?
+      WHERE l.member_id = ?${after === undefined ? '' : ' AND l.id < ?'}
       ORDER BY l.id DESC
       LIMIT ?`,
-      [memberId, HISTORY_LIMIT],
+      after === undefined ? [memberId, limit] : [memberId, after, limit],
     );
     return rows.map((row) => ({
       id: Number(row.id),

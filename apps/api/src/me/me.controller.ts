@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -27,6 +28,7 @@ import { IdempotencyKey } from '../common/idempotency-key.decorator';
 import { RedeemVoucherDto } from '../redemptions/dto/create-redemption.dto';
 import { Redemption } from '../redemptions/redemption.entity';
 import { RedemptionsService } from '../redemptions/redemptions.service';
+import { HistoryQuery } from './dto/history.query';
 import { Favorite, FavoritesService } from './favorites.service';
 import {
   HistoryEntry,
@@ -64,9 +66,15 @@ export class MeController {
   }
 
   @Get('history')
-  @ApiOkResponse({ description: 'Latest 50 point entries, newest first' })
-  history(@CurrentMemberId() memberId: number): Promise<HistoryEntry[]> {
-    return this.me.history(memberId);
+  @ApiOkResponse({
+    description:
+      'Point entries, newest first; `limit` (default 50, max 100), `after` = id of the last entry seen',
+  })
+  history(
+    @CurrentMemberId() memberId: number,
+    @Query() query: HistoryQuery,
+  ): Promise<HistoryEntry[]> {
+    return this.me.history(memberId, query.limit, query.after);
   }
 
   @Get('redemptions')

@@ -39,6 +39,12 @@ curl -s localhost:3000/me -H "Authorization: Bearer $MTOKEN"
 # latest 50 point entries -> 200 [{"type":"earn","points":250,"merchantName":"Shop A",...}]
 curl -s localhost:3000/me/history -H "Authorization: Bearer $MTOKEN"
 
+# next page: 2 entries older than id 41 -> 200, at most 2 entries, all with id < 41
+curl -s "localhost:3000/me/history?limit=2&after=41" -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 400 (limit above 100)
+curl -s "localhost:3000/me/history?limit=101" -H "Authorization: Bearer $MTOKEN"
+
 # error path -> 401 (admin token instead of a member token)
 curl -s localhost:3000/me -H "Authorization: Bearer $TOKEN"
 

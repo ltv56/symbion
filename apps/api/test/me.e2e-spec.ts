@@ -198,6 +198,74 @@ describe('Me', () => {
       expect(res.body[0].points).toBe(55);
       expect(res.body[49].points).toBe(6);
     });
+
+    describe('paging', () => {
+      const pointsOf = (body: { points: number }[]) =>
+        body.map((entry) => entry.points);
+
+      beforeEach(async () => {
+        for (let i = 1; i <= 7; i++) {
+          await addLot(memberId, i);
+        }
+        await addLot(otherMemberId, 999);
+      });
+
+      it('limit caps the page', async () => {
+        const res = await get('/me/history?limit=3').expect(200);
+
+        expect(pointsOf(res.body)).toEqual([7, 6, 5]);
+      });
+
+      it('after returns the entries older than that id', async () => {
+        const first = await get('/me/history?limit=3').expect(200);
+        const cursor = first.body[2].id;
+
+        const res = await get(`/me/history?limit=3&after=${cursor}`).expect(
+          200,
+        );
+
+        expect(pointsOf(res.body)).toEqual([4, 3, 2]);
+      });
+
+      it('walks to the oldest entry and then an empty page', async () => {
+        const seen: number[] = [];
+        let after: number | undefined;
+        for (let page = 0; page < 5; page++) {
+          const query = `limit=3${after ? `&after=${after}` : ''}`;
+          const res = await get(`/me/history?${query}`).expect(200);
+          if (res.body.length === 0) break;
+          seen.push(...pointsOf(res.body));
+          after = res.body[res.body.length - 1].id;
+        }
+
+        expect(seen).toEqual([7, 6, 5, 4, 3, 2, 1]);
+      });
+
+      it('never returns another member entries through after', async () => {
+        const [{ id }] = await dataSource.query(
+          `SELECT id FROM ledger_lots WHERE member_id = ? AND points = 999`,
+          [otherMemberId],
+        );
+
+        const res = await get(`/me/history?after=${Number(id) + 1}`).expect(
+          200,
+        );
+
+        expect(pointsOf(res.body)).toEqual([7, 6, 5, 4, 3, 2, 1]);
+      });
+
+      it.each([
+        'limit=0',
+        'limit=101',
+        'limit=abc',
+        'limit=1.5',
+        'after=0',
+        'after=-1',
+        'after=abc',
+      ])('rejects %s with 400', async (query) => {
+        await get(`/me/history?${query}`).expect(400);
+      });
+    });
   });
 
   describe('GET /me/lots', () => {
