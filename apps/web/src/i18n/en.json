@@ -122,6 +122,23 @@
     "failed": "No connection. Try again, the points are deducted once."
   },
   "redemptions": {
+    "title": "My codes",
+    "empty": "You have not redeemed a voucher yet. Your codes appear here.",
+    "active": "Unused",
+    "past": "Used or expired",
+    "groupTitle": "{{name}} ({{count}})",
+    "showAll": "Show all {{n}} codes",
+    "showLess": "Show less",
+    "validUntil": "Valid until {{date}}",
+    "usedOn": "Used {{date}}",
+    "expiredOn": "Expired {{date}}",
+    "left_one": "{{count}} day left",
+    "left_other": "{{count}} days left",
+    "leftHours_one": "{{count}} hour left",
+    "leftHours_other": "{{count}} hours left",
+    "stampUsed": "Used",
+    "stampExpired": "Expired",
+    "paid": "{{n}} points deducted",
     "copy": "Copy code {{code}}",
     "copied": "Code copied"
   },

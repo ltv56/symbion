@@ -160,3 +160,6 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 - Redeem asks for confirmation: value, points deducted, balance after, code valid until (see Redemption), no refund if the code expires.
 - The app sends one `Idempotency-Key` per voucher until the server answers; a retry after a lost response repeats it. `200` shows "already recorded", points are deducted once.
 - A `409` reloads the balance and the vouchers: the dialog then says sold out, not enough points or voucher gone.
+- "My codes" lists the member's latest 50 codes (`GET /me/redemptions`): unused codes first, the one that ends soonest on top, then used and expired codes in the order the api returns them. A redemption reloads the list.
+- An unused code shows the full date and time it ends, and the time left when it ends within 7 days (hours when under a day). Only an unused code has a copy button.
+- The list shows 10 codes; "Show all" shows the rest.

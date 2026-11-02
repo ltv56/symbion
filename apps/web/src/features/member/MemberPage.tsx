@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AccountMenu } from './AccountMenu';
 import { BalanceHeadline } from './balance/BalanceHeadline';
 import { ExpiryTimeline } from './expiry/ExpiryTimeline';
+import { RedemptionList } from './redemptions/RedemptionList';
 import { TierProgress } from './tier/TierProgress';
 import { useMe } from './useMe';
 import { VoucherList } from './vouchers/VoucherList';
@@ -69,6 +70,11 @@ export function MemberPage() {
             {me.data && (
               <div className="max-w-2xl pb-6">
                 <VoucherList balance={me.data.balance} />
+              </div>
+            )}
+            {me.data && (
+              <div className="max-w-2xl pb-6">
+                <RedemptionList />
               </div>
             )}
           </div>
