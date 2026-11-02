@@ -93,8 +93,8 @@ export function VoucherDetail({
         </p>
       )}
       {voucher.description && (
-        <section className="mt-6" aria-labelledby="voucher-description">
-          <h3 id="voucher-description" className="font-semibold">
+        <section className="mt-6" aria-labelledby="voucher-detail-description">
+          <h3 id="voucher-detail-description" className="font-semibold">
             {t('admin.vouchers.detail.description')}
           </h3>
           <p className="mt-1 text-sm whitespace-pre-line wrap-anywhere">
@@ -103,8 +103,8 @@ export function VoucherDetail({
         </section>
       )}
       {voucher.steps && voucher.steps.length > 0 && (
-        <section className="mt-6" aria-labelledby="voucher-steps">
-          <h3 id="voucher-steps" className="font-semibold">
+        <section className="mt-6" aria-labelledby="voucher-detail-steps">
+          <h3 id="voucher-detail-steps" className="font-semibold">
             {t('admin.vouchers.detail.steps')}
           </h3>
           <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">

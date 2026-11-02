@@ -12,6 +12,7 @@ export function DialogShell({
   locked,
   onClose,
   onCloseFocus,
+  wide = false,
   children,
 }: {
   open: boolean;
@@ -19,6 +20,8 @@ export function DialogShell({
   onClose: () => void;
   // Focus target on close
   onCloseFocus: () => void;
+  // For a long form
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -41,7 +44,7 @@ export function DialogShell({
             event.preventDefault();
             onCloseFocus();
           }}
-          className={`${DIALOG_SURFACE} fixed top-1/2 left-1/2 z-50 max-h-[calc(100svh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 motion-reduce:animate-none sm:max-w-sm`}
+          className={`${DIALOG_SURFACE} fixed top-1/2 left-1/2 z-50 max-h-[calc(100svh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 motion-reduce:animate-none ${wide ? 'sm:max-w-lg' : 'sm:max-w-sm'}`}
         >
           {children}
         </DialogPrimitive.Content>

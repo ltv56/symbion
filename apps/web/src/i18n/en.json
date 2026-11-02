@@ -448,6 +448,36 @@
         "created": "Created",
         "description": "Description",
         "steps": "How to use"
+      },
+      "add": "Add voucher",
+      "create": {
+        "title": "Add voucher",
+        "description": "Creates a voucher on behalf of a merchant. The price and the face value cannot change afterwards.",
+        "merchant": "Merchant",
+        "pickMerchant": "Choose a merchant",
+        "titleField": "Voucher title",
+        "descriptionField": "Description (optional)",
+        "stepsField": "How to use (optional)",
+        "stepsHint": "One step per line, up to 10 steps.",
+        "pointsPrice": "Points price",
+        "faceValue": "Face value (₫)",
+        "floorHint": "At least {{floor}} (points price × {{value}} ₫ per point).",
+        "stock": "Stock",
+        "validUntil": "On sale until",
+        "submit": "Add",
+        "submitting": "Adding…",
+        "refused": "The system refused this voucher.",
+        "validation": {
+          "merchant": "Choose a merchant.",
+          "title": "Enter the voucher title, up to 255 characters.",
+          "description": "The description is at most 2,000 characters.",
+          "steps": "Up to 10 steps, each at most 200 characters.",
+          "faceValue": "Enter a positive whole number.",
+          "pointsPrice": "Enter a positive whole number.",
+          "stock": "Enter a whole number from 0 to 4,294,967,295.",
+          "validUntil": "Choose a time in the future.",
+          "floor": "The face value must cover what the merchant is paid: at least points price × point value."
+        }
       }
     }
   }

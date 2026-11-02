@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanelQuery } from '@/components/PanelQuery';
+import { Button } from '@/components/ui/button';
 import { useMerchants } from '../merchants/useMerchants';
 import { PageHeader, TwoHalves } from '../layout';
 import { Select } from '../Select';
 import { useDetailScroll } from '../useDetailScroll';
+import { useDialog } from '../useDialog';
+import { CreateVoucherDialog } from './CreateVoucherDialog';
 import { VoucherDetail } from './VoucherDetail';
 import { VoucherRow } from './VoucherRow';
 import { useAdminVouchers, type VoucherFilters } from './useVouchers';
@@ -18,6 +22,8 @@ export function VouchersPage() {
   });
   const [picked, setPicked] = useState<number | null>(null);
   const { detail, reveal } = useDetailScroll();
+  const create = useDialog();
+  const addButton = useRef<HTMLButtonElement>(null);
   const merchants = useMerchants();
   const query = useAdminVouchers(filters);
   const vouchers = query.data;
@@ -40,7 +46,12 @@ export function VouchersPage() {
             { count: vouchers.length },
           )
         }
-      />
+      >
+        <Button ref={addButton} onClick={create.show}>
+          <Plus />
+          {t('admin.vouchers.add')}
+        </Button>
+      </PageHeader>
       <div
         data-surface="ground"
         className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 lg:max-w-2xl"
@@ -137,6 +148,16 @@ export function VouchersPage() {
           />
         )}
       </TwoHalves>
+      <CreateVoucherDialog
+        key={`create-${create.session}`}
+        open={create.open}
+        onClose={create.close}
+        onCloseFocus={() => addButton.current?.focus()}
+        onCreated={(id) => {
+          setFilters({ merchantId: '', status: '' });
+          setPicked(id);
+        }}
+      />
     </div>
   );
 }

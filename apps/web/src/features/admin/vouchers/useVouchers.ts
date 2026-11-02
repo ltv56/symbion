@@ -1,4 +1,8 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
 export type VoucherStatus = 'active' | 'expired';
@@ -29,12 +33,24 @@ export interface VoucherFilters {
   status: '' | VoucherStatus;
 }
 
+export interface VoucherInput {
+  merchantId: number;
+  title: string;
+  description?: string;
+  steps?: string[];
+  faceValue: number;
+  pointsPrice: number;
+  stock: number;
+  validUntil: string;
+}
+
+const KEY = ['admin', 'vouchers'];
 const PAGE_SIZE = 50;
 
 // Every state, newest first, one page at a time
 export function useAdminVouchers({ merchantId, status }: VoucherFilters) {
   return useInfiniteQuery({
-    queryKey: ['admin', 'vouchers', merchantId, status],
+    queryKey: [...KEY, merchantId, status],
     initialPageParam: null as number | null,
     queryFn: ({ pageParam }) => {
       const query = new URLSearchParams({ limit: String(PAGE_SIZE) });
@@ -45,5 +61,14 @@ export function useAdminVouchers({ merchantId, status }: VoucherFilters) {
     },
     getNextPageParam: (last) => last.nextCursor,
     select: (data) => data.pages.flatMap((page) => page.items),
+  });
+}
+
+export function useCreateVoucher() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: VoucherInput) =>
+      api<{ id: number }>('/vouchers', { method: 'POST', body, as: 'admin' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: KEY }),
   });
 }

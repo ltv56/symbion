@@ -426,6 +426,36 @@
         "created": "Ngày tạo",
         "description": "Mô tả",
         "steps": "Cách dùng"
+      },
+      "add": "Thêm voucher",
+      "create": {
+        "title": "Thêm voucher",
+        "description": "Tạo voucher thay mặt cửa hàng. Giá đổi và giá trị voucher không sửa được sau khi tạo.",
+        "merchant": "Cửa hàng",
+        "pickMerchant": "Chọn cửa hàng",
+        "titleField": "Tên voucher",
+        "descriptionField": "Mô tả (không bắt buộc)",
+        "stepsField": "Cách dùng (không bắt buộc)",
+        "stepsHint": "Mỗi dòng một bước, tối đa 10 bước.",
+        "pointsPrice": "Giá đổi (điểm)",
+        "faceValue": "Giá trị voucher (₫)",
+        "floorHint": "Tối thiểu {{floor}} (giá đổi × {{value}} ₫ mỗi điểm).",
+        "stock": "Số lượng",
+        "validUntil": "Bán đến",
+        "submit": "Thêm",
+        "submitting": "Đang thêm…",
+        "refused": "Hệ thống từ chối voucher này.",
+        "validation": {
+          "merchant": "Chọn một cửa hàng.",
+          "title": "Nhập tên voucher, tối đa 255 ký tự.",
+          "description": "Mô tả tối đa 2.000 ký tự.",
+          "steps": "Tối đa 10 bước, mỗi bước tối đa 200 ký tự.",
+          "faceValue": "Nhập số nguyên dương.",
+          "pointsPrice": "Nhập số nguyên dương.",
+          "stock": "Nhập số nguyên từ 0 đến 4.294.967.295.",
+          "validUntil": "Chọn một thời điểm trong tương lai.",
+          "floor": "Giá trị voucher phải đủ trả cho cửa hàng: ít nhất giá đổi × giá trị điểm."
+        }
       }
     }
   }
