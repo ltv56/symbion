@@ -26,8 +26,6 @@ export interface VoucherPage {
 export class VouchersService {
   constructor(
     @InjectRepository(Voucher) private readonly vouchers: Repository<Voucher>,
-    @InjectRepository(ProgramSettings)
-    private readonly settings: Repository<ProgramSettings>,
     private readonly merchants: MerchantsService,
   ) {}
 
@@ -38,19 +36,25 @@ export class VouchersService {
       );
     }
 
-    // The app pays the merchant pointsPrice x point value, so the discount must cover it.
-    const { pointValueVnd } = await this.settings.findOneByOrFail({ id: 1 });
-    const floor = dto.pointsPrice * pointValueVnd;
-    if (dto.faceValue < floor) {
-      throw new BadRequestException(
-        `faceValue ${dto.faceValue} is below the floor ${floor} (${dto.pointsPrice} points x ${pointValueVnd} VND)`,
-      );
-    }
+    return this.vouchers.manager.transaction(async (tx) => {
+      // Shared lock: waits for a point value change in flight
+      const { pointValueVnd } = await tx.findOneOrFail(ProgramSettings, {
+        where: { id: 1 },
+        lock: { mode: 'pessimistic_read' },
+      });
+      // The app pays the merchant pointsPrice x point value, so the discount must cover it.
+      const floor = dto.pointsPrice * pointValueVnd;
+      if (dto.faceValue < floor) {
+        throw new BadRequestException(
+          `faceValue ${dto.faceValue} is below the floor ${floor} (${dto.pointsPrice} points x ${pointValueVnd} VND)`,
+        );
+      }
 
-    const saved = await this.vouchers.save(this.vouchers.create(dto));
-    // save() keeps the insertId as the driver returns it (a string)
-    saved.id = Number(saved.id);
-    return saved;
+      const saved = await tx.save(tx.create(Voucher, dto));
+      // save() keeps the insertId as the driver returns it (a string)
+      saved.id = Number(saved.id);
+      return saved;
+    });
   }
 
   // Keyset pagination; one extra row tells whether another page exists

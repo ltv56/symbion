@@ -148,6 +148,20 @@ Admin only. Body:
 
 Responses: `201` with the tier, `400` validation (unknown fields included), `401` no or invalid admin token, `409` name or `minSpend` already used. There is no update or delete.
 
+## GET /settings, PATCH /settings
+
+Admin only. Settings are `{ "pointValueVnd" }`, VND per point.
+
+`PATCH /settings` body:
+
+| Field           | Rule                      |
+| --------------- | ------------------------- |
+| `pointValueVnd` | integer from 1 to 100,000 |
+
+The change is refused when a sellable voucher (`status` `active`, `valid_until` in the future) would fall under its floor (`faceValue < pointsPrice × pointValueVnd`). A voucher exactly on the floor is kept. Lowering the value never conflicts.
+
+Responses: `200` with the settings, `400` validation (unknown fields included), `401` no or invalid admin token, `409` `"message": "Point value 101 puts 1 voucher under their floor: #7 \"50k off\" (500 points x 101 VND > 50000)"` (up to 5 vouchers named, then `, and N more`). `GET` returns `200` or `401`.
+
 ## POST /members
 
 Creates a member on the lowest tier (smallest `min_spend`). Responses: `201`, `400` validation, `401` bad key, `409` email already registered, `503` (`"message": "No tiers configured"`) when the `tiers` table is empty.

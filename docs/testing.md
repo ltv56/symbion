@@ -111,7 +111,22 @@ curl -s localhost:3000/tiers/999999
 
 ## Vouchers (MySQL)
 
-Point value: `SELECT point_value_vnd FROM program_settings` (default 100).
+Point value: `GET /settings` or `SELECT point_value_vnd FROM program_settings` (default 100).
+
+```sh
+# read, change (admin) -> 200
+curl -s localhost:3000/settings -H "Authorization: Bearer $TOKEN"
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":120}'
+
+# error path -> 409 (a sellable voucher would fall under its floor; create a 500-point voucher at 50000 first)
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":101}'
+
+# error path -> 400 (not a positive integer)
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":0}'
+```
 
 ```sh
 # create (admin) -> 201, faceValue at the floor (500 x 100)
