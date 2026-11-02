@@ -199,6 +199,12 @@ curl -s localhost:3000/members/abc -H "x-api-key: $KEY"
 
 # error path -> 400 (name and email are required)
 curl -s -X POST localhost:3000/members -H 'content-type: application/json' -H "x-api-key: $KEY" -d '{}'
+
+# admin list across merchants (filters: merchantId, tierId, q for name or email), with balance
+curl -s 'localhost:3000/admin/members?limit=5&q=an' -H "Authorization: Bearer $TOKEN"
+
+# admin detail: profile, lots, latest history and redemptions -> 200; unknown id -> 404
+curl -s localhost:3000/admin/members/1 -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Orders (MySQL)
