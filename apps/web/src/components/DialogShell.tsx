@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 import { Dialog, DialogPortal } from '@/components/ui/dialog';
 
 // Cream or Maroon Panel, hairline ring, no shadow
-export const DIALOG_SURFACE =
+const DIALOG_SURFACE =
   'grid gap-4 rounded-lg bg-popover p-4 pb-0 text-sm text-popover-foreground ring-1 ring-foreground/10';
 
 // Flat scrim, locked while sending
-export function RedeemShell({
+export function DialogShell({
   open,
   locked,
   onClose,
