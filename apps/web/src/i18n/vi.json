@@ -200,5 +200,28 @@
     "filterMerchant": "Cửa hàng: {{name}}",
     "clearMerchant": "Bỏ lọc cửa hàng",
     "merchantEmpty": "Cửa hàng này chưa có voucher."
+  },
+  "personal": {
+    "calendar": "Lịch",
+    "calendarMonth": "Tháng",
+    "calendarYear": "Năm",
+    "calendarExpand": "Xem cả tháng",
+    "calendarCollapse": "Thu gọn",
+    "monthWithMarks": "{{name}} ({{count}})",
+    "tabPoints": "Điểm",
+    "tabCodes": "Voucher của tôi",
+    "tabHistory": "Lịch sử",
+    "tabsLabel": "Điểm, voucher của tôi hoặc lịch sử",
+    "markEarn_other": "{{count}} lần cộng điểm",
+    "markSpend_other": "{{count}} lần trừ điểm",
+    "dayFilter": "Ngày {{date}}",
+    "dayCount_other": "{{count}} giao dịch",
+    "clearDay": "Bỏ lọc ngày",
+    "dayEmpty": "Không có giao dịch nào trong ngày này.",
+    "pickDay": "Bấm một ngày có dấu để chỉ xem giao dịch ngày đó.",
+    "title": "Cá nhân",
+    "prev": "Trang trước",
+    "next": "Trang sau",
+    "page": "Trang {{page}} / {{pages}}"
   }
 }

@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from 'react-router';
 import { LoginPage } from '@/features/login/LoginPage';
 import { Dashboard } from '@/features/member/dashboard/Dashboard';
 import { MemberLayout } from '@/features/member/MemberLayout';
-import { PersonalPage } from '@/features/member/PersonalPage';
+import { PersonalPage } from '@/features/member/personal/PersonalPage';
 import { useToken } from '@/lib/auth';
 
 export function App() {

@@ -152,8 +152,11 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 
 - The balance is the sum of the member's unexpired lots (`GET /me`). After a refund it can be negative: it is shown with a minus sign and redemption is blocked (see Redemption).
 - Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
-- The expiry calendar covers the next 12 months, the longest a lot lives (see Earning).
-- The calendar marks the end of each lot that has one (hourglass) and of each unused, unexpired code (ticket). The Points and Vouchers tabs under it choose the marks shown and the list below: points by expiry, or "My codes". Pointing at or pressing a row, ticket or mark lights the other two; changing tab clears the selection.
+- The Personal page has one calendar and three tabs: Points, My vouchers, History. The header shows the member's tier seal, name and balance.
+- The calendar shows one month; month and year are chosen from two menus (each month lists its number of marks) or with the arrows. Points and My vouchers cover the next 12 months, the longest a lot lives (see Earning); History covers the past 12 months.
+- Points marks the end of each lot that has one (hourglass); My vouchers marks the end of each unused, unexpired code (ticket); History marks each ledger entry (arrow up for earned, down for spent). Pointing at or pressing a row, ticket or mark lights the other two; changing tab clears the selection and returns to the current month.
+- Below 768px the calendar shows one week; "Show the month" opens the month, "Collapse" closes it. The arrows then move by week.
+- In History, pressing a marked day keeps only that day's entries, with a bar that clears the filter; pressing the day again clears it too.
 - The tier bar shows the 12-month spend and the spend still needed for the next tier; the top tier has no next tier.
 - Vouchers are grouped: ready to redeem (stock left and balance covers the price), not enough points (including a negative balance), sold out. Not-enough-points vouchers are ordered by price, so the smallest shortfall comes first.
 - The member app has two pages: Home (`/`) and Personal (`/me`). From 1024px two buttons at the left edge of the window switch between them and show their name on hover or focus; below 1024px the header menu holds the same two entries, then language and sign-out. An unknown path returns to Home.
@@ -169,5 +172,5 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 - "My codes" lists the member's latest 50 codes (`GET /me/redemptions`): unused codes first, the one that ends soonest on top, then used and expired codes in the order the api returns them. A redemption reloads the list.
 - An unused code shows the full date and time it ends, and the time left when it ends within 7 days (hours when under a day). Only an unused code has a copy button.
 - The list shows 10 codes; "Show all" shows the rest.
-- "Point history" is closed by default and loads when opened (`GET /me/history`, 50 entries per request, older pages by `after`): ledger entries, newest first, each with the merchant, a label by source (order, voucher redeemed, refund deduction; plain earned or spent when the source is unknown), the date and the signed amount. 10 are shown, "Show all" shows the rest.
+- "History" reads the last 12 months of ledger entries (`GET /me/history`, 100 per request, older pages by `after`, at most 10 requests; a note shows the count when more exist). Each entry shows the merchant, a label by source (order, voucher redeemed, refund deduction; plain earned or spent when the source is unknown), the date and the signed amount. The list is paged to the room there is.
 - "Partner merchants" lists every merchant of the programme (`GET /me/partners`), ordered by name: 8 are shown, "Show all" shows the rest.
