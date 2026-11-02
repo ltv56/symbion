@@ -27,6 +27,13 @@ pnpm dev:web   # web on http://localhost:5173
 
 Details and environment variables: [Development](docs/development.md).
 
+## Demo
+
+https://symbion-demo.duckdns.org
+
+- Member app: sign in with `member1@demo.example`, `member2@demo.example` or `member3@demo.example`. The sign-in code appears on the page; no email is sent.
+- Swagger UI: https://symbion-demo.duckdns.org/api/docs
+
 ## Surfaces
 
 | Surface       | Address                                                               | Access                     |
