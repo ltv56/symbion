@@ -45,7 +45,10 @@
     "markCodes_one": "{{count}} code",
     "markCodes_other": "{{count}} codes",
     "markNone": "nothing ends",
-    "monthMarks": "{{month}}, {{summary}}"
+    "monthMarks": "{{month}}, {{summary}}",
+    "tabsLabel": "What expires",
+    "tabPoints": "Points",
+    "tabVouchers": "Vouchers"
   },
   "header": {
     "menu": "Menu",

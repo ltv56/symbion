@@ -4,10 +4,11 @@ import { FormError } from '@/components/FormError';
 import type { PanelQueryState } from '@/components/PanelQuery';
 import { ShowMore } from '@/components/ShowMore';
 import { Button } from '@/components/ui/button';
+import { markKey } from '@/features/member/expiry/marks';
+import type { useActiveMark } from '@/features/member/expiry/useActiveMark';
 import { groupRedemptions } from './groups';
 import type { RedemptionGroups } from './groups';
 import { RedemptionTicket } from './RedemptionTicket';
-import { useRedemptions } from './useRedemptions';
 import type { MemberRedemption } from './useRedemptions';
 
 // Codes shown before "show all"
@@ -28,12 +29,16 @@ function visibleGroups(
   return { active, past };
 }
 
+type Link = ReturnType<typeof useActiveMark>;
+
 function Groups({
   items,
   loadedAt,
+  link,
 }: {
   items: MemberRedemption[];
   loadedAt: number;
+  link?: Link;
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -63,6 +68,11 @@ function Groups({
                     key={item.id}
                     item={item}
                     loadedAt={loadedAt}
+                    link={
+                      item.status === 'issued'
+                        ? link?.ticket(markKey('code', item.id))
+                        : undefined
+                    }
                   />
                 ))}
               </ul>
@@ -85,8 +95,10 @@ function Groups({
 // List on a query result
 export function RedemptionListView({
   query,
+  link,
 }: {
   query: PanelQueryState<MemberRedemption[]>;
+  link?: Link;
 }) {
   const { t } = useTranslation();
 
@@ -114,13 +126,12 @@ export function RedemptionListView({
             {t('redemptions.empty')}
           </p>
         ) : (
-          <Groups items={query.data} loadedAt={query.dataUpdatedAt} />
+          <Groups
+            items={query.data}
+            loadedAt={query.dataUpdatedAt}
+            link={link}
+          />
         ))}
     </section>
   );
-}
-
-export function RedemptionList() {
-  const redemptions = useRedemptions();
-  return <RedemptionListView query={redemptions} />;
 }

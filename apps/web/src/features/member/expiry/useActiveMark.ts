@@ -1,6 +1,6 @@
 import { cn } from 'cn';
 import { useState } from 'react';
-import type { KeyboardEvent, PointerEvent } from 'react';
+import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 
 // A pointed row is one rounded piece
 const LIT = 'bg-card-foreground/10 inset-ring-1 inset-ring-card-foreground/25';
@@ -12,6 +12,10 @@ const ROW = [
 ].join(' ');
 const ROW_BUTTON =
   'cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-card-foreground';
+// A pointed ticket sits on the page ground
+const TICKET =
+  'cursor-pointer transition-[outline-color] motion-reduce:transition-none';
+const TICKET_LIT = 'outline-2 outline-offset-2 outline-foreground';
 
 const pressKey = (action: () => void) => (event: KeyboardEvent) => {
   if (event.key === 'Enter' || event.key === ' ') {
@@ -20,7 +24,7 @@ const pressKey = (action: () => void) => (event: KeyboardEvent) => {
   }
 };
 
-// Rows and the calendar light each other through one key
+// Rows, tickets and the calendar light each other through one key
 export function useActiveMark() {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const [pinnedKey, setPinnedKey] = useState<string | null>(null);
@@ -51,12 +55,38 @@ export function useActiveMark() {
       onKeyDown: pressKey(() => toggle(key)),
     },
   });
+  // The whole ticket takes a press
+  const ticket = (key: string) => ({
+    item: {
+      className: cn(TICKET, activeKey === key && TICKET_LIT),
+      onPointerEnter: mouse(key),
+      onPointerLeave: mouse(null),
+      onClick: (event: MouseEvent) => {
+        if ((event.target as HTMLElement).closest('button')) return;
+        if (window.getSelection()?.toString()) return;
+        toggle(key);
+      },
+    },
+    stop: {
+      role: 'button',
+      tabIndex: 0,
+      'aria-pressed': pinnedKey === key,
+      onKeyDown: pressKey(() => toggle(key)),
+    },
+  });
+  // A tab change drops what was pointed at
+  const clear = () => {
+    setHoverKey(null);
+    setPinnedKey(null);
+  };
   return {
     activeKey,
     pinnedKey,
     setHoverKey,
     toggle,
+    clear,
     row,
+    ticket,
     calendar: {
       activeKey,
       selectedKey: pinnedKey,

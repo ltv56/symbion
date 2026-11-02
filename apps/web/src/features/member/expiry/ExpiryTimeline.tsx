@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanelQuery } from '@/components/PanelQuery';
 import { ShowMore } from '@/components/ShowMore';
@@ -10,9 +10,12 @@ import { ExpiryDivider } from './divider/ExpiryDivider';
 import { byExpiry, daysOf, EXPIRING_SOON_DAYS, isSoon } from './expiry';
 import { LotList } from './LotList';
 import { marksOf } from './marks';
+import type { MarkKind } from './marks';
 import { useActiveMark } from './useActiveMark';
+import { panelId, Tabs, tabId } from './Tabs';
 import { useLots } from './useLots';
 import type { Lot } from './useLots';
+import { RedemptionListView } from '../redemptions/RedemptionList';
 import { useRedemptions } from '../redemptions/useRedemptions';
 
 // Lots shown after the soon group
@@ -109,29 +112,52 @@ function Groups({
 
 export function ExpiryTimeline() {
   const { t } = useTranslation();
+  const base = useId().replace(/:/g, '');
   const lots = useLots();
   const redemptions = useRedemptions();
   const link = useActiveMark();
+  const [tab, setTab] = useState<MarkKind>('points');
   const [openedAt] = useState(Date.now);
   const loadedAt = lots.dataUpdatedAt || redemptions.dataUpdatedAt || openedAt;
-  const marks = marksOf(lots.data ?? [], redemptions.data ?? [], loadedAt);
+  const marks = marksOf(
+    lots.data ?? [],
+    redemptions.data ?? [],
+    loadedAt,
+  ).filter((mark) => mark.kind === tab);
+  const select = (kind: MarkKind) => {
+    if (kind === tab) return;
+    link.clear();
+    setTab(kind);
+  };
 
   return (
-    <div className="space-y-6">
-      <section data-surface="ground">
-        <h2 className="mb-2 text-base font-semibold">
-          {t('timeline.calendarTitle')}
-        </h2>
-        <ExpiryCalendar marks={marks} loadedAt={loadedAt} {...link.calendar} />
-      </section>
-      <PanelQuery
-        title={t('timeline.title')}
-        query={lots}
-        isEmpty={(data) => data.length === 0}
-        emptyText={t('timeline.empty')}
+    <section>
+      <h2 data-surface="ground" className="mb-2 text-base font-semibold">
+        {t('timeline.calendarTitle')}
+      </h2>
+      <ExpiryCalendar marks={marks} loadedAt={loadedAt} {...link.calendar} />
+      <div data-surface="ground" className="mt-3">
+        <Tabs base={base} value={tab} onChange={select} />
+      </div>
+      <div
+        role="tabpanel"
+        id={panelId(base)}
+        aria-labelledby={tabId(base, tab)}
+        className="mt-3"
       >
-        {(data, at) => <Groups lots={data} loadedAt={at} link={link} />}
-      </PanelQuery>
-    </div>
+        {tab === 'points' ? (
+          <PanelQuery
+            title={t('timeline.title')}
+            query={lots}
+            isEmpty={(data) => data.length === 0}
+            emptyText={t('timeline.empty')}
+          >
+            {(data, at) => <Groups lots={data} loadedAt={at} link={link} />}
+          </PanelQuery>
+        ) : (
+          <RedemptionListView query={redemptions} link={link} />
+        )}
+      </div>
+    </section>
   );
 }

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { MerchantAvatar } from '@/components/MerchantAvatar';
 import { CodeCopy } from '@/features/member/redeem/CodeCopy';
 import { DAY_MS } from '@/features/member/expiry/expiry';
+import type { useActiveMark } from '@/features/member/expiry/useActiveMark';
 import { formatDate, formatDateTime, formatPoints } from '@/lib/format';
 import { StatusStamp } from './StatusStamp';
 import type { MemberRedemption } from './useRedemptions';
@@ -11,12 +12,17 @@ import type { MemberRedemption } from './useRedemptions';
 const SOON_DAYS = 7;
 const HOUR_MS = 3_600_000;
 
+// The shared link a ticket takes
+export type TicketLink = ReturnType<ReturnType<typeof useActiveMark>['ticket']>;
+
 function Meta({
   item,
   loadedAt,
+  stop,
 }: {
   item: MemberRedemption;
   loadedAt: number;
+  stop?: TicketLink['stop'];
 }) {
   const { t, i18n } = useTranslation();
   const date = (value: string) => formatDate(value, i18n.language);
@@ -24,7 +30,14 @@ function Meta({
   const days = Math.max(1, Math.ceil(msLeft / DAY_MS));
   const hours = Math.max(1, Math.ceil(msLeft / HOUR_MS));
   return (
-    <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm text-muted-foreground">
+    <p
+      {...stop}
+      className={cn(
+        'mt-1 flex flex-wrap items-baseline gap-x-2 text-sm text-muted-foreground',
+        stop &&
+          'rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-card-foreground',
+      )}
+    >
       <span className="wrap-anywhere">
         {item.status === 'issued' &&
           t('redemptions.validUntil', {
@@ -52,9 +65,11 @@ function Meta({
 export function RedemptionTicket({
   item,
   loadedAt,
+  link,
 }: {
   item: MemberRedemption;
   loadedAt: number;
+  link?: TicketLink;
 }) {
   const { t, i18n } = useTranslation();
   const issued = item.status === 'issued';
@@ -68,12 +83,16 @@ export function RedemptionTicket({
 
   return (
     <li
+      onPointerEnter={link?.item.onPointerEnter}
+      onPointerLeave={link?.item.onPointerLeave}
+      onClick={link?.item.onClick}
       className={cn(
         '@container flex rounded-lg border-2',
         issued
           ? 'border-card bg-card text-card-foreground'
           : `${edge} text-foreground`,
         expired && 'border-dashed',
+        link?.item.className,
       )}
     >
       <div data-surface={surface} className="min-w-0 flex-1 p-3">
@@ -109,7 +128,7 @@ export function RedemptionTicket({
               <StatusStamp status={item.status} />
             </div>
           )}
-          <Meta item={item} loadedAt={loadedAt} />
+          <Meta item={item} loadedAt={loadedAt} stop={link?.stop} />
         </div>
       </div>
       <div

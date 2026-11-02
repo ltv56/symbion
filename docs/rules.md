@@ -153,7 +153,7 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 - The balance is the sum of the member's unexpired lots (`GET /me`). After a refund it can be negative: it is shown with a minus sign and redemption is blocked (see Redemption).
 - Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
 - The expiry calendar covers the next 12 months, the longest a lot lives (see Earning).
-- The calendar marks the end of each lot that has one (hourglass) and of each unused, unexpired code (ticket), on the page ground.
+- The calendar marks the end of each lot that has one (hourglass) and of each unused, unexpired code (ticket). The Points and Vouchers tabs under it choose the marks shown and the list below: points by expiry, or "My codes". Pointing at or pressing a row, ticket or mark lights the other two; changing tab clears the selection.
 - The tier bar shows the 12-month spend and the spend still needed for the next tier; the top tier has no next tier.
 - Vouchers are grouped: ready to redeem (stock left and balance covers the price), not enough points (including a negative balance), sold out. Not-enough-points vouchers are ordered by price, so the smallest shortfall comes first.
 - The home page shows 4 / 3 / 2 vouchers of the three groups; "See more" opens the all-vouchers page filtered to that group (filter: All, or one group).
