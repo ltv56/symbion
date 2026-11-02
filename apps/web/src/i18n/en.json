@@ -239,6 +239,9 @@
     "title": "Personal",
     "prev": "Previous page",
     "next": "Next page",
-    "page": "Page {{page}} / {{pages}}"
+    "page": "Page {{page}} / {{pages}}",
+    "favoritesTitle": "Favorite vouchers",
+    "favoritesEmpty": "No favorite vouchers yet. Press the heart on a voucher page to save it.",
+    "favoritesAll": "See all {{n}} favorite vouchers"
   }
 }

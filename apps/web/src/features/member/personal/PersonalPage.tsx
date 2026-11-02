@@ -5,7 +5,9 @@ import { useActiveMark } from '../expiry/useActiveMark';
 import { useLots } from '../expiry/useLots';
 import { RedemptionListView } from '../redemptions/RedemptionList';
 import { useRedemptions } from '../redemptions/useRedemptions';
+import { useMe } from '../useMe';
 import { MonthCalendar } from './calendar/MonthCalendar';
+import { FavoritesSection } from './FavoritesSection';
 import { HistoryTab } from './HistoryTab';
 import { marksOf } from './marks';
 import type { MarkKind } from './marks';
@@ -19,6 +21,7 @@ import { useHistoryYear } from './useHistoryYear';
 export function PersonalPage() {
   const { t } = useTranslation();
   const base = useId().replace(/:/g, '');
+  const me = useMe();
   const lots = useLots();
   const redemptions = useRedemptions();
   const history = useHistoryYear();
@@ -88,6 +91,11 @@ export function PersonalPage() {
           )}
         </div>
       </div>
+      {me.data && (
+        <div className="mt-6 max-w-2xl xl:col-start-1 xl:row-start-3">
+          <FavoritesSection balance={me.data.balance} />
+        </div>
+      )}
     </section>
   );
 }

@@ -153,6 +153,7 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 - The balance is the sum of the member's unexpired lots (`GET /me`). After a refund it can be negative: it is shown with a minus sign and redemption is blocked (see Redemption).
 - Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
 - The Personal page has one calendar and three tabs: Points, My vouchers, History. The header shows the member's tier seal, name and balance.
+- Under the calendar a "Favorite vouchers" block lists the member's favorites as tickets, newest first (see Favorites): 2 are shown, "See all" shows the rest; an empty list says how to add one. Removing the heart in the detail updates the block.
 - The calendar shows one month; month and year are chosen from two menus (each month lists its number of marks) or with the arrows. Points and My vouchers cover the next 12 months, the longest a lot lives (see Earning); History covers the past 12 months.
 - Points marks the end of each lot that has one (hourglass); My vouchers marks the end of each unused, unexpired code (ticket); History marks each ledger entry (arrow up for earned, down for spent). Pointing at or pressing a row, ticket or mark lights the other two; changing tab clears the selection and returns to the current month.
 - Below 768px the calendar shows one week; "Show the month" opens the month, "Collapse" closes it. The arrows then move by week.

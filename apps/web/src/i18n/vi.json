@@ -222,6 +222,9 @@
     "title": "Cá nhân",
     "prev": "Trang trước",
     "next": "Trang sau",
-    "page": "Trang {{page}} / {{pages}}"
+    "page": "Trang {{page}} / {{pages}}",
+    "favoritesTitle": "Voucher yêu thích",
+    "favoritesEmpty": "Chưa có voucher yêu thích. Bấm biểu tượng tim ở trang chi tiết voucher để lưu lại.",
+    "favoritesAll": "Xem tất cả {{n}} voucher yêu thích"
   }
 }
