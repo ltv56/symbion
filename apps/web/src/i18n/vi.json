@@ -281,7 +281,8 @@
         "appPays": "App trả cửa hàng {{amount}}",
         "even": "Cửa hàng và app không nợ nhau trong tháng này",
         "breakage_other": "Mã hết hạn chưa dùng: {{points}} điểm ({{amount}}), không tính vào ròng."
-      }
+      },
+      "download": "Tải CSV"
     },
     "merchants": {
       "title": "Cửa hàng",

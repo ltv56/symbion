@@ -1,10 +1,13 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Download } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanelQuery } from '@/components/PanelQuery';
+import { Button } from '@/components/ui/button';
 import { formatVnd, signed } from '@/lib/format';
 import { PageHeader, TwoHalves } from '../layout';
+import { OUTLINE } from '../styles';
 import { useDetailScroll } from '../useDetailScroll';
+import { downloadCsv, statementCsv } from './csv';
 import { currentMonth } from './month';
 import { MonthSwitch } from './MonthSwitch';
 import { StatementDetail } from './StatementDetail';
@@ -42,7 +45,24 @@ export function StatementPage() {
           </>
         }
       >
-        <MonthSwitch month={month} onChange={setMonth} />
+        <div className="flex flex-wrap items-center gap-3">
+          <MonthSwitch month={month} onChange={setMonth} />
+          <Button
+            variant="outline"
+            className={OUTLINE}
+            disabled={!data || data.merchants.length === 0}
+            onClick={() =>
+              data &&
+              downloadCsv(
+                `symbion-statement-${data.month}.csv`,
+                statementCsv(data),
+              )
+            }
+          >
+            <Download />
+            {t('admin.statement.download')}
+          </Button>
+        </div>
       </PageHeader>
       <TwoHalves>
         <PanelQuery

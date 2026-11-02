@@ -299,7 +299,8 @@
         "even": "The merchant and the app owe each other nothing this month",
         "breakage_one": "Expired unused: {{points}} point ({{amount}}), not part of the net.",
         "breakage_other": "Expired unused: {{points}} points ({{amount}}), not part of the net."
-      }
+      },
+      "download": "Download CSV"
     },
     "merchants": {
       "title": "Merchants",
