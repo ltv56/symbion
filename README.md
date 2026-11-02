@@ -33,8 +33,6 @@ https://symbion-demo.duckdns.org
 
 - Member app: sign in with `member1@demo.example`, `member2@demo.example` or `member3@demo.example`. The sign-in code appears on the page; no email is sent.
 - Swagger UI: https://symbion-demo.duckdns.org/api/docs
-- The data is reset every night at 04:00 (Asia/Ho_Chi_Minh).
-- The admin credentials are not published.
 
 ## Surfaces
 
