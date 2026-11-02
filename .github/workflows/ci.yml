@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: symbion
+      DB_USER: symbion
+      DB_PASSWORD: change-me
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: symbion
+          MYSQL_USER: symbion
+          MYSQL_PASSWORD: change-me
+          MYSQL_ROOT_PASSWORD: change-me
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pchange-me"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:ledger
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm db:migrate
+      - run: pnpm test
+      - run: pnpm build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -f apps/api/Dockerfile -t symbion-api .
+      - run: docker build -f infra/nginx/Dockerfile -t symbion-nginx .
+      - name: Check the nginx config
+        run: |
+          mkdir -p certs/live/example.com
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 -subj /CN=example.com \
+            -keyout certs/live/example.com/privkey.pem -out certs/live/example.com/fullchain.pem
+          docker run --rm -e DOMAIN=example.com -v "$PWD/certs:/etc/letsencrypt:ro" \
+            --add-host api:127.0.0.1 symbion-nginx nginx -t

@@ -10,3 +10,11 @@ notes/
 
 CLAUDE.md
 .claude/
+
+.agents/
+skills-lock.json
+.playwright-mcp/
+apps/web/PRODUCT.md
+apps/web/DESIGN.md
+apps/web/.impeccable/
+.vscode/

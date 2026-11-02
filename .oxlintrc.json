@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "jest"],
+  "categories": { "correctness": "error" },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error"
+  },
+  "ignorePatterns": ["**/dist/**", "**/coverage/**", "notes/**"]
+}

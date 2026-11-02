@@ -1,0 +1,755 @@
+import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { DataSource } from 'typeorm';
+import { AppModule } from '../src/app.module';
+import { adminToken } from './helpers/admin-token';
+import { insertMerchant, resetDatabase } from './helpers/database';
+import { memberToken } from './helpers/member-token';
+
+describe('Me', () => {
+  let app: INestApplication;
+  let dataSource: DataSource;
+  let merchantId: number;
+  let otherMerchantId: number;
+  let memberId: number;
+  let otherMemberId: number;
+  let token: string;
+  const email = 'john@example.com';
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    await app.init();
+    dataSource = app.get(DataSource);
+  });
+
+  beforeEach(async () => {
+    await resetDatabase(dataSource);
+    merchantId = await insertMerchant(dataSource, 'key-a', 'Shop A');
+    otherMerchantId = await insertMerchant(dataSource, 'key-b', 'Shop B');
+    const tier = await dataSource.query(
+      `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Silver', 0, 1.25)`,
+    );
+    const insertMember = async (memberEmail: string) => {
+      const res = await dataSource.query(
+        `INSERT INTO members (merchant_id, tier_id, email, name) VALUES (?, ?, ?, 'John')`,
+        [merchantId, Number(tier.insertId), memberEmail],
+      );
+      return Number(res.insertId);
+    };
+    memberId = await insertMember(email);
+    otherMemberId = await insertMember('jane@example.com');
+    token = await memberToken(app, email);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  let lotSeq = 0;
+  const addLot = (
+    forMemberId: number,
+    points: number,
+    {
+      atMerchant = merchantId,
+      expiresAt = null as Date | null,
+      ref = null as { type: string; id: number } | null,
+    } = {},
+  ) =>
+    dataSource.query(
+      `INSERT INTO ledger_lots (merchant_id, member_id, points, remaining, expires_at, idempotency_key, type, ref_type, ref_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        atMerchant,
+        forMemberId,
+        points,
+        points,
+        expiresAt,
+        `seed-${++lotSeq}`,
+        points > 0 ? 'earn' : 'spend',
+        ref?.type ?? null,
+        ref?.id ?? null,
+      ],
+    );
+
+  const get = (path: string, auth: string | null = `Bearer ${token}`) => {
+    const req = request(app.getHttpServer()).get(path);
+    if (auth) req.set('Authorization', auth);
+    return req;
+  };
+
+  describe('GET /me', () => {
+    it('returns the member with tier and balance', async () => {
+      await addLot(memberId, 300);
+      await addLot(memberId, 200, { atMerchant: otherMerchantId });
+      await addLot(memberId, 1000, {
+        expiresAt: new Date(Date.now() - 60_000),
+      });
+      await addLot(otherMemberId, 999);
+
+      const res = await get('/me').expect(200);
+
+      expect(res.body).toEqual({
+        id: memberId,
+        email,
+        name: 'John',
+        tier: { id: expect.any(Number), name: 'Silver' },
+        balance: 500,
+        spend12m: 0,
+        nextTier: null,
+      });
+    });
+
+    describe('tier progress', () => {
+      let orderSeq = 0;
+      const addOrder = async (amount: number, monthsAgo = 0) => {
+        const res = await dataSource.query(
+          `INSERT INTO orders (merchant_id, member_id, idempotency_key, amount, created_at)
+          VALUES (?, ?, ?, ?, NOW() - INTERVAL ? MONTH)`,
+          [merchantId, memberId, `order-${++orderSeq}`, amount, monthsAgo],
+        );
+        return Number(res.insertId);
+      };
+      const addRefund = (orderId: number, amount: number) =>
+        dataSource.query(
+          `INSERT INTO refunds (merchant_id, order_id, idempotency_key, amount)
+          VALUES (?, ?, ?, ?)`,
+          [merchantId, orderId, `refund-${++orderSeq}`, amount],
+        );
+
+      it('returns the 12-month spend and the next tier above the current one', async () => {
+        const gold = await dataSource.query(
+          `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Gold', 5000000, 1.5)`,
+        );
+        await dataSource.query(
+          `INSERT INTO tiers (name, min_spend, earn_rate) VALUES ('Platinum', 10000000, 2)`,
+        );
+        await addOrder(800_000);
+        const refunded = await addOrder(300_000);
+        await addRefund(refunded, 100_000);
+        const old = await addOrder(2_000_000, 13);
+        await addRefund(old, 500_000);
+
+        const res = await get('/me').expect(200);
+
+        expect(res.body.spend12m).toBe(1_000_000);
+        expect(res.body.nextTier).toEqual({
+          id: Number(gold.insertId),
+          name: 'Gold',
+          minSpend: 5_000_000,
+        });
+      });
+
+      it('returns no next tier on the top tier', async () => {
+        await addOrder(800_000);
+
+        const res = await get('/me').expect(200);
+
+        expect(res.body.spend12m).toBe(800_000);
+        expect(res.body.nextTier).toBeNull();
+      });
+    });
+
+    it('shows a negative balance', async () => {
+      await addLot(memberId, -40);
+
+      const res = await get('/me').expect(200);
+
+      expect(res.body.balance).toBe(-40);
+    });
+  });
+
+  describe('GET /me/history', () => {
+    it("returns the member's own entries, newest first", async () => {
+      await addLot(memberId, 300, { ref: { type: 'order', id: 7 } });
+      await addLot(memberId, -100, { atMerchant: otherMerchantId });
+      await addLot(otherMemberId, 999);
+
+      const res = await get('/me/history').expect(200);
+
+      expect(res.body).toHaveLength(2);
+      expect(res.body[0]).toMatchObject({
+        type: 'spend',
+        points: -100,
+        merchantName: 'Shop B',
+        ref: null,
+      });
+      expect(res.body[1]).toMatchObject({
+        type: 'earn',
+        points: 300,
+        merchantName: 'Shop A',
+        ref: { type: 'order', id: 7 },
+        expiresAt: null,
+      });
+      expect(res.body[1].createdAt).toEqual(expect.any(String));
+    });
+
+    it('returns at most 50 entries', async () => {
+      for (let i = 1; i <= 55; i++) {
+        await addLot(memberId, i);
+      }
+
+      const res = await get('/me/history').expect(200);
+
+      expect(res.body).toHaveLength(50);
+      expect(res.body[0].points).toBe(55);
+      expect(res.body[49].points).toBe(6);
+    });
+
+    describe('paging', () => {
+      const pointsOf = (body: { points: number }[]) =>
+        body.map((entry) => entry.points);
+
+      beforeEach(async () => {
+        for (let i = 1; i <= 7; i++) {
+          await addLot(memberId, i);
+        }
+        await addLot(otherMemberId, 999);
+      });
+
+      it('limit caps the page', async () => {
+        const res = await get('/me/history?limit=3').expect(200);
+
+        expect(pointsOf(res.body)).toEqual([7, 6, 5]);
+      });
+
+      it('after returns the entries older than that id', async () => {
+        const first = await get('/me/history?limit=3').expect(200);
+        const cursor = first.body[2].id;
+
+        const res = await get(`/me/history?limit=3&after=${cursor}`).expect(
+          200,
+        );
+
+        expect(pointsOf(res.body)).toEqual([4, 3, 2]);
+      });
+
+      it('walks to the oldest entry and then an empty page', async () => {
+        const seen: number[] = [];
+        let after: number | undefined;
+        for (let page = 0; page < 5; page++) {
+          const query = `limit=3${after ? `&after=${after}` : ''}`;
+          const res = await get(`/me/history?${query}`).expect(200);
+          if (res.body.length === 0) break;
+          seen.push(...pointsOf(res.body));
+          after = res.body[res.body.length - 1].id;
+        }
+
+        expect(seen).toEqual([7, 6, 5, 4, 3, 2, 1]);
+      });
+
+      it('never returns another member entries through after', async () => {
+        const [{ id }] = await dataSource.query(
+          `SELECT id FROM ledger_lots WHERE member_id = ? AND points = 999`,
+          [otherMemberId],
+        );
+
+        const res = await get(`/me/history?after=${Number(id) + 1}`).expect(
+          200,
+        );
+
+        expect(pointsOf(res.body)).toEqual([7, 6, 5, 4, 3, 2, 1]);
+      });
+
+      it.each([
+        'limit=0',
+        'limit=101',
+        'limit=abc',
+        'limit=1.5',
+        'after=0',
+        'after=-1',
+        'after=abc',
+      ])('rejects %s with 400', async (query) => {
+        await get(`/me/history?${query}`).expect(400);
+      });
+    });
+  });
+
+  describe('GET /me/lots', () => {
+    const day = 86_400_000;
+    const inDays = (days: number) => new Date(Date.now() + days * day);
+
+    it('returns unspent, unexpired lots by expiry, lots without expiry last', async () => {
+      await addLot(memberId, 100, { expiresAt: inDays(200) });
+      await addLot(memberId, 300, {
+        atMerchant: otherMerchantId,
+        expiresAt: inDays(30),
+      });
+      await addLot(memberId, 50);
+      await addLot(memberId, 70, { expiresAt: inDays(200) });
+
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toEqual([
+        {
+          id: expect.any(Number),
+          merchantId: otherMerchantId,
+          merchantName: 'Shop B',
+          remaining: 300,
+          expiresAt: expect.any(String),
+        },
+        expect.objectContaining({ remaining: 100, merchantName: 'Shop A' }),
+        expect.objectContaining({ remaining: 70 }),
+        expect.objectContaining({ remaining: 50, expiresAt: null }),
+      ]);
+    });
+
+    it('leaves out spent-out, expired, debt and other members lots', async () => {
+      await addLot(memberId, 100, { expiresAt: inDays(10) });
+      await addLot(memberId, 500, { expiresAt: new Date(Date.now() - 60_000) });
+      await addLot(memberId, -40);
+      await addLot(otherMemberId, 999, { expiresAt: inDays(10) });
+      await dataSource.query(
+        `UPDATE ledger_lots SET remaining = 0 WHERE member_id = ? AND points = 100`,
+        [memberId],
+      );
+      await addLot(memberId, 60, { expiresAt: inDays(20) });
+
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].remaining).toBe(60);
+    });
+
+    it('returns an empty list for a member with no points', async () => {
+      const res = await get('/me/lots').expect(200);
+
+      expect(res.body).toEqual([]);
+    });
+  });
+
+  describe('GET /me/redemptions', () => {
+    let voucherId: number;
+    let codeSeq = 0;
+
+    beforeEach(async () => {
+      const res = await dataSource.query(
+        `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until)
+        VALUES (?, 'Coffee', 50000, 500, 10, ?)`,
+        [otherMerchantId, new Date(Date.now() + 86_400_000)],
+      );
+      voucherId = Number(res.insertId);
+    });
+
+    const addRedemption = async (
+      forMemberId: number,
+      {
+        status = 'issued',
+        usedAt = null as Date | null,
+        expiresAt = new Date(Date.now() + 86_400_000),
+      } = {},
+    ): Promise<number> => {
+      const n = ++codeSeq;
+      const res = await dataSource.query(
+        `INSERT INTO redemptions (merchant_id, member_id, voucher_id, code, points, point_value_vnd, status, client_key, used_at, expires_at)
+        VALUES (?, ?, ?, ?, 500, 100, ?, ?, ?, ?)`,
+        [
+          otherMerchantId,
+          forMemberId,
+          voucherId,
+          `CODE${String(n).padStart(6, '0')}`,
+          status,
+          `key-${n}`,
+          usedAt,
+          expiresAt,
+        ],
+      );
+      return Number(res.insertId);
+    };
+
+    it("returns the member's own redemptions, newest first", async () => {
+      const first = await addRedemption(memberId);
+      const second = await addRedemption(memberId);
+      await addRedemption(otherMemberId);
+
+      const res = await get('/me/redemptions').expect(200);
+
+      expect(res.body.map((r: { id: number }) => r.id)).toEqual([
+        second,
+        first,
+      ]);
+      expect(res.body[0]).toEqual({
+        id: second,
+        code: expect.stringMatching(/^CODE\d{6}$/),
+        status: 'issued',
+        points: 500,
+        voucherTitle: 'Coffee',
+        merchantId: otherMerchantId,
+        merchantName: 'Shop B',
+        usedAt: null,
+        expiresAt: expect.any(String),
+        createdAt: expect.any(String),
+      });
+    });
+
+    it('shows a used code as used and an issued code past its expiry as expired', async () => {
+      const past = new Date(Date.now() - 60_000);
+      const used = await addRedemption(memberId, {
+        status: 'used',
+        usedAt: new Date(Date.now() - 120_000),
+      });
+      const usedThenExpired = await addRedemption(memberId, {
+        status: 'used',
+        usedAt: new Date(Date.now() - 180_000),
+        expiresAt: past,
+      });
+      const expired = await addRedemption(memberId, { expiresAt: past });
+
+      const res = await get('/me/redemptions').expect(200);
+
+      const statusOf = (id: number) =>
+        res.body.find((r: { id: number }) => r.id === id).status;
+      expect(statusOf(used)).toBe('used');
+      expect(statusOf(usedThenExpired)).toBe('used');
+      expect(statusOf(expired)).toBe('expired');
+      expect(
+        res.body.find((r: { id: number }) => r.id === used).usedAt,
+      ).toEqual(expect.any(String));
+    });
+
+    it('returns at most 50 redemptions', async () => {
+      for (let i = 1; i <= 55; i++) {
+        await addRedemption(memberId);
+      }
+
+      const res = await get('/me/redemptions').expect(200);
+
+      expect(res.body).toHaveLength(50);
+    });
+
+    it('returns an empty list for a member with no redemptions', async () => {
+      const res = await get('/me/redemptions').expect(200);
+      expect(res.body).toEqual([]);
+    });
+  });
+
+  describe('GET /me/partners', () => {
+    it('lists every merchant by name with only id and name', async () => {
+      const aroma = await insertMerchant(dataSource, 'key-c', 'Aroma');
+
+      const res = await get('/me/partners').expect(200);
+
+      expect(res.body).toEqual([
+        { id: aroma, name: 'Aroma' },
+        { id: merchantId, name: 'Shop A' },
+        { id: otherMerchantId, name: 'Shop B' },
+      ]);
+    });
+  });
+
+  describe('favorites', () => {
+    const DAY = 86_400_000;
+    let voucherId: number;
+
+    const insertVoucher = async (
+      validUntil = new Date(Date.now() + DAY),
+      status = 'active',
+    ): Promise<number> => {
+      const res = await dataSource.query(
+        `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until, status)
+        VALUES (?, 'Coffee', 50000, 500, 10, ?, ?)`,
+        [otherMerchantId, validUntil, status],
+      );
+      return Number(res.insertId);
+    };
+
+    const insertFavorite = (
+      forMemberId: number,
+      forVoucherId: number,
+      createdAt: Date,
+    ) =>
+      dataSource.query(
+        `INSERT INTO voucher_favorites (member_id, voucher_id, merchant_id, created_at)
+        VALUES (?, ?, ?, ?)`,
+        [forMemberId, forVoucherId, otherMerchantId, createdAt],
+      );
+
+    const favoriteRows = async (forMemberId = memberId) =>
+      (
+        await dataSource.query(
+          `SELECT voucher_id, merchant_id FROM voucher_favorites WHERE member_id = ?`,
+          [forMemberId],
+        )
+      ).map((row: { voucher_id: string; merchant_id: string }) => ({
+        voucherId: Number(row.voucher_id),
+        merchantId: Number(row.merchant_id),
+      }));
+
+    const send = (
+      method: 'put' | 'delete',
+      id: number | string,
+      auth: string | null = `Bearer ${token}`,
+    ) => {
+      const req = request(app.getHttpServer())[method](`/me/favorites/${id}`);
+      if (auth) req.set('Authorization', auth);
+      return req;
+    };
+
+    beforeEach(async () => {
+      voucherId = await insertVoucher();
+    });
+
+    describe('PUT /me/favorites/:voucherId', () => {
+      it("adds the voucher to the member's favorites", async () => {
+        await send('put', voucherId).expect(204);
+
+        const res = await get('/me/favorites').expect(200);
+        expect(res.body).toEqual([
+          { voucherId, createdAt: expect.any(String) },
+        ]);
+        await expect(favoriteRows()).resolves.toEqual([
+          { voucherId, merchantId: otherMerchantId },
+        ]);
+      });
+
+      it('keeps one row and the first createdAt when repeated', async () => {
+        await send('put', voucherId).expect(204);
+        await dataSource.query(
+          `UPDATE voucher_favorites SET created_at = '2026-01-01 00:00:00.000'`,
+        );
+
+        await send('put', voucherId).expect(204);
+
+        const res = await get('/me/favorites').expect(200);
+        expect(res.body).toEqual([
+          { voucherId, createdAt: '2026-01-01T00:00:00.000Z' },
+        ]);
+      });
+
+      it('adds one row when sent ten times in parallel', async () => {
+        const responses = await Promise.all(
+          Array.from({ length: 10 }, () => send('put', voucherId)),
+        );
+
+        expect(responses.map((res) => res.status)).toEqual(Array(10).fill(204));
+        await expect(favoriteRows()).resolves.toHaveLength(1);
+      });
+
+      it.each([
+        ['an unknown voucher', async () => 999_999],
+        ['an expired voucher', () => insertVoucher(new Date(Date.now() - DAY))],
+        [
+          'a voucher marked expired',
+          () => insertVoucher(new Date(Date.now() + DAY), 'expired'),
+        ],
+      ])('returns 404 for %s', async (_label, makeId) => {
+        const id = await makeId();
+
+        await send('put', id).expect(404);
+        await expect(favoriteRows()).resolves.toEqual([]);
+      });
+
+      it('returns 400 when the id is not an integer', async () => {
+        await send('put', 'abc').expect(400);
+      });
+    });
+
+    describe('DELETE /me/favorites/:voucherId', () => {
+      it('removes the favorite, and repeating it is not an error', async () => {
+        await send('put', voucherId).expect(204);
+
+        await send('delete', voucherId).expect(204);
+        await send('delete', voucherId).expect(204);
+
+        await expect(favoriteRows()).resolves.toEqual([]);
+      });
+
+      it('returns 204 for a voucher that was never a favorite or does not exist', async () => {
+        await send('delete', voucherId).expect(204);
+        await send('delete', 999_999).expect(204);
+      });
+
+      it("leaves other members' favorites alone", async () => {
+        await insertFavorite(otherMemberId, voucherId, new Date());
+
+        await send('delete', voucherId).expect(204);
+
+        await expect(favoriteRows(otherMemberId)).resolves.toHaveLength(1);
+      });
+
+      it('returns 400 when the id is not an integer', async () => {
+        await send('delete', 'abc').expect(400);
+      });
+    });
+
+    describe('GET /me/favorites', () => {
+      it("returns the member's own favorites, newest first", async () => {
+        const second = await insertVoucher();
+        const third = await insertVoucher();
+        await insertFavorite(
+          memberId,
+          voucherId,
+          new Date('2026-03-01T00:00:00Z'),
+        );
+        await insertFavorite(memberId, third, new Date('2026-03-03T00:00:00Z'));
+        await insertFavorite(
+          memberId,
+          second,
+          new Date('2026-03-02T00:00:00Z'),
+        );
+        await insertFavorite(otherMemberId, voucherId, new Date());
+
+        const res = await get('/me/favorites').expect(200);
+
+        expect(
+          res.body.map((row: { voucherId: number }) => row.voucherId),
+        ).toEqual([third, second, voucherId]);
+      });
+
+      it('leaves out vouchers that are no longer listed', async () => {
+        const expired = await insertVoucher();
+        const marked = await insertVoucher();
+        await insertFavorite(memberId, voucherId, new Date());
+        await insertFavorite(memberId, expired, new Date());
+        await insertFavorite(memberId, marked, new Date());
+        await dataSource.query(
+          `UPDATE vouchers SET valid_until = ? WHERE id = ?`,
+          [new Date(Date.now() - DAY), expired],
+        );
+        await dataSource.query(
+          `UPDATE vouchers SET status = 'expired' WHERE id = ?`,
+          [marked],
+        );
+
+        const res = await get('/me/favorites').expect(200);
+
+        expect(res.body).toEqual([
+          { voucherId, createdAt: expect.any(String) },
+        ]);
+      });
+
+      it('returns an empty list for a member with no favorites', async () => {
+        const res = await get('/me/favorites').expect(200);
+
+        expect(res.body).toEqual([]);
+      });
+    });
+
+    describe.each([
+      ['GET', (auth: string | null) => get('/me/favorites', auth)],
+      ['PUT', (auth: string | null) => send('put', 1, auth)],
+      ['DELETE', (auth: string | null) => send('delete', 1, auth)],
+    ] as const)('%s auth', (_method, call) => {
+      it('returns 401 without a token', async () => {
+        await call(null).expect(401);
+      });
+
+      it('returns 401 for an admin token', async () => {
+        await call(`Bearer ${await adminToken(app)}`).expect(401);
+      });
+    });
+  });
+
+  describe('POST /me/redemptions', () => {
+    const insertVoucher = async (): Promise<number> => {
+      const res = await dataSource.query(
+        `INSERT INTO vouchers (merchant_id, title, face_value, points_price, stock, valid_until)
+        VALUES (?, 'Coffee', 50000, 500, 10, ?)`,
+        [otherMerchantId, new Date(Date.now() + 86_400_000)],
+      );
+      return Number(res.insertId);
+    };
+
+    const redeem = (
+      body: object,
+      key: string | null = 'r1',
+      auth: string | null = `Bearer ${token}`,
+    ) => {
+      const req = request(app.getHttpServer()).post('/me/redemptions');
+      if (auth) req.set('Authorization', auth);
+      if (key) req.set('Idempotency-Key', key);
+      return req.send(body);
+    };
+
+    const balance = async () => (await get('/me').expect(200)).body.balance;
+
+    it('redeems a voucher for the logged-in member', async () => {
+      const voucherId = await insertVoucher();
+      await addLot(memberId, 800);
+
+      const res = await redeem({ voucherId }).expect(201);
+
+      expect(res.body).toMatchObject({
+        memberId,
+        voucherId,
+        merchantId: otherMerchantId,
+        points: 500,
+        status: 'issued',
+      });
+      await expect(balance()).resolves.toBe(300);
+    });
+
+    it('returns the same redemption when the key is repeated', async () => {
+      const voucherId = await insertVoucher();
+      await addLot(memberId, 800);
+
+      const res1 = await redeem({ voucherId }).expect(201);
+      const res2 = await redeem({ voucherId }).expect(200);
+
+      expect(res2.body.id).toBe(res1.body.id);
+      await expect(balance()).resolves.toBe(300);
+    });
+
+    it('returns 409 when the balance is too low', async () => {
+      const voucherId = await insertVoucher();
+      await addLot(memberId, 499);
+
+      await redeem({ voucherId }).expect(409);
+    });
+
+    it.each([
+      ['no Idempotency-Key', { voucherId: 1 }, null],
+      [
+        'a memberEmail field',
+        { voucherId: 1, memberEmail: 'jane@example.com' },
+        'r1',
+      ],
+      ['no voucherId', {}, 'r1'],
+    ])('returns 400 for %s', async (_label, body, key) => {
+      await redeem(body, key).expect(400);
+    });
+
+    it('returns 401 without a member token', async () => {
+      const voucherId = await insertVoucher();
+      await addLot(memberId, 800);
+
+      await redeem({ voucherId }, 'r1', null).expect(401);
+      await redeem(
+        { voucherId },
+        'r1',
+        `Bearer ${await adminToken(app)}`,
+      ).expect(401);
+      await expect(balance()).resolves.toBe(800);
+    });
+  });
+
+  describe.each([
+    '/me',
+    '/me/history',
+    '/me/lots',
+    '/me/redemptions',
+    '/me/partners',
+  ])('%s auth', (path) => {
+    it('returns 401 without a token', async () => {
+      await get(path, null).expect(401);
+    });
+
+    it('returns 401 for an admin token', async () => {
+      await get(path, `Bearer ${await adminToken(app)}`).expect(401);
+    });
+
+    it('returns 401 for a malformed token', async () => {
+      await get(path, 'Bearer not-a-jwt').expect(401);
+    });
+
+    it('returns 401 for a merchant api key', async () => {
+      await request(app.getHttpServer())
+        .get(path)
+        .set('x-api-key', 'key-a')
+        .expect(401);
+    });
+  });
+});

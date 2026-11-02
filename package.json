@@ -6,14 +6,31 @@
     "node": ">=26"
   },
   "scripts": {
+    "dev": "pnpm --filter @symbion/api start:dev",
+    "dev:web": "pnpm --filter @symbion/web dev",
+    "start": "pnpm --filter @symbion/api start",
+    "build:ledger": "pnpm --filter @symbion/ledger build",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "lint": "oxlint --type-aware",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm build:ledger && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "db:up": "docker compose -f infra/compose.yaml up -d --wait mysql",
+    "db:migrate": "pnpm --filter @symbion/api migration:run",
+    "db:migrate:revert": "pnpm --filter @symbion/api migration:revert",
+    "db:seed": "pnpm --filter @symbion/api seed",
+    "db:down": "docker compose -f infra/compose.yaml down",
+    "seed:demo": "pnpm --filter @symbion/api seed:demo"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^26.6.5",
     "jest": "^30.5.2",
+    "oxlint": "^1.89.0",
+    "oxlint-tsgolint": "^7.0.2005",
+    "prettier": "^3.9.10",
     "ts-jest": "^29.4.15",
     "typescript": "~6.0.3"
   }

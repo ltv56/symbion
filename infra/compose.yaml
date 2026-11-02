@@ -1,0 +1,96 @@
+name: symbion
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - '127.0.0.1:${DB_PORT:-3306}:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'root',
+          '-p${DB_ROOT_PASSWORD}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MAX_POINTS_PER_ORDER: ${MAX_POINTS_PER_ORDER:-10000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      DEMO_RESET: ${DEMO_RESET:-false}
+      DEMO_API_KEY: ${DEMO_API_KEY:-}
+      TIER_DOWNGRADE_CRON: '${TIER_DOWNGRADE_CRON:-0 3 * * *}'
+      DEMO_RESET_CRON: '${DEMO_RESET_CRON:-0 4 * * *}'
+    ports:
+      - '127.0.0.1:${API_PORT:-3000}:3000'
+    healthcheck:
+      # busybox wget ships with the alpine image; 127.0.0.1 because the api listens on IPv4 only
+      test:
+        ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  nginx:
+    profiles: ['prod']
+    build:
+      context: ..
+      dockerfile: infra/nginx/Dockerfile
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  mysql-data:

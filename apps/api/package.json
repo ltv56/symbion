@@ -4,21 +4,54 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start": "nest start --env-file ../../infra/.env",
+    "start:dev": "nest start --watch --env-file ../../infra/.env",
     "start:prod": "node dist/main",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typeorm": "node --env-file-if-exists=../../infra/.env node_modules/typeorm/cli.js -d dist/data-source.js",
+    "migration:run": "pnpm build && pnpm typeorm migration:run",
+    "migration:revert": "pnpm build && pnpm typeorm migration:revert",
+    "seed": "pnpm build && node --env-file-if-exists=../../infra/.env dist/seed.js",
+    "seed:demo": "pnpm build && node --env-file-if-exists=../../infra/.env dist/seed-demo.js",
+    "test": "node --env-file-if-exists=../../infra/.env --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --passWithNoTests",
+    "hash-password": "pnpm --silent build && node dist/hash-password.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.2.0",
+    "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.2.0",
+    "@nestjs/jwt": "^12.0.3",
     "@nestjs/platform-express": "^12.2.0",
+    "@nestjs/schedule": "^12.0.2",
+    "@nestjs/swagger": "^12.0.4",
+    "@nestjs/typeorm": "^12.0.2",
+    "@symbion/ledger": "workspace:*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "cron": "^4.4.0",
+    "mysql2": "^3.24.6",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "typeorm": "^1.1.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.10",
     "@nestjs/schematics": "^12.0.10",
-    "@types/express": "^5.0.6"
+    "@nestjs/testing": "^12.2.0",
+    "@types/express": "^5.0.6",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.1"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src",
+      "<rootDir>/test"
+    ],
+    "testRegex": ".(e2e-)?spec.ts$",
+    "setupFiles": [
+      "<rootDir>/test/setup-env.ts"
+    ]
   }
 }

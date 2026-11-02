@@ -1,4 +1,82 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  ValidationPipe,
+} from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_FILTER, APP_PIPE } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { RedactedSqlLogger } from './common/redacted-sql.logger';
+import { requestIdMiddleware } from './common/request-id.middleware';
+import { AuthModule } from './auth/auth.module';
+import { DemoModule } from './demo/demo.module';
+import { HealthModule } from './health/health.module';
+import { MeModule } from './me/me.module';
+import { MembersModule } from './members/members.module';
+import { MerchantsModule } from './merchants/merchants.module';
+import { OrdersModule } from './orders/orders.module';
+import { ReconciliationModule } from './reconciliation/reconciliation.module';
+import { RedemptionsModule } from './redemptions/redemptions.module';
+import { RefundsModule } from './refunds/refunds.module';
+import { SettingsModule } from './settings/settings.module';
+import { TiersModule } from './tiers/tiers.module';
+import { VouchersModule } from './vouchers/vouchers.module';
 
-@Module({})
-export class AppModule {}
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.getOrThrow<string>('DB_HOST'),
+        port: config.get<number>('DB_PORT', 3306),
+        database: config.getOrThrow<string>('DB_NAME'),
+        username: config.getOrThrow<string>('DB_USER'),
+        password: config.getOrThrow<string>('DB_PASSWORD'),
+        autoLoadEntities: true,
+        bigNumberStrings: false,
+        timezone: 'Z',
+        synchronize: false,
+        logging: true,
+        logger:
+          config.get<string>('NODE_ENV') === 'production'
+            ? new RedactedSqlLogger()
+            : 'advanced-console',
+      }),
+    }),
+    AuthModule,
+    DemoModule,
+    HealthModule,
+    MeModule,
+    MembersModule,
+    MerchantsModule,
+    OrdersModule,
+    ReconciliationModule,
+    RedemptionsModule,
+    RefundsModule,
+    SettingsModule,
+    TiersModule,
+    VouchersModule,
+  ],
+  providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    },
+  ],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(requestIdMiddleware).forRoutes('*path');
+  }
+}

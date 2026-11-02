@@ -1,0 +1,323 @@
+# API conventions
+
+## Errors
+
+All error responses use this JSON body:
+
+```json
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "details": ["email must be an email"]
+}
+```
+
+| Field        | Notes                                                             |
+| ------------ | ----------------------------------------------------------------- |
+| `statusCode` | HTTP status code, same as the response status                     |
+| `error`      | Status name, e.g. `Unauthorized`, `Not Found`, `Conflict`         |
+| `message`    | Always a string                                                   |
+| `details`    | Only on 400 validation errors: one string per violated constraint |
+
+Unexpected errors: 500, `"message": "Internal server error"`. The cause (SQL, stack trace) is logged server-side only.
+
+Logs of failed requests contain method, path and status only; no request bodies or headers.
+
+With `NODE_ENV=production` the SQL log (`RedactedSqlLogger`) prints the query text only: no parameters (member emails) and no MySQL error message (contains the duplicate value). Failed queries log the MySQL `code` and `errno`. Other environments log in full.
+
+Implemented by `AllExceptionsFilter` in `apps/api/src/common/all-exceptions.filter.ts`.
+
+## Authentication
+
+- `/members*`, `POST /orders`, `POST /orders/:orderId/refunds`, `POST /redemptions` and `POST /redemptions/:code/confirm` require the `x-api-key` header of a merchant.
+- `GET /members*` returns only the calling merchant's members; a member of another merchant is `404`.
+- `/merchants*`, `POST /tiers`, `POST /vouchers` and `GET /reconciliation` require `Authorization: Bearer <token>` from `POST /auth/login` (admin only).
+- `/me*` requires `Authorization: Bearer <token>` from `POST /auth/member/login` (member only).
+- `GET /tiers*` and `GET /vouchers*` are public.
+- `GET /health` is unauthenticated (load balancers and Compose probes cannot send a key).
+
+## POST /auth/login
+
+Logs in the admin account configured in the environment. Body: `email`, `password` (1-200 characters). Responses: `200` with `{ "accessToken": "<jwt>" }`, `400` validation, `401` `Invalid credentials` (same body for a wrong email and a wrong password).
+
+The token is a JWT (HS256) with payload `{ "sub": "admin", "role": "admin" }` that expires after `JWT_EXPIRES_IN`. Admin endpoints answer `401` for a missing, malformed, expired or wrongly signed token, and for a token without `role: admin`.
+
+| Variable              | Notes                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `ADMIN_EMAIL`         | required; compared case-insensitively                                                    |
+| `ADMIN_PASSWORD_HASH` | required; `scrypt$<salt hex>$<hash hex>`, create with `pnpm hash-password` (see testing) |
+| `JWT_SECRET`          | required, at least 32 characters                                                         |
+| `JWT_EXPIRES_IN`      | optional, default `1h`                                                                   |
+
+The api does not start when a required variable is missing or `JWT_SECRET` is too short.
+
+Known limitations: no refresh token, no logout, no rate limit on login, a single admin account.
+
+## POST /auth/member/otp, POST /auth/member/login
+
+Member login with a one-time code.
+
+`POST /auth/member/otp`, body `email`: creates a 6 digit code valid for 5 minutes and replaces any earlier code. Responses: `200` with `{}` (also for an unknown email), or `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`; `400` invalid email. No email is sent yet.
+
+`POST /auth/member/login`, body `email`, `otp` (string of 6 digits): responses `200` with `{ "accessToken": "<jwt>" }`, payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
+
+Admin endpoints reject a member token (`401`).
+
+## GET /me, GET /me/lots, GET /me/history, GET /me/redemptions, GET /me/partners
+
+Member only (`Authorization: Bearer <member token>`). `401` for a missing, invalid or non-member token.
+
+`GET /me`: `200` with `{ "id", "email", "name", "tier": { "id", "name" }, "balance", "spend12m", "nextTier" }`. `balance` is the sum of unexpired lots and may be negative. `spend12m` is the VND spend of the last 12 months (orders minus their refunds), the figure tiers are evaluated on. `nextTier` is `{ "id", "name", "minSpend" }` of the tier with the next higher `min_spend` above the member's current tier, `null` on the top tier.
+
+`GET /me/lots`: `200` with the member's earned lots that still have points and have not expired, each `{ "id", "merchantId", "merchantName", "remaining", "expiresAt" }`, earliest `expiresAt` first (lots without expiry last), the order in which spending takes them. Debt lots and other members' lots are not listed.
+
+`GET /me/history`: `200` with an array of the member's ledger entries, newest first, at most `limit` (query, integer 1-100, default 50); `after` (query, integer from 1) keeps the entries with an `id` below it, so the next page is requested with the `id` of the last entry received and the end is an array shorter than `limit`; `400` for a `limit` or `after` outside these bounds. Each entry is `{ "id", "type", "points", "merchantId", "merchantName", "ref", "expiresAt", "createdAt" }`; `type` is `earn` or `spend`, `points` is negative for `spend`, `ref` is `{ "type", "id" }` or `null`; `ref.type` is `order`, `redemption` or `refund` (entries written before spends carried a `ref` have `null`).
+
+`GET /me/redemptions`: `200` with the member's latest 50 redemptions, newest first, each `{ "id", "code", "status", "points", "voucherTitle", "merchantId", "merchantName", "usedAt", "expiresAt", "createdAt" }`; `status` is `issued`, `used` or `expired`, `expired` being an `issued` code past `expiresAt` (never stored); `usedAt` is `null` unless `used`; `merchantId` and `merchantName` are the merchant that owns the voucher.
+
+`GET /me/partners`: `200` with every merchant of the programme, each `{ "id", "name" }`, ordered by `name`. Points are shared across merchants, so no merchant is filtered out.
+
+## GET /me/favorites, PUT /me/favorites/:voucherId, DELETE /me/favorites/:voucherId
+
+Member only; `401` for a missing, invalid or non-member token. `:voucherId` is an integer, otherwise `400`.
+
+`GET /me/favorites`: `200` with the member's favorite vouchers that are still listed (`active` and before `validUntil`), newest first, each `{ "voucherId", "createdAt" }`.
+
+`PUT /me/favorites/:voucherId`: `204` adds the favorite; `204` again when it is already there (the first `createdAt` is kept). `404` when the voucher is unknown, `expired` or past `validUntil`.
+
+`DELETE /me/favorites/:voucherId`: `204` removes the favorite; `204` also when it was not a favorite or the voucher does not exist. Other members' favorites are not touched.
+
+## POST /me/redemptions
+
+Member only. The logged-in member redeems a voucher; same rules and redemption shape as `POST /redemptions`.
+
+| Input             | Notes                                                         |
+| ----------------- | ------------------------------------------------------------- |
+| `Idempotency-Key` | header, required; unique per member                           |
+| `voucherId`       | body, integer from 1; an `active` voucher before `validUntil` |
+
+Responses: `201` with the redemption, `200` with the original redemption for a repeated `Idempotency-Key`, `400` invalid input (a `memberEmail` field included) or missing `Idempotency-Key`, `401` no member token, `404` voucher unknown, `expired` or past `validUntil`, `409` not enough points (a negative balance included) or no stock left, `422` the `Idempotency-Key` was already used for another voucher.
+
+| Variable    | Notes                                                   |
+| ----------- | ------------------------------------------------------- |
+| `DEMO_MODE` | optional; `true` returns the code in the `otp` response |
+
+## Request id and logs
+
+- Every response has an `x-request-id` header: the client's value (1-64 chars of `A-Z a-z 0-9 . _ -`) or a generated UUID.
+- One access log line per request: `METHOD /path status Nms` (no query string, no headers). Every log line of the request carries the same id.
+- `NODE_ENV=production`: one JSON object per line (`time`, `level`, `context`, `message`, `requestId`, `stack` for errors). Otherwise Nest's console format.
+
+## GET /health
+
+Liveness plus a MySQL check (`SELECT 1`). Responses: `200` with `{ "status": "ok" }`, `503` in the common error shape (`"message": "Database unavailable"`) when MySQL does not answer. The cause is logged server-side only.
+
+## POST /merchants/:id/api-key
+
+Admin only. Replaces the merchant's API key; the old key is rejected (`401`) from then on. No body.
+
+Responses: `200` with `{ "id", "name", "apiKey" }` (`apiKey`: 64 hex characters, shown only in this response), `400` id is not an integer, `401` no or invalid admin token, `404` unknown merchant.
+
+## PATCH /merchants/:id
+
+Admin only. Sets the merchant's shop details. Body, every field optional; a missing field is kept, `null` clears it:
+
+| Field      | Rule                                                         |
+| ---------- | ------------------------------------------------------------ |
+| `photoUrl` | `http` or `https` URL with a protocol, up to 2048 characters |
+| `address`  | string, trimmed, 1-255 characters                            |
+
+A merchant is `{ "id", "name", "photoUrl", "address", "createdAt" }`; `photoUrl` and `address` are `null` until set. `GET /merchants` and `GET /merchants/:id` return the same shape.
+
+Responses: `200` with the merchant (an empty body changes nothing), `400` validation (unknown fields included, so `name` cannot be changed), `401` no or invalid admin token, `404` unknown merchant.
+
+## GET /tiers, GET /tiers/:id
+
+Public. `GET /tiers` lists tiers by `min_spend` ascending; `GET /tiers/:id` returns `404` for an unknown id and `400` when the id is not an integer. A tier is `{ "id", "name", "minSpend", "earnRate" }`; `earnRate` is a number.
+
+## POST /tiers
+
+Admin only. Body:
+
+| Field      | Rule                                           |
+| ---------- | ---------------------------------------------- |
+| `name`     | string, trimmed, 1-255 characters, unique      |
+| `minSpend` | integer VND from 0 to 9,999,999,999, unique    |
+| `earnRate` | number from 0.01 to 999.99, at most 2 decimals |
+
+Responses: `201` with the tier, `400` validation (unknown fields included), `401` no or invalid admin token, `409` name or `minSpend` already used. There is no delete.
+
+## PATCH /tiers/:id
+
+Admin only. Body with the same fields and rules as `POST /tiers`, every field optional; a missing field is kept and `null` is not accepted. An empty body changes nothing. A tier may keep its own `name` and `minSpend`.
+
+Responses: `200` with the tier, `400` validation (unknown fields included) or the id is not an integer, `401` no or invalid admin token, `404` unknown tier, `409` name or `minSpend` used by another tier.
+
+## GET /settings, PATCH /settings
+
+Admin only. Settings are `{ "pointValueVnd" }`, VND per point.
+
+`PATCH /settings` body:
+
+| Field           | Rule                      |
+| --------------- | ------------------------- |
+| `pointValueVnd` | integer from 1 to 100,000 |
+
+The change is refused when a sellable voucher (`status` `active`, `valid_until` in the future) would fall under its floor (`faceValue < pointsPrice × pointValueVnd`). A voucher exactly on the floor is kept. Lowering the value never conflicts.
+
+Responses: `200` with the settings, `400` validation (unknown fields included), `401` no or invalid admin token, `409` `"message": "Point value 101 puts 1 voucher under their floor: #7 \"50k off\" (500 points x 101 VND > 50000)"` (up to 5 vouchers named, then `, and N more`). `GET` returns `200` or `401`.
+
+## GET /admin/members
+
+Admin only. Members of every merchant, newest id first. Query, all optional:
+
+| Param        | Rule                                                                                                                                                |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`      | 1-100, default 20                                                                                                                                   |
+| `after`      | cursor: the `nextCursor` of the previous page                                                                                                       |
+| `merchantId` | positive integer, members registered at that merchant                                                                                               |
+| `tierId`     | positive integer, members on that tier                                                                                                              |
+| `q`          | trimmed, up to 100 characters, part of the name or the email (case and accent insensitive; `%` and `_` are plain characters); empty means no filter |
+
+Response `200`: `{ "items": [...], "nextCursor": <id or null> }`. A member is `{ "id", "merchantId", "merchantName", "email", "name", "tier": { "id", "name" }, "balance", "createdAt" }`; `name` may be `null`; `balance` is the sum of the unexpired lots, as in `GET /me`, and may be negative.
+
+Responses: `400` a query value is out of range, `401` no or invalid admin token (a member token is refused too).
+
+## GET /admin/members/:id
+
+Admin only. One member with what `GET /me*` shows that member: the member as above plus `spend12m` and `nextTier` (as in `GET /me`), `lots` (unspent lots, as in `GET /me/lots`), `history` (the latest 50 entries, as in `GET /me/history`) and `redemptions` (the latest 50, as in `GET /me/redemptions`).
+
+Responses: `200`, `400` the id is not an integer, `401` no or invalid admin token, `404` unknown member.
+
+## POST /members
+
+Creates a member on the lowest tier (smallest `min_spend`). Responses: `201`, `400` validation, `401` bad key, `409` email already registered, `503` (`"message": "No tiers configured"`) when the `tiers` table is empty.
+
+## POST /orders
+
+A merchant reports an order for a member. `merchant_id` comes from the API key, never from the body. A new order (and a refund, below) re-evaluates the member's tier (see [rules](../rules.md#tiers)).
+
+| Input             | Notes                                                                            |
+| ----------------- | -------------------------------------------------------------------------------- |
+| `x-api-key`       | header, required                                                                 |
+| `Idempotency-Key` | header, required, 1-255 characters; unique per merchant                          |
+| `memberEmail`     | body, email of an existing member                                                |
+| `amount`          | body, integer VND from 1 to 9999999999; what the member paid (after any voucher) |
+
+A new order awards points to the member in the same transaction (see `docs/rules.md`). The response body is the order; points are not included.
+
+Responses: `201` with the created order (`amount` is a number), `200` with the original order when the same `Idempotency-Key` was already used by this merchant with the same `memberEmail` and `amount` (no second order, no extra points), `400` invalid input (amount not an integer or outside 1 to 9999999999) or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member, `422` the `Idempotency-Key` was already used for another member or `amount` (`"message": "Idempotency-Key was already used with a different request"`). `memberEmail` is compared after it resolves to a member, so emails that match the same member are equal; an unknown member returns `404` before the key is checked.
+
+## POST /orders/:orderId/refunds
+
+The order's merchant refunds part or all of an order and the member loses the matching points (see `docs/rules.md`).
+
+| Input             | Notes                                                   |
+| ----------------- | ------------------------------------------------------- |
+| `x-api-key`       | header, required; the merchant of the order             |
+| `Idempotency-Key` | header, required, 1-255 characters; unique per merchant |
+| `orderId`         | path, integer                                           |
+| `amount`          | body, integer VND from 1 to 9999999999                  |
+
+A refund is `{ "id", "merchantId", "orderId", "idempotencyKey", "amount", "pointsDeducted", "createdAt" }`.
+
+Responses: `201` with the refund, `200` with the original refund when this merchant already used the `Idempotency-Key` for the same order and `amount` (nothing deducted again), `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown order or an order of another merchant, `409` the order is older than 90 days, `422` the refunds of the order would exceed its amount, or the `Idempotency-Key` was already used for another order or `amount`.
+
+## POST /vouchers
+
+Admin only. Creates a voucher on behalf of a merchant. Body:
+
+| Field         | Rule                                                               |
+| ------------- | ------------------------------------------------------------------ |
+| `merchantId`  | integer, an existing merchant                                      |
+| `title`       | string, trimmed, 1-255 characters                                  |
+| `description` | optional string, trimmed, up to 2000 characters                    |
+| `steps`       | optional array of up to 10 strings, each trimmed, 1-200 characters |
+| `faceValue`   | integer VND from 1 to 9007199254740991                             |
+| `pointsPrice` | integer from 1 to 9007199254740991                                 |
+| `stock`       | integer from 0 to 4294967295                                       |
+| `validUntil`  | ISO 8601 date-time in the future, whole seconds                    |
+
+`faceValue` must be at least `pointsPrice × point value` (`program_settings.point_value_vnd`).
+
+A voucher is `{ "id", "merchantId", "title", "description", "steps", "faceValue", "pointsPrice", "stock", "validUntil", "status", "createdAt" }`; `status` is `active`; `description` and `steps` are `null` when not given.
+
+Responses: `201` with the voucher, `400` validation (unknown fields included) or `faceValue` below the floor (`"message": "faceValue 49999 is below the floor 50000 (500 points x 100 VND)"`), `401` no or invalid admin token, `404` unknown merchant.
+
+## PATCH /vouchers/:id
+
+Admin only. Changes what can change after issue; price and face value stay as issued because members hold codes bought at them. Body, every field optional (a missing field is kept, `null` is not accepted, an empty body changes nothing):
+
+| Field        | Rule                                                                     |
+| ------------ | ------------------------------------------------------------------------ |
+| `stock`      | integer from 0 to 4,294,967,295, the stock is set (not added to)         |
+| `validUntil` | ISO 8601 date-time in the future, whole seconds; may be earlier or later |
+| `status`     | only `expired`: retires the voucher for good; repeating it is accepted   |
+
+A redemption holds the voucher's row lock, so a change and a redemption queue up. Stock `0` refuses new redemptions (`409`); a retired voucher leaves the public list and refuses them (`404`). Codes already issued stay valid.
+
+Responses: `200` with the voucher (as in `POST /vouchers`), `400` validation (unknown fields included, so `title`, `pointsPrice` and `faceValue` cannot change) or the id is not an integer, `401` no or invalid admin token, `404` unknown voucher.
+
+## GET /admin/vouchers
+
+Admin only. Vouchers in every state (live, sold out, past `validUntil`, retired), newest id first. Query, all optional:
+
+| Param        | Rule                                                           |
+| ------------ | -------------------------------------------------------------- |
+| `limit`      | 1-100, default 20                                              |
+| `after`      | cursor: the `nextCursor` of the previous page                  |
+| `merchantId` | positive integer, only that merchant's vouchers                |
+| `status`     | `active` or `expired` (the stored status, `expired` = retired) |
+
+Response `200`: `{ "items": [...], "nextCursor": <id or null> }`. An item is a voucher as in `POST /vouchers` plus `merchantName` and `redeemedCount` (codes issued for it, whatever their status). Whether an item is live, sold out or lapsed is read from `status`, `stock` and `validUntil`.
+
+Responses: `400` a query value is out of range, `401` no or invalid admin token (a member token is refused too).
+
+## GET /vouchers, GET /vouchers/:id
+
+Public. Only vouchers with `status` `active` and `validUntil` in the future. Each voucher also carries `merchantName`, `merchantPhotoUrl` and `merchantAddress` of its merchant (`null` when unset).
+
+`GET /vouchers` lists by `id` descending (keyset pagination). Query:
+
+| Field   | Rule                                                  |
+| ------- | ----------------------------------------------------- |
+| `limit` | integer from 1 to 100, default 20                     |
+| `after` | integer from 1; the `nextCursor` of the previous page |
+
+Response: `200` with `{ "items": [<voucher>], "nextCursor": <id | null> }`; `nextCursor` is `null` on the last page. `400` for an invalid or unknown query field.
+
+`GET /vouchers/:id`: `200` with the voucher, `404` (`"message": "Voucher with id 1 not found"`) when unknown, `expired` or past `validUntil`, `400` when the id is not an integer.
+
+## POST /redemptions
+
+A member redeems a voucher for points. Any merchant's API key may call; the redemption belongs to the voucher's merchant.
+
+| Input             | Notes                                                         |
+| ----------------- | ------------------------------------------------------------- |
+| `x-api-key`       | header, required                                              |
+| `Idempotency-Key` | header, required, 1-255 characters; unique per member         |
+| `memberEmail`     | body, email of an existing member                             |
+| `voucherId`       | body, integer from 1; an `active` voucher before `validUntil` |
+
+A redemption is `{ "id", "merchantId", "memberId", "voucherId", "code", "points", "pointValueVnd", "status", "clientKey", "usedAt", "expiresAt", "createdAt" }`; `code` is 10 characters of Crockford base32, `status` is `issued`, `used` or `expired` (`issued` past `expiresAt`), `usedAt` is `null` until used, `expiresAt` is the earlier of 30 days after redemption and the voucher's `validUntil`.
+
+Responses: `201` with the redemption, `200` with the original redemption when this member already used the `Idempotency-Key` for the same voucher, `400` invalid input or missing `Idempotency-Key`, `401` missing or unknown API key, `404` unknown member, or voucher unknown, `expired` or past `validUntil`, `409` not enough points (a negative balance included) or no stock left, `422` the `Idempotency-Key` was already used for another voucher.
+
+## POST /redemptions/:code/confirm
+
+The voucher's merchant marks a code used at the counter. No body. The code is matched case-insensitively.
+
+Responses: `200` with the redemption (`status` `used`, `usedAt` set); `200` with the same redemption and unchanged `usedAt` when it was already used, `401` missing or unknown API key, `404` unknown code or a code of another merchant's voucher, `409` the code is expired.
+
+## GET /reconciliation
+
+What each merchant and the app owe for one calendar month (see `docs/rules.md`). Admin only.
+
+| Input   | Notes                                                                         |
+| ------- | ----------------------------------------------------------------------------- |
+| `month` | query, required, `YYYY-MM` from `2000-01`; the month runs in Asia/Ho_Chi_Minh |
+
+A report is `{ "month", "pointValueVnd", "merchants": [...] }`. Each merchant is `{ "merchantId", "merchantName", "earnedPoints", "earnedVnd", "refundedPoints", "refundedVnd", "redeemedPoints", "redeemedVnd", "breakagePoints", "breakageVnd", "netVnd" }`, ordered by `merchantId`. `netVnd = earnedVnd - refundedVnd - redeemedVnd`: positive means the merchant owes the app, negative means the app owes the merchant. `breakagePoints` and `breakageVnd` are the codes of the voucher merchant that expired unused in the month; they are not part of `netVnd`. A merchant with no points issued, refunded, redeemed or expired in the month is left out.
+
+Responses: `200` with the report (`merchants` is empty for a month without activity), `400` missing or malformed `month`, `401` missing, invalid or non-admin token.

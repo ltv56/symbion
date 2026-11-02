@@ -1,0 +1,414 @@
+# Manual testing
+
+## Admin login
+
+Needs `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` and `JWT_SECRET` in the api environment (see `infra/.env.example`).
+
+```sh
+# create the value for ADMIN_PASSWORD_HASH (the password is read from stdin)
+printf '%s' 'my-password' | pnpm --silent --filter @symbion/api hash-password
+
+# login -> 200 {"accessToken":"<jwt>"}
+TOKEN=$(curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
+  -d '{"email":"admin@example.com","password":"my-password"}' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+
+# error path -> 401 {"message":"Invalid credentials",...}
+curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
+  -d '{"email":"admin@example.com","password":"wrong"}'
+```
+
+## Member login (MySQL)
+
+Needs `DEMO_MODE=true` in the api environment and member `an@x.com` (see Members).
+
+```sh
+# request a code -> 200 {"otp":"<6 digits>"} (without DEMO_MODE: {})
+curl -s -X POST localhost:3000/auth/member/otp -H 'content-type: application/json' -d '{"email":"an@x.com"}'
+
+# login -> 200 {"accessToken":"<jwt>"}
+MTOKEN=$(curl -s -X POST localhost:3000/auth/member/login -H 'content-type: application/json' \
+  -d '{"email":"an@x.com","otp":"<code>"}' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+
+# error path -> 401 {"message":"Invalid or expired code",...} (same code again)
+curl -s -X POST localhost:3000/auth/member/login -H 'content-type: application/json' \
+  -d '{"email":"an@x.com","otp":"<code>"}'
+
+# profile -> 200 {"id":1,"email":"an@x.com","tier":{"id":1,"name":"Bronze"},"balance":250,...}
+curl -s localhost:3000/me -H "Authorization: Bearer $MTOKEN"
+
+# latest 50 point entries -> 200 [{"type":"earn","points":250,"merchantName":"Shop A",...}]
+curl -s localhost:3000/me/history -H "Authorization: Bearer $MTOKEN"
+
+# next page: 2 entries older than id 41 -> 200, at most 2 entries, all with id < 41
+curl -s "localhost:3000/me/history?limit=2&after=41" -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 400 (limit above 100)
+curl -s "localhost:3000/me/history?limit=101" -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 401 (admin token instead of a member token)
+curl -s localhost:3000/me -H "Authorization: Bearer $TOKEN"
+
+# redeem as the member (needs 500 points and voucher $VID, see Redemptions) -> 201; same key again -> 200
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/me/redemptions -H "Authorization: Bearer $MTOKEN" \
+  -H 'Idempotency-Key: m-1' -H 'content-type: application/json' -d "{\"voucherId\":$VID}"
+
+# error path -> 409 (not enough points, new key)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/me/redemptions -H "Authorization: Bearer $MTOKEN" \
+  -H 'Idempotency-Key: m-2' -H 'content-type: application/json' -d "{\"voucherId\":$VID}"
+```
+
+## Merchants (MySQL)
+
+All `/merchants*` calls need the admin token (`$TOKEN`, see Admin login).
+
+```sh
+# create a merchant -> 201 {"id":1,"name":"Shop A","apiKey":"<64 hex chars>"}; the key is shown only once
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Shop A"}'
+
+# list / get never include the key or its hash
+curl -s localhost:3000/merchants -H "Authorization: Bearer $TOKEN"
+curl -s localhost:3000/merchants/1 -H "Authorization: Bearer $TOKEN"
+
+# error path -> 401 (no token)
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -d '{"name":"Shop A"}'
+
+# error path -> 400 (blank name)
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"name":" "}'
+
+# new api key -> 200 {"id":1,"name":"Shop A","apiKey":"<new key>"}; the old key now gets 401
+curl -s -X POST localhost:3000/merchants/1/api-key -H "Authorization: Bearer $TOKEN"
+curl -s -o /dev/null -w '%{http_code}\n' localhost:3000/members -H "x-api-key: $OLD_KEY"
+
+# error path -> 404 (unknown merchant)
+curl -s -X POST localhost:3000/merchants/999999/api-key -H "Authorization: Bearer $TOKEN"
+```
+
+## Tiers (MySQL)
+
+```sh
+# list (public) -> tiers by min_spend ascending
+curl -s localhost:3000/tiers
+
+# create (admin) -> 201 {"id":4,"name":"Platinum","minSpend":10000000,"earnRate":2}
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Platinum","minSpend":10000000,"earnRate":2}'
+
+# error path -> 409 (same name, or same minSpend)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Platinum","minSpend":20000000,"earnRate":2}'
+
+# update (admin) -> 200 with the tier; send only the fields to change
+curl -s -X PATCH localhost:3000/tiers/4 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"earnRate":2.5}'
+
+# error path -> 409 (another tier has this name or minSpend)
+curl -s -X PATCH localhost:3000/tiers/4 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Gold"}'
+
+# error path -> 404
+curl -s -X PATCH localhost:3000/tiers/999999 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"earnRate":2}'
+
+# error path -> 401 (no token)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -d '{"name":"X","minSpend":1,"earnRate":1}'
+
+# error path -> 400 (earnRate has 3 decimals)
+curl -s -X POST localhost:3000/tiers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"X","minSpend":1,"earnRate":1.234}'
+
+# error path -> 404
+curl -s localhost:3000/tiers/999999
+```
+
+## Vouchers (MySQL)
+
+Point value: `GET /settings` or `SELECT point_value_vnd FROM program_settings` (default 100).
+
+```sh
+# read, change (admin) -> 200
+curl -s localhost:3000/settings -H "Authorization: Bearer $TOKEN"
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":120}'
+
+# error path -> 409 (a sellable voucher would fall under its floor; create a 500-point voucher at 50000 first)
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":101}'
+
+# error path -> 400 (not a positive integer)
+curl -s -X PATCH localhost:3000/settings -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"pointValueVnd":0}'
+```
+
+```sh
+# create (admin) -> 201, faceValue at the floor (500 x 100)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":1,"title":"50k off","faceValue":50000,"pointsPrice":500,"stock":100,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# error path -> 400 (faceValue below the floor)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":1,"title":"10k off","faceValue":10000,"pointsPrice":500,"stock":100,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# error path -> 404 (unknown merchant)
+curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"merchantId":999999,"title":"X","faceValue":50000,"pointsPrice":500,"stock":1,"validUntil":"2030-12-31T00:00:00Z"}'
+
+# admin list, every state, with merchantName and redeemedCount (filters: merchantId, status)
+curl -s 'localhost:3000/admin/vouchers?limit=2&status=active' -H "Authorization: Bearer $TOKEN"
+
+# change stock and end date (admin) -> 200 with the voucher
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"stock":25,"validUntil":"2031-01-01T00:00:00Z"}'
+
+# retire for good -> 200; sending {"status":"active"} is a 400
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"status":"expired"}'
+
+# error path -> 400 (price is fixed) / 404 (unknown id)
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"pointsPrice":1}'
+curl -s -X PATCH localhost:3000/vouchers/999999 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"stock":1}'
+
+# list (public), newest id first -> {"items":[...],"nextCursor":<id|null>}
+curl -s 'localhost:3000/vouchers?limit=2'
+
+# next page: pass nextCursor as after
+curl -s 'localhost:3000/vouchers?limit=2&after=<nextCursor>'
+
+# get one -> 200
+curl -s localhost:3000/vouchers/1
+
+# error path -> 400 (limit out of range)
+curl -s 'localhost:3000/vouchers?limit=101'
+
+# error path -> 404 (unknown, expired or past validUntil)
+curl -s localhost:3000/vouchers/999999
+```
+
+## Members (MySQL)
+
+Requires applied migrations (see Migrations), one merchant and one tier. Start the API with `pnpm start` (`PORT`, default 3000). New members get the tier with the smallest `min_spend`.
+
+```sh
+# create a member -> 201; the same email again -> 409
+# (KEY is the apiKey returned once by POST /merchants; merchant_id comes from it)
+curl -s -X POST localhost:3000/members -H 'content-type: application/json' -H "x-api-key: $KEY" \
+  -d '{"name":"An","email":"an@x.com"}'
+
+# error path -> 401 (missing or unknown x-api-key)
+curl -s -X POST localhost:3000/members -H 'content-type: application/json' \
+  -d '{"name":"An","email":"an@x.com"}'
+
+# list the merchant's members
+curl -s localhost:3000/members -H "x-api-key: $KEY"
+
+# get one member
+curl -s localhost:3000/members/1 -H "x-api-key: $KEY"
+
+# error path -> 404 {"message":"Member with id 99 not found",...} (also for another merchant's member)
+curl -s localhost:3000/members/99 -H "x-api-key: $KEY"
+
+# error path -> 401 (missing x-api-key)
+curl -s localhost:3000/members
+
+# error path -> 400 (id is not an integer)
+curl -s localhost:3000/members/abc -H "x-api-key: $KEY"
+
+# error path -> 400 (name and email are required)
+curl -s -X POST localhost:3000/members -H 'content-type: application/json' -H "x-api-key: $KEY" -d '{}'
+
+# admin list across merchants (filters: merchantId, tierId, q for name or email), with balance
+curl -s 'localhost:3000/admin/members?limit=5&q=an' -H "Authorization: Bearer $TOKEN"
+
+# admin detail: profile, lots, latest history and redemptions -> 200; unknown id -> 404
+curl -s localhost:3000/admin/members/1 -H "Authorization: Bearer $TOKEN"
+```
+
+## Orders (MySQL)
+
+Requires a merchant (`$KEY`) and a member `an@x.com` (see Members).
+
+```sh
+# create an order -> 201
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":250000}'
+
+# same key again -> 200 with the same order id, no second row
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":250000}'
+
+# same key, different amount -> 422
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: order-1' -d '{"memberEmail":"an@x.com","amount":5}'
+
+# error path -> 400 (missing Idempotency-Key)
+curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
+  -d '{"memberEmail":"an@x.com","amount":5000}'
+
+# error path -> 404 (unknown member)
+curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
+  -H 'Idempotency-Key: order-2' -d '{"memberEmail":"ghost@x.com","amount":5000}'
+```
+
+Tier upgrade (needs `pnpm db:seed`; new member `$EMAIL` on Bronze). Two orders of 600,000 cross Silver (1,000,000): the second still earns 60 points, a third earns 75.
+
+```sh
+for k in t-1 t-2 t-3; do
+  curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
+    -H "Idempotency-Key: $k" -d "{\"memberEmail\":\"$EMAIL\",\"amount\":600000}"
+done
+# tier -> Silver
+curl -s localhost:3000/members -H "x-api-key: $KEY"
+```
+
+## Redemptions (MySQL)
+
+Requires `$KEY`, member `an@x.com` with at least 500 points (e.g. two orders of 2,500,000) and an active voucher `$VID` with `pointsPrice` 500 (see Vouchers).
+
+```sh
+# redeem -> 201 {"code":"<10 chars>","points":500,"status":"issued",...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-1' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+
+# same key again -> 200 with the same id and code, no second spend
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-1' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+
+# error path -> 409 (not enough points, after spending them with new keys)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: r-2' -d "{\"memberEmail\":\"an@x.com\",\"voucherId\":$VID}"
+```
+
+Confirm a code (`$CODE` from the redeem response). `$VKEY` is the key of the voucher's merchant, `$KEY` a different merchant.
+
+```sh
+# confirm -> 200 {"status":"used","usedAt":"<time>",...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $VKEY"
+
+# again -> 200 with the same usedAt
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $VKEY"
+
+# error path -> 404 (another merchant's key)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $KEY"
+```
+
+Expired code: move `expires_at` of a new, unused `$CODE` into the past.
+
+```sh
+docker compose -f infra/compose.yaml exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" symbion' \
+  <<< "UPDATE redemptions SET expires_at = NOW() - INTERVAL 1 MINUTE WHERE code = '$CODE'"
+
+# error path -> 409 {"message":"Redemption code <code> has expired",...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/redemptions/$CODE/confirm -H "x-api-key: $VKEY"
+```
+
+## Favorites (MySQL)
+
+Requires `$MTOKEN` (see Member login) and an active voucher `$VID` (see Vouchers).
+
+```sh
+# add -> 204; again -> 204, still one row
+curl -s -w ' [%{http_code}]\n' -X PUT localhost:3000/me/favorites/$VID -H "Authorization: Bearer $MTOKEN"
+curl -s -w ' [%{http_code}]\n' -X PUT localhost:3000/me/favorites/$VID -H "Authorization: Bearer $MTOKEN"
+
+# list -> 200 [{"voucherId":<VID>,"createdAt":"<time>"}]
+curl -s localhost:3000/me/favorites -H "Authorization: Bearer $MTOKEN"
+
+# remove -> 204; again -> 204; list -> []
+curl -s -w ' [%{http_code}]\n' -X DELETE localhost:3000/me/favorites/$VID -H "Authorization: Bearer $MTOKEN"
+curl -s -w ' [%{http_code}]\n' -X DELETE localhost:3000/me/favorites/$VID -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 404 {"message":"Voucher with id 999999 not found",...}
+curl -s -w ' [%{http_code}]\n' -X PUT localhost:3000/me/favorites/999999 -H "Authorization: Bearer $MTOKEN"
+
+# error path -> 401 (admin token instead of a member token)
+curl -s -w ' [%{http_code}]\n' -X PUT localhost:3000/me/favorites/$VID -H "Authorization: Bearer $TOKEN"
+```
+
+## Refunds (MySQL)
+
+Requires `$KEY` and member `an@x.com` (see Members).
+
+```sh
+# order of 250,000 -> 25 points; keep its id
+OID=$(curl -s -X POST localhost:3000/orders -H 'content-type: application/json' -H "x-api-key: $KEY" \
+  -H 'Idempotency-Key: refund-order-1' -d '{"memberEmail":"an@x.com","amount":250000}' | sed 's/.*"id":\([0-9]*\).*/\1/')
+
+# refund 35,000 -> 201 {"pointsDeducted":4,...}
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/$OID/refunds -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-1' -d '{"amount":35000}'
+
+# error path -> 404 (unknown order)
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/999999/refunds -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-2' -d '{"amount":1}'
+
+# error path -> 409 (order older than 90 days)
+docker compose -f infra/compose.yaml exec mysql sh -c "mysql -u\"\$MYSQL_USER\" -p\"\$MYSQL_PASSWORD\" \"\$MYSQL_DATABASE\" \
+  -e 'UPDATE orders SET created_at = NOW() - INTERVAL 91 DAY WHERE id = $OID'"
+curl -s -w ' [%{http_code}]\n' -X POST localhost:3000/orders/$OID/refunds -H 'content-type: application/json' \
+  -H "x-api-key: $KEY" -H 'Idempotency-Key: refund-3' -d '{"amount":1}'
+```
+
+## Reconciliation (MySQL)
+
+Requires `$TOKEN` (see Admin login) and the data from Orders, Redemptions and Refunds. The month is in Asia/Ho_Chi_Minh.
+
+```sh
+# this month -> 200 {"month":"...","pointValueVnd":100,"merchants":[{"merchantId":...,"netVnd":...}]}
+MONTH=$(date -u -d '+7 hours' +%Y-%m)
+curl -s -w ' [%{http_code}]\n' "localhost:3000/reconciliation?month=$MONTH" -H "Authorization: Bearer $TOKEN"
+
+# breakage: make an issued code expire (mysql client, see Migrations), then read this month -> the voucher merchant has breakagePoints > 0
+#   UPDATE redemptions SET expires_at = NOW() - INTERVAL 1 MINUTE WHERE status = 'issued' LIMIT 1;
+
+# a month without activity -> 200 {"month":"2020-01","pointValueVnd":100,"merchants":[]}
+curl -s -w ' [%{http_code}]\n' 'localhost:3000/reconciliation?month=2020-01' -H "Authorization: Bearer $TOKEN"
+
+# error path -> 400 (malformed month)
+curl -s -w ' [%{http_code}]\n' 'localhost:3000/reconciliation?month=2026-13' -H "Authorization: Bearer $TOKEN"
+
+# error path -> 401 (no token)
+curl -s -w ' [%{http_code}]\n' "localhost:3000/reconciliation?month=$MONTH"
+```
+
+## Health and logs
+
+```sh
+# 200 {"status":"ok"}; 503 {"message":"Database unavailable",...} when MySQL is down (`pnpm db:down`)
+curl -s -i localhost:3000/health
+
+# JSON logs: one object per line, every line of a request has its requestId (DB_* exported, see Migrations)
+cd apps/api && NODE_ENV=production PORT=3000 node dist/main
+```
+
+E2E tests (`pnpm check`) delete all rows in `vouchers`, `ledger_lots`, `orders`, `members`, `tiers` and `merchants`. Use a throwaway database only.
+
+Ledger MySQL tests require applied migrations (`pnpm db:migrate`). Run only these: `pnpm --filter @symbion/api test ledger-mysql`.
+
+## Demo reset (MySQL)
+
+Needs `$TOKEN` (see Admin login). The job runs every 20 seconds here.
+
+```sh
+# start the api with the job on (DEMO_MODE=true is required)
+DEMO_RESET=true DEMO_MODE=true DEMO_API_KEY=demo-key-demo-key-1234 DEMO_RESET_CRON='*/20 * * * * *' pnpm dev
+
+# create a merchant, wait for the next tick: it is gone, "Demo Shop" and "Demo Cafe" are back
+curl -s -X POST localhost:3000/merchants -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"name":"Visitor Shop"}'
+curl -s localhost:3000/merchants -H "Authorization: Bearer $TOKEN"
+
+# error path: the api exits at start (DEMO_MODE is not true)
+DEMO_RESET=true DEMO_MODE=false DEMO_API_KEY=demo-key-demo-key-1234 pnpm dev
+```
+
+## Migrations
+
+```sh
+pnpm db:up
+
+pnpm db:migrate          # build, then apply pending migrations
+pnpm db:migrate:revert   # undo the last migration
+pnpm db:seed             # build, then upsert the default tiers (Bronze, Silver, Gold); safe to re-run
+DEMO_API_KEY=demo-key-demo-key-1234 pnpm seed:demo   # tiers, merchants "Demo Shop" (key from DEMO_API_KEY, 16+ chars) and "Demo Cafe" (key DEMO_API_KEY + "-cafe"), 3 members, 3 vouchers, 9 events in the previous month; safe to re-run
+NODE_ENV=production DEMO_API_KEY=... pnpm seed:demo  # refused: add --allow-production to the script arguments to run it
+
+docker compose -f infra/compose.yaml exec mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW CREATE TABLE members\G"'
+```
