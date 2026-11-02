@@ -74,7 +74,7 @@ docker run --rm -e DOMAIN=example.com -v /etc/letsencrypt:/etc/letsencrypt:ro --
 DEMO_API_KEY=<16+ characters> pnpm seed:demo
 ```
 
-Creates the tiers, the merchant "Demo Shop" with that API key, three members, a second merchant "Demo Cafe" (API key `<DEMO_API_KEY>-cafe`), three vouchers (with description and steps) and nine events dated in the previous month (Asia/Ho_Chi_Minh): five orders, three redemptions (two confirmed), one refund. Both merchants get an address and no photo; set one with `PATCH /merchants/:id`. The month report of `GET /reconciliation` has numbers right after the seed. Safe to run twice; the events are keyed by month, so a run in a later month adds that month's events. With `NODE_ENV=production` the script refuses to run unless `--allow-production` is passed.
+Creates the tiers, the merchant "Demo Shop" with that API key, three members, a second merchant "Demo Cafe" (API key `<DEMO_API_KEY>-cafe`), three vouchers (with description and steps, in Vietnamese) and nine events dated in the previous month (Asia/Ho_Chi_Minh): five orders, three redemptions (two confirmed), one refund. Both merchants get a Vietnamese address and no photo; set one with `PATCH /merchants/:id`. The month report of `GET /reconciliation` has numbers right after the seed. Safe to run twice; the events are keyed by month, so a run in a later month adds that month's events. With `NODE_ENV=production` the script refuses to run unless `--allow-production` is passed.
 
 ### Nightly reset
 

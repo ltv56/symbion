@@ -103,7 +103,7 @@ describe('Demo reset job', () => {
         'member3@demo.example',
       );
       const [voucher] = await ds.query(
-        `SELECT id FROM vouchers WHERE title = '20,000 VND off'`,
+        `SELECT id FROM vouchers WHERE title = 'Giảm 20.000đ'`,
       );
       await request(server)
         .post('/me/redemptions')
