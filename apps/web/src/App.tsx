@@ -1,11 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router';
+import { AdminApp } from '@/features/admin/AdminApp';
 import { LoginPage } from '@/features/login/LoginPage';
 import { Dashboard } from '@/features/member/dashboard/Dashboard';
 import { MemberLayout } from '@/features/member/MemberLayout';
 import { PersonalPage } from '@/features/member/personal/PersonalPage';
 import { useToken } from '@/lib/auth';
 
-export function App() {
+function MemberApp() {
   const token = useToken();
   if (!token) return <LoginPage />;
   return (
@@ -15,6 +16,15 @@ export function App() {
         <Route path="me" element={<PersonalPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
+    </Routes>
+  );
+}
+
+export function App() {
+  return (
+    <Routes>
+      <Route path="admin/*" element={<AdminApp />} />
+      <Route path="*" element={<MemberApp />} />
     </Routes>
   );
 }
