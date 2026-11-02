@@ -536,6 +536,27 @@
         "toNext": "{{amount}} more for {{tier}}",
         "topTier": "At the top tier",
         "joined": "Joined"
+      },
+      "fold": {
+        "more": "Show all {{count}}",
+        "less": "Show less"
+      },
+      "lots": {
+        "title": "Spendable points",
+        "empty": "No points left.",
+        "until": "Expires {{date}}",
+        "noExpiry": "Does not expire"
+      },
+      "codes": {
+        "title": "Redeemed codes",
+        "empty": "No voucher redeemed yet.",
+        "issued": "Unused",
+        "used": "Used",
+        "expired": "Expired"
+      },
+      "history": {
+        "title": "Recent point history",
+        "empty": "No point movement yet."
       }
     }
   }

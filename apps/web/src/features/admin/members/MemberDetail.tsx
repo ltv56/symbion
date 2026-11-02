@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { TierSeal } from '@/features/member/tier/TierSeal';
 import { formatDate, formatVnd } from '@/lib/format';
 import { Fact } from '../Fact';
+import { MemberSections } from './MemberSections';
 import { formatBalance } from './MemberRow';
 import { useAdminMember, type AdminMember } from './useAdminMembers';
 
@@ -83,6 +84,7 @@ export function MemberDetail({
           {formatDate(member.createdAt, locale)}
         </Fact>
       </dl>
+      {detail.data && <MemberSections member={detail.data} />}
       {detail.isPending && (
         <div role="status" className="mt-4 space-y-3">
           <span className="sr-only">{t('member.loading')}</span>

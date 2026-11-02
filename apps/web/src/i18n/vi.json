@@ -512,6 +512,27 @@
         "toNext": "Còn {{amount}} để lên {{tier}}",
         "topTier": "Đã ở hạng cao nhất",
         "joined": "Ngày tham gia"
+      },
+      "fold": {
+        "more": "Xem tất cả {{count}}",
+        "less": "Thu gọn"
+      },
+      "lots": {
+        "title": "Điểm còn dùng được",
+        "empty": "Không còn điểm nào.",
+        "until": "Hết hạn {{date}}",
+        "noExpiry": "Không hết hạn"
+      },
+      "codes": {
+        "title": "Mã đã đổi",
+        "empty": "Chưa đổi voucher nào.",
+        "issued": "Chưa dùng",
+        "used": "Đã dùng",
+        "expired": "Hết hạn"
+      },
+      "history": {
+        "title": "Lịch sử điểm gần đây",
+        "empty": "Chưa có biến động điểm."
       }
     }
   }
