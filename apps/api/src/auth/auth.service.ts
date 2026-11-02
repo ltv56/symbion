@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { verifyPassword } from './password-hash';
+import { isPasswordHash, verifyPassword } from './password-hash';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +14,11 @@ export class AuthService {
   ) {
     this.adminEmail = config.getOrThrow<string>('ADMIN_EMAIL').toLowerCase();
     this.adminPasswordHash = config.getOrThrow<string>('ADMIN_PASSWORD_HASH');
+    if (!isPasswordHash(this.adminPasswordHash)) {
+      throw new Error(
+        'ADMIN_PASSWORD_HASH is not a scrypt$<salt>$<hash> value; quote it in infra/.env, Compose expands $',
+      );
+    }
   }
 
   async login(
