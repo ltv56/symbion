@@ -16,22 +16,10 @@ import { useMerchants } from '../merchants/useMerchants';
 import { useSettings } from '../programme/useProgramme';
 import { Select } from '../Select';
 import { Textarea } from '../Textarea';
+import { MAX_STOCK, positiveNumber, wholeNumber } from './fields';
 import { useCreateVoucher, type VoucherInput } from './useVouchers';
 
 const V = 'admin.vouchers.create.validation';
-const MAX_STOCK = 4_294_967_295;
-
-const whole = (max: number, error: string) =>
-  z
-    .string()
-    .trim()
-    .regex(/^\d{1,16}$/, { error })
-    .refine((value) => Number(value) <= max, { error });
-
-const positive = (error: string) =>
-  whole(Number.MAX_SAFE_INTEGER, error).refine((value) => Number(value) >= 1, {
-    error,
-  });
 
 function stepLines(text: string): string[] {
   return text
@@ -40,7 +28,7 @@ function stepLines(text: string): string[] {
     .filter(Boolean);
 }
 
-// Messages are i18n keys; numbers are typed as text and parsed on submit
+// Messages are i18n keys
 function makeSchema(pointValue: number | undefined) {
   return z
     .object({
@@ -61,9 +49,9 @@ function makeSchema(pointValue: number | undefined) {
         },
         { error: `${V}.steps` },
       ),
-      faceValue: positive(`${V}.faceValue`),
-      pointsPrice: positive(`${V}.pointsPrice`),
-      stock: whole(MAX_STOCK, `${V}.stock`),
+      faceValue: positiveNumber(`${V}.faceValue`),
+      pointsPrice: positiveNumber(`${V}.pointsPrice`),
+      stock: wholeNumber(MAX_STOCK, `${V}.stock`),
       validUntil: z.string().refine((v) => new Date(v).getTime() > Date.now(), {
         error: `${V}.validUntil`,
       }),

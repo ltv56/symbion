@@ -447,7 +447,9 @@
         "validUntil": "On sale until",
         "created": "Created",
         "description": "Description",
-        "steps": "How to use"
+        "steps": "How to use",
+        "edit": "Edit stock and date",
+        "retire": "Retire"
       },
       "add": "Add voucher",
       "create": {
@@ -478,6 +480,28 @@
           "validUntil": "Choose a time in the future.",
           "floor": "The face value must cover what the merchant is paid: at least points price × point value."
         }
+      },
+      "edit": {
+        "title": "Edit {{title}}",
+        "description": "The price and the face value stay as issued: members redeemed at that price.",
+        "stock": "Stock left",
+        "stockHint": "Set to 0 to stop issuing codes while the voucher stays listed.",
+        "validUntil": "On sale until",
+        "save": "Save",
+        "saving": "Saving…",
+        "validation": {
+          "stock": "Enter a whole number from 0 to 4,294,967,295.",
+          "validUntil": "Choose a time in the future."
+        }
+      },
+      "retire": {
+        "title": "Retire {{title}}?",
+        "description": "A retired voucher is never offered again.",
+        "effectList": "The voucher leaves the member list and no new code is issued.",
+        "effectCodes": "Codes already issued stay valid until their own expiry.",
+        "effectFinal": "This cannot be undone.",
+        "confirm": "Retire",
+        "working": "Retiring…"
       }
     }
   }

@@ -425,7 +425,9 @@
         "validUntil": "Bán đến",
         "created": "Ngày tạo",
         "description": "Mô tả",
-        "steps": "Cách dùng"
+        "steps": "Cách dùng",
+        "edit": "Sửa số lượng và hạn",
+        "retire": "Ngừng bán"
       },
       "add": "Thêm voucher",
       "create": {
@@ -456,6 +458,28 @@
           "validUntil": "Chọn một thời điểm trong tương lai.",
           "floor": "Giá trị voucher phải đủ trả cho cửa hàng: ít nhất giá đổi × giá trị điểm."
         }
+      },
+      "edit": {
+        "title": "Sửa {{title}}",
+        "description": "Giá đổi và giá trị voucher giữ nguyên vì thành viên đã đổi theo giá đó.",
+        "stock": "Số lượng còn lại",
+        "stockHint": "Đặt về 0 để ngừng phát mã mới mà vẫn giữ voucher trong danh sách.",
+        "validUntil": "Bán đến",
+        "save": "Lưu",
+        "saving": "Đang lưu…",
+        "validation": {
+          "stock": "Nhập số nguyên từ 0 đến 4.294.967.295.",
+          "validUntil": "Chọn một thời điểm trong tương lai."
+        }
+      },
+      "retire": {
+        "title": "Ngừng bán {{title}}?",
+        "description": "Voucher ngừng bán không bao giờ được bán lại.",
+        "effectList": "Voucher rời danh sách của thành viên và không phát thêm mã mới.",
+        "effectCodes": "Mã đã phát vẫn dùng được đến hạn mã.",
+        "effectFinal": "Không hoàn tác được.",
+        "confirm": "Ngừng bán",
+        "working": "Đang xử lý…"
       }
     }
   }

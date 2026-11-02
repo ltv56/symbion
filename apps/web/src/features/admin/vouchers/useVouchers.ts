@@ -72,3 +72,22 @@ export function useCreateVoucher() {
     onSuccess: () => client.invalidateQueries({ queryKey: KEY }),
   });
 }
+
+export interface VoucherChange {
+  stock?: number;
+  validUntil?: string;
+  status?: 'expired';
+}
+
+export function useUpdateVoucher(id: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: VoucherChange) =>
+      api<{ id: number }>(`/vouchers/${id}`, {
+        method: 'PATCH',
+        body,
+        as: 'admin',
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: KEY }),
+  });
+}

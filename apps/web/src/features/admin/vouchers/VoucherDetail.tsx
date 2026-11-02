@@ -1,7 +1,9 @@
-import type { Ref } from 'react';
+import { Ban, Pencil } from 'lucide-react';
+import { useRef, type Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MerchantAvatar } from '@/components/MerchantAvatar';
 import { RubberStamp } from '@/components/RubberStamp';
+import { Button } from '@/components/ui/button';
 import {
   formatDate,
   formatDateTime,
@@ -10,6 +12,10 @@ import {
 } from '@/lib/format';
 import { Fact } from '../Fact';
 import { useSettings } from '../programme/useProgramme';
+import { OUTLINE } from '../styles';
+import { useDialog } from '../useDialog';
+import { EditVoucherDialog } from './EditVoucherDialog';
+import { RetireDialog } from './RetireDialog';
 import type { AdminVoucher } from './useVouchers';
 import { voucherState } from './voucherState';
 
@@ -27,6 +33,10 @@ export function VoucherDetail({
   const settings = useSettings();
   const state = voucherState(voucher, now);
   const locale = i18n.language;
+  const edit = useDialog();
+  const retire = useDialog();
+  const editButton = useRef<HTMLButtonElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
 
   return (
     <section
@@ -39,8 +49,10 @@ export function VoucherDetail({
         <MerchantAvatar id={voucher.merchantId} name={voucher.merchantName} />
         <div className="min-w-0 flex-1">
           <h2
+            ref={heading}
             id="voucher-heading"
-            className="text-xl font-semibold wrap-anywhere"
+            tabIndex={-1}
+            className="text-xl font-semibold outline-none wrap-anywhere"
           >
             {voucher.title}
           </h2>
@@ -92,6 +104,23 @@ export function VoucherDetail({
           {t('admin.vouchers.detail.payoutNote')}
         </p>
       )}
+      {state !== 'retired' && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            ref={editButton}
+            variant="outline"
+            className={OUTLINE}
+            onClick={edit.show}
+          >
+            <Pencil />
+            {t('admin.vouchers.detail.edit')}
+          </Button>
+          <Button variant="outline" className={OUTLINE} onClick={retire.show}>
+            <Ban />
+            {t('admin.vouchers.detail.retire')}
+          </Button>
+        </div>
+      )}
       {voucher.description && (
         <section className="mt-6" aria-labelledby="voucher-detail-description">
           <h3 id="voucher-detail-description" className="font-semibold">
@@ -116,6 +145,20 @@ export function VoucherDetail({
           </ol>
         </section>
       )}
+      <EditVoucherDialog
+        key={`edit-${voucher.id}-${edit.session}`}
+        voucher={voucher}
+        open={edit.open}
+        onClose={edit.close}
+        onCloseFocus={() => editButton.current?.focus()}
+      />
+      <RetireDialog
+        key={`retire-${voucher.id}-${retire.session}`}
+        voucher={voucher}
+        open={retire.open}
+        onClose={retire.close}
+        onCloseFocus={() => heading.current?.focus()}
+      />
     </section>
   );
 }
