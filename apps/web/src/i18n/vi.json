@@ -160,5 +160,12 @@
   },
   "errors": {
     "generic": "Có lỗi xảy ra. Thử lại sau."
+  },
+  "partners": {
+    "title": "Cửa hàng đối tác",
+    "intro_other": "Điểm dùng chung tại {{count}} cửa hàng.",
+    "empty": "Chưa có cửa hàng đối tác nào.",
+    "showAll": "Xem tất cả {{n}} cửa hàng",
+    "showLess": "Thu gọn"
   }
 }
