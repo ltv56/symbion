@@ -244,7 +244,8 @@
     "nav": {
       "label": "Các mục quản trị",
       "console": "Quản trị",
-      "statement": "Quyết toán"
+      "statement": "Quyết toán",
+      "merchants": "Cửa hàng"
     },
     "statement": {
       "title": "Quyết toán tháng",
@@ -276,6 +277,63 @@
         "appPays": "App trả cửa hàng {{amount}}",
         "even": "Cửa hàng và app không nợ nhau trong tháng này",
         "breakage_other": "Mã hết hạn chưa dùng: {{points}} điểm ({{amount}}), không tính vào ròng."
+      }
+    },
+    "merchants": {
+      "title": "Cửa hàng",
+      "count_other": "{{count}} cửa hàng đối tác",
+      "add": "Thêm cửa hàng",
+      "list": "Danh sách cửa hàng",
+      "empty": "Chưa có cửa hàng nào.",
+      "noAddress": "Chưa có địa chỉ",
+      "cancel": "Hủy",
+      "detail": {
+        "id": "Mã",
+        "created": "Ngày tạo",
+        "address": "Địa chỉ",
+        "photo": "Ảnh",
+        "none": "Chưa có",
+        "edit": "Sửa thông tin",
+        "apiKey": "Khóa API",
+        "apiKeyText": "Hệ thống chỉ lưu bản băm của khóa, nên không xem lại được. Khóa chỉ hiện một lần khi tạo hoặc đổi.",
+        "rotate": "Đổi khóa API",
+        "photoAlt": "Ảnh cửa hàng {{name}}"
+      },
+      "create": {
+        "title": "Thêm cửa hàng",
+        "description": "Hệ thống tạo khóa API cho cửa hàng. Khóa chỉ hiện một lần.",
+        "name": "Tên cửa hàng",
+        "submit": "Thêm",
+        "submitting": "Đang thêm…",
+        "validation": {
+          "name": "Nhập tên cửa hàng, tối đa 255 ký tự."
+        }
+      },
+      "edit": {
+        "title": "Sửa thông tin {{name}}",
+        "description": "Ảnh và địa chỉ hiện cho thành viên ở trang voucher.",
+        "photo": "Đường dẫn ảnh",
+        "photoHint": "Bắt đầu bằng http:// hoặc https://. Để trống để xóa ảnh.",
+        "address": "Địa chỉ",
+        "save": "Lưu",
+        "saving": "Đang lưu…",
+        "validation": {
+          "photo": "Nhập một đường dẫn http hoặc https hợp lệ, tối đa 2048 ký tự.",
+          "address": "Địa chỉ tối đa 255 ký tự."
+        }
+      },
+      "rotate": {
+        "title": "Đổi khóa API?",
+        "description": "Khóa hiện tại của {{name}} ngừng hoạt động ngay. Cửa hàng phải dùng khóa mới để gửi đơn và xác nhận mã.",
+        "confirm": "Đổi khóa",
+        "working": "Đang đổi…"
+      },
+      "key": {
+        "title": "Khóa API của {{name}}",
+        "description": "Sao chép khóa ngay. Đóng hộp thoại là không xem lại được.",
+        "copy": "Sao chép khóa API",
+        "copied": "Đã sao chép khóa API",
+        "done": "Đã lưu khóa, đóng"
       }
     }
   }
