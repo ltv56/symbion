@@ -152,6 +152,21 @@ curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "
 curl -s -X POST localhost:3000/vouchers -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"merchantId":999999,"title":"X","faceValue":50000,"pointsPrice":500,"stock":1,"validUntil":"2030-12-31T00:00:00Z"}'
 
+# admin list, every state, with merchantName and redeemedCount (filters: merchantId, status)
+curl -s 'localhost:3000/admin/vouchers?limit=2&status=active' -H "Authorization: Bearer $TOKEN"
+
+# change stock and end date (admin) -> 200 with the voucher
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"stock":25,"validUntil":"2031-01-01T00:00:00Z"}'
+
+# retire for good -> 200; sending {"status":"active"} is a 400
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"status":"expired"}'
+
+# error path -> 400 (price is fixed) / 404 (unknown id)
+curl -s -X PATCH localhost:3000/vouchers/1 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"pointsPrice":1}'
+curl -s -X PATCH localhost:3000/vouchers/999999 -H 'content-type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"stock":1}'
+
 # list (public), newest id first -> {"items":[...],"nextCursor":<id|null>}
 curl -s 'localhost:3000/vouchers?limit=2'
 

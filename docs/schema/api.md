@@ -223,6 +223,35 @@ A voucher is `{ "id", "merchantId", "title", "description", "steps", "faceValue"
 
 Responses: `201` with the voucher, `400` validation (unknown fields included) or `faceValue` below the floor (`"message": "faceValue 49999 is below the floor 50000 (500 points x 100 VND)"`), `401` no or invalid admin token, `404` unknown merchant.
 
+## PATCH /vouchers/:id
+
+Admin only. Changes what can change after issue; price and face value stay as issued because members hold codes bought at them. Body, every field optional (a missing field is kept, `null` is not accepted, an empty body changes nothing):
+
+| Field        | Rule                                                                     |
+| ------------ | ------------------------------------------------------------------------ |
+| `stock`      | integer from 0 to 4,294,967,295, the stock is set (not added to)         |
+| `validUntil` | ISO 8601 date-time in the future, whole seconds; may be earlier or later |
+| `status`     | only `expired`: retires the voucher for good; repeating it is accepted   |
+
+A redemption holds the voucher's row lock, so a change and a redemption queue up. Stock `0` refuses new redemptions (`409`); a retired voucher leaves the public list and refuses them (`404`). Codes already issued stay valid.
+
+Responses: `200` with the voucher (as in `POST /vouchers`), `400` validation (unknown fields included, so `title`, `pointsPrice` and `faceValue` cannot change) or the id is not an integer, `401` no or invalid admin token, `404` unknown voucher.
+
+## GET /admin/vouchers
+
+Admin only. Vouchers in every state (live, sold out, past `validUntil`, retired), newest id first. Query, all optional:
+
+| Param        | Rule                                                           |
+| ------------ | -------------------------------------------------------------- |
+| `limit`      | 1-100, default 20                                              |
+| `after`      | cursor: the `nextCursor` of the previous page                  |
+| `merchantId` | positive integer, only that merchant's vouchers                |
+| `status`     | `active` or `expired` (the stored status, `expired` = retired) |
+
+Response `200`: `{ "items": [...], "nextCursor": <id or null> }`. An item is a voucher as in `POST /vouchers` plus `merchantName` and `redeemedCount` (codes issued for it, whatever their status). Whether an item is live, sold out or lapsed is read from `status`, `stock` and `validUntil`.
+
+Responses: `400` a query value is out of range, `401` no or invalid admin token (a member token is refused too).
+
 ## GET /vouchers, GET /vouchers/:id
 
 Public. Only vouchers with `status` `active` and `validUntil` in the future. Each voucher also carries `merchantName`, `merchantPhotoUrl` and `merchantAddress` of its merchant (`null` when unset).
