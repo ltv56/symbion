@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { AccountMenu } from './AccountMenu';
 import { BalanceHeadline } from './balance/BalanceHeadline';
 import { ExpiryTimeline } from './expiry/ExpiryTimeline';
+import { HistoryPanel } from './history/HistoryPanel';
+import { PartnerList } from './partners/PartnerList';
 import { TierProgress } from './tier/TierProgress';
 import { useMe } from './useMe';
 import { VoucherList } from './vouchers/VoucherList';
@@ -73,8 +75,10 @@ export function MemberPage() {
             )}
           </div>
           {me.data && (
-            <div className="max-w-2xl xl:pt-10">
+            <div className="max-w-2xl space-y-6 xl:pt-10">
               <ExpiryTimeline />
+              <HistoryPanel />
+              <PartnerList />
             </div>
           )}
         </div>

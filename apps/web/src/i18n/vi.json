@@ -160,5 +160,28 @@
   },
   "errors": {
     "generic": "Có lỗi xảy ra. Thử lại sau."
+  },
+  "partners": {
+    "title": "Cửa hàng đối tác",
+    "intro_other": "Điểm dùng chung tại {{count}} cửa hàng.",
+    "empty": "Chưa có cửa hàng đối tác nào.",
+    "showAll": "Xem tất cả {{n}} cửa hàng",
+    "showLess": "Thu gọn"
+  },
+  "history": {
+    "title": "Lịch sử điểm",
+    "empty": "Chưa có giao dịch.",
+    "limit": "Hiện {{count}} giao dịch gần nhất.",
+    "showAll": "Xem tất cả {{n}} giao dịch",
+    "showLess": "Thu gọn",
+    "earned": "Cộng {{n}} điểm",
+    "spent": "Trừ {{n}} điểm",
+    "kind": {
+      "earn": "Điểm cộng",
+      "spend": "Điểm đã dùng",
+      "earn_order": "Tích điểm từ đơn hàng",
+      "spend_redemption": "Đổi voucher",
+      "spend_refund": "Trừ do hoàn đơn"
+    }
   }
 }
