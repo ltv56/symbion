@@ -2,15 +2,10 @@ import { createHash } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import dataSource from './data-source';
 import { seedTiers } from './seed';
+import { DEMO_MEMBERS, MERCHANTS, VOUCHERS } from './seed-demo-data';
 import { historyDataSource, seedDemoHistory } from './seed-demo-history';
 
 const MIN_KEY_LENGTH = 16;
-const DEMO_MERCHANT = 'Demo Shop';
-const DEMO_MEMBERS = [
-  { name: 'Demo Member One', email: 'member1@demo.example' },
-  { name: 'Demo Member Two', email: 'member2@demo.example' },
-  { name: 'Demo Member Three', email: 'member3@demo.example' },
-];
 
 export function checkDemoApiKey(key: string | undefined): string {
   if (!key || key.length < MIN_KEY_LENGTH) {
@@ -39,7 +34,7 @@ export async function seedDemo(ds: DataSource, apiKey: string): Promise<void> {
   await ds.query(
     `INSERT INTO merchants (name, api_key_hash) VALUES (?, ?)
      ON DUPLICATE KEY UPDATE name = VALUES(name)`,
-    [DEMO_MERCHANT, apiKeyHash],
+    [MERCHANTS[0]!.name, apiKeyHash],
   );
   const [merchant] = await ds.query(
     'SELECT id FROM merchants WHERE api_key_hash = ?',
@@ -65,11 +60,11 @@ async function main(): Promise<void> {
   try {
     await history.initialize();
     await seedDemo(dataSource, apiKey);
+    console.log(`Seeded ${DEMO_MEMBERS.length} members`);
+    const { steps } = await seedDemoHistory(history, apiKey, new Date());
     console.log(
-      `Seeded merchant "${DEMO_MERCHANT}" and ${DEMO_MEMBERS.length} members`,
+      `Seeded ${MERCHANTS.length} merchants, ${VOUCHERS.length} vouchers and ${steps} events`,
     );
-    const { month, steps } = await seedDemoHistory(history, apiKey, new Date());
-    console.log(`Seeded ${steps} events for ${month}`);
   } finally {
     if (history.isInitialized) {
       await history.destroy();
