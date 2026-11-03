@@ -69,7 +69,7 @@
     "changeEmail": "Dùng email khác",
     "demo": {
       "open": "Dùng tài khoản demo",
-      "hint": "Bấm một dòng để điền email. Mã đăng nhập hiện ngay trên trang. Không gửi email: email ngoài danh sách này sẽ không nhận được mã.",
+      "hint": "Bấm một dòng để điền email. Mã đăng nhập hiện ngay trên trang.",
       "points": "điểm"
     },
     "validation": {

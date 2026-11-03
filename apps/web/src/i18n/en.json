@@ -74,7 +74,7 @@
     "changeEmail": "Use another email",
     "demo": {
       "open": "Use a demo account",
-      "hint": "Tap a row to fill in the email. The sign-in code appears on the page. No email is sent: an email outside this list gets no code.",
+      "hint": "Tap a row to fill in the email. The sign-in code appears on the page.",
       "points": "points"
     },
     "validation": {
