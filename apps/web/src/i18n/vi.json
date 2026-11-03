@@ -67,6 +67,11 @@
     "wrongCode": "Mã không đúng hoặc đã hết hạn.",
     "resend": "Gửi mã mới",
     "changeEmail": "Dùng email khác",
+    "demo": {
+      "open": "Dùng tài khoản demo",
+      "hint": "Bấm một dòng để điền email. Mã đăng nhập hiện ngay trên trang. Không gửi email: email ngoài danh sách này sẽ không nhận được mã.",
+      "points": "điểm"
+    },
     "validation": {
       "email": "Nhập email hợp lệ.",
       "code": "Nhập đủ 6 số."
