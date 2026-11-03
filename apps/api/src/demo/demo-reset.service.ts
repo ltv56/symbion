@@ -19,6 +19,7 @@ export const WIPED_TABLES = [
   'orders',
   'ledger_lots',
   'member_otps',
+  'member_signups',
   'members',
   'tiers',
   'merchants',
