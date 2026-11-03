@@ -60,7 +60,7 @@ Member login with a one-time code.
 
 `POST /auth/member/otp`, body `email`: creates a 6 digit code valid for 5 minutes and replaces any earlier code, and emails it when SMTP is configured. An email that is not a member gets a sign-up code instead (the pending sign-up is named after the part before `@`), so one form signs in and signs up. Responses: `200` with `{}`, or `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`; `400` invalid email; `429` when a sign-up code for this email was requested in the last 30 seconds.
 
-`POST /auth/member/login`, body `email`, `otp` (string of 6 digits): for an email that is not a member the code confirms the sign-up and creates the member (see below). Responses: `200` with `{ "accessToken": "<jwt>" }`, payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
+`POST /auth/member/login`, body `email`, `otp` (string of 6 digits): for an email that is not a member the code confirms the sign-up and creates the member (see below). Responses: `200` with `{ "accessToken": "<jwt>" }` (plus `"newMember": true` when the code created the member), payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
 
 Admin endpoints reject a member token (`401`).
 
@@ -75,6 +75,10 @@ Self sign-up of a member with an emailed code.
 ## GET /demo/members
 
 Public, only with `DEMO_MODE=true`; otherwise `404`. The first 20 members by id: `[{ "email", "name", "tierName", "balance" }]`. `balance` is the sum of the unexpired lots and can be negative.
+
+## PATCH /me
+
+Member token. Body `name` (1-255 characters, trimmed): sets the display name and responds `200` with the profile of `GET /me`. `400` validation.
 
 ## GET /me, GET /me/lots, GET /me/history, GET /me/redemptions, GET /me/partners
 

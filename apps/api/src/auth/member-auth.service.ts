@@ -104,12 +104,13 @@ export class MemberAuthService {
     return this.demoMode ? { otp } : {};
   }
 
+  // `newMember` tells the form to ask for a display name
   async confirmSignup(
     email: string,
     otp: string,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<{ accessToken: string; newMember?: true }> {
     // Return instead of throw inside the tx: a throw rolls back the attempt count.
-    const memberId = await this.dataSource.transaction(async (tx) => {
+    const created = await this.dataSource.transaction(async (tx) => {
       const [row]: {
         name: string;
         code_hash: string;
@@ -141,18 +142,22 @@ export class MemberAuthService {
       return null;
     });
 
-    if (memberId === null) {
+    if (created === null) {
       throw new UnauthorizedException('Invalid or expired code');
     }
     return {
       accessToken: await this.jwt.signAsync({
-        sub: String(memberId),
+        sub: String(created.id),
         role: 'member',
       }),
+      ...(created.isNew ? { newMember: true as const } : {}),
     };
   }
 
-  async login(email: string, otp: string): Promise<{ accessToken: string }> {
+  async login(
+    email: string,
+    otp: string,
+  ): Promise<{ accessToken: string; newMember?: true }> {
     const [existing]: { id: number }[] = await this.dataSource.query(
       'SELECT id FROM members WHERE email = ?',
       [email],
@@ -242,7 +247,7 @@ export class MemberAuthService {
     tx: EntityManager,
     email: string,
     name: string,
-  ): Promise<number> {
+  ): Promise<{ id: number; isNew: boolean }> {
     const [tier]: { id: number }[] = await tx.query(
       'SELECT id FROM tiers ORDER BY min_spend ASC LIMIT 1',
     );
@@ -255,7 +260,7 @@ export class MemberAuthService {
         'INSERT INTO members (merchant_id, tier_id, email, name) VALUES (?, ?, ?, ?)',
         [merchantId, Number(tier.id), email, name],
       );
-      return Number(result.insertId);
+      return { id: Number(result.insertId), isNew: true };
     } catch (error) {
       if (!isDuplicateEntry(error)) {
         throw error;
@@ -267,7 +272,7 @@ export class MemberAuthService {
       if (!existing) {
         throw error;
       }
-      return Number(existing.id);
+      return { id: Number(existing.id), isNew: false };
     }
   }
 
