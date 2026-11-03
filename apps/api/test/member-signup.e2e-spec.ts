@@ -213,39 +213,84 @@ describe('Member sign-up', () => {
       request(app.getHttpServer())
         .post('/auth/member/otp')
         .send({ email: who });
-    const login = (otp: string, who = email) =>
+    const login = (otp: string, name?: string, who = email) =>
       request(app.getHttpServer())
         .post('/auth/member/login')
-        .send({ email: who, otp });
+        .send({ email: who, otp, ...(name === undefined ? {} : { name }) });
 
-    it('a new email gets a code, and the right code creates the member named after the address', async () => {
+    it('a new email gets a code, and the right code alone creates nobody and asks for a name', async () => {
       const first = await requestOtp().expect(200);
 
       expect(first.body.otp).toMatch(/^\d{6}$/);
       expect(sent).toHaveLength(1);
-      expect(await members()).toEqual([]);
 
       const res = await login(first.body.otp).expect(200);
 
-      expect(await members()).toEqual([
-        { email, name: 'new', tier: 'Bronze', merchant: 'Symbion' },
-      ]);
-      expect(res.body.accessToken).toEqual(expect.any(String));
-      expect(res.body.newMember).toBe(true);
+      expect(res.body).toEqual({ needName: true });
+      expect(await members()).toEqual([]);
+      expect(await signups()).toHaveLength(1);
     });
 
-    it('a member gets the sign-in code again and the same member signs in', async () => {
+    it('the same code with a name creates the member under that name and signs them in', async () => {
+      const first = await requestOtp().expect(200);
+      await login(first.body.otp).expect(200);
+
+      const res = await login(first.body.otp, '  Minh Anh  ').expect(200);
+
+      expect(res.body.accessToken).toEqual(expect.any(String));
+      expect(res.body.needName).toBeUndefined();
+      expect(await members()).toEqual([
+        { email, name: 'Minh Anh', tier: 'Bronze', merchant: 'Symbion' },
+      ]);
+      expect(await signups()).toEqual([]);
+      await login(first.body.otp, 'Again').expect(401);
+    });
+
+    it('a wrong code with a name creates nobody', async () => {
+      const first = await requestOtp().expect(200);
+      const wrong = first.body.otp === '000000' ? '111111' : '000000';
+
+      await login(wrong, 'Minh Anh').expect(401);
+
+      expect(await members()).toEqual([]);
+    });
+
+    it('asking for the name leaves the code time to type it', async () => {
+      const first = await requestOtp().expect(200);
+      await dataSource.query(
+        `UPDATE member_signups SET expires_at = NOW() + INTERVAL 1 MINUTE`,
+      );
+
+      await login(first.body.otp).expect(200);
+
+      const [row] = await dataSource.query(
+        `SELECT TIMESTAMPDIFF(MINUTE, NOW(), expires_at) AS minutes FROM member_signups`,
+      );
+      expect(Number(row.minutes)).toBeGreaterThanOrEqual(8);
+    });
+
+    it('a member signs in with the code alone, and a name changes nothing', async () => {
       const created = await requestOtp().expect(200);
-      await login(created.body.otp).expect(200);
+      await login(created.body.otp, 'Minh Anh').expect(200);
       sent = [];
 
       const again = await requestOtp().expect(200);
-      const res = await login(again.body.otp).expect(200);
+      const res = await login(again.body.otp, 'Someone Else').expect(200);
 
-      expect(res.body.newMember).toBeUndefined();
+      expect(res.body.accessToken).toEqual(expect.any(String));
       expect(sent).toHaveLength(1);
-      expect(await members()).toHaveLength(1);
-      expect(await signups()).toEqual([]);
+      expect(await members()).toEqual([
+        { email, name: 'Minh Anh', tier: 'Bronze', merchant: 'Symbion' },
+      ]);
+    });
+
+    it.each([
+      ['an empty name', '   '],
+      ['a name over 255 characters', 'n'.repeat(256)],
+    ])('rejects %s with 400', async (_label, name) => {
+      const first = await requestOtp().expect(200);
+
+      await login(first.body.otp, name).expect(400);
     });
 
     it('asks for a new code of a new email again only after 30 seconds', async () => {
@@ -255,54 +300,18 @@ describe('Member sign-up', () => {
 
       expect(sent).toHaveLength(1);
     });
-  });
 
-  describe('display name', () => {
-    const rename = (token: string, body: object) =>
-      request(app.getHttpServer())
-        .patch('/me')
-        .set('Authorization', `Bearer ${token}`)
-        .send(body);
+    it('asking again for a pending sign-up sends a new code', async () => {
+      await requestOtp().expect(200);
+      await dataSource.query(
+        `UPDATE member_signups SET created_at = NOW() - INTERVAL 1 MINUTE`,
+      );
+      sent = [];
 
-    const newToken = async (): Promise<string> => {
-      const first = await request(app.getHttpServer())
-        .post('/auth/member/otp')
-        .send({ email })
-        .expect(200);
-      const res = await request(app.getHttpServer())
-        .post('/auth/member/login')
-        .send({ email, otp: first.body.otp })
-        .expect(200);
-      return res.body.accessToken;
-    };
+      const again = await requestOtp().expect(200);
 
-    it('a new member sets the name they want to be called', async () => {
-      const token = await newToken();
-
-      const res = await rename(token, { name: '  Minh Anh  ' }).expect(200);
-
-      expect(res.body.name).toBe('Minh Anh');
-      expect(await members()).toEqual([
-        { email, name: 'Minh Anh', tier: 'Bronze', merchant: 'Symbion' },
-      ]);
-    });
-
-    it.each([
-      ['no name', {}],
-      ['an empty name', { name: '   ' }],
-      ['a name over 255 characters', { name: 'n'.repeat(256) }],
-      ['a name that is not a string', { name: 7 }],
-    ])('rejects %s with 400', async (_label, body) => {
-      const token = await newToken();
-
-      await rename(token, body).expect(400);
-    });
-
-    it('needs a member token', async () => {
-      await request(app.getHttpServer())
-        .patch('/me')
-        .send({ name: 'X' })
-        .expect(401);
+      expect(sent).toHaveLength(1);
+      await login(again.body.otp, 'Minh Anh').expect(200);
     });
   });
 

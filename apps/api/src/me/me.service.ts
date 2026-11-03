@@ -60,14 +60,6 @@ export class MeService {
     private readonly ledger: Ledger<EntityManager>,
   ) {}
 
-  async rename(memberId: number, name: string): Promise<Profile> {
-    await this.dataSource.query('UPDATE members SET name = ? WHERE id = ?', [
-      name,
-      memberId,
-    ]);
-    return this.profile(memberId);
-  }
-
   async profile(memberId: number): Promise<Profile> {
     const [member]: {
       email: string;

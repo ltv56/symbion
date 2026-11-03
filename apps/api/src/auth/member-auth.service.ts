@@ -21,6 +21,8 @@ import { MailService } from '../mail/mail.service';
 const OTP_LIFETIME_MS = 5 * 60_000;
 const MAX_ATTEMPTS = 5;
 const SIGNUP_COOLDOWN_SECONDS = 30;
+// The right code of a new email keeps working this long while the name is typed
+const NAME_STEP_MS = 10 * 60_000;
 const SYSTEM_MERCHANT_NAME = 'Symbion';
 
 @Injectable()
@@ -104,11 +106,22 @@ export class MemberAuthService {
     return this.demoMode ? { otp } : {};
   }
 
-  // `newMember` tells the form to ask for a display name
+  // With `askName` the right code alone only answers `needName`: nobody is created until the
+  // same code comes back with a name. The code stays valid for that second call.
   async confirmSignup(
     email: string,
     otp: string,
-  ): Promise<{ accessToken: string; newMember?: true }> {
+  ): Promise<{ accessToken: string }>;
+  async confirmSignup(
+    email: string,
+    otp: string,
+    options: { name?: string; askName: true },
+  ): Promise<{ accessToken: string } | { needName: true }>;
+  async confirmSignup(
+    email: string,
+    otp: string,
+    options: { name?: string; askName?: boolean } = {},
+  ): Promise<{ accessToken: string } | { needName: true }> {
     // Return instead of throw inside the tx: a throw rolls back the attempt count.
     const created = await this.dataSource.transaction(async (tx) => {
       const [row]: {
@@ -128,8 +141,15 @@ export class MemberAuthService {
         return null;
       }
       if (this.matches(row.code_hash, this.hash(`signup:${email}`, otp))) {
+        if (options.askName && options.name === undefined) {
+          await tx.query(
+            'UPDATE member_signups SET expires_at = GREATEST(expires_at, ?) WHERE email = ?',
+            [new Date(Date.now() + NAME_STEP_MS), email],
+          );
+          return 'needName' as const;
+        }
         await tx.query('DELETE FROM member_signups WHERE email = ?', [email]);
-        return this.createMember(tx, email, row.name);
+        return this.createMember(tx, email, options.name ?? row.name);
       }
       if (row.attempts + 1 >= MAX_ATTEMPTS) {
         await tx.query('DELETE FROM member_signups WHERE email = ?', [email]);
@@ -145,25 +165,29 @@ export class MemberAuthService {
     if (created === null) {
       throw new UnauthorizedException('Invalid or expired code');
     }
+    if (created === 'needName') {
+      return { needName: true };
+    }
     return {
       accessToken: await this.jwt.signAsync({
-        sub: String(created.id),
+        sub: String(created),
         role: 'member',
       }),
-      ...(created.isNew ? { newMember: true as const } : {}),
     };
   }
 
+  // `name` only matters for a new email: it creates the member under that name
   async login(
     email: string,
     otp: string,
-  ): Promise<{ accessToken: string; newMember?: true }> {
+    name?: string,
+  ): Promise<{ accessToken: string } | { needName: true }> {
     const [existing]: { id: number }[] = await this.dataSource.query(
       'SELECT id FROM members WHERE email = ?',
       [email],
     );
     if (!existing) {
-      return this.confirmSignup(email, otp);
+      return this.confirmSignup(email, otp, { name, askName: true });
     }
     // Return instead of throw inside the tx: a throw rolls back the attempt count.
     const memberId = await this.dataSource.transaction(async (tx) => {
@@ -247,7 +271,7 @@ export class MemberAuthService {
     tx: EntityManager,
     email: string,
     name: string,
-  ): Promise<{ id: number; isNew: boolean }> {
+  ): Promise<number> {
     const [tier]: { id: number }[] = await tx.query(
       'SELECT id FROM tiers ORDER BY min_spend ASC LIMIT 1',
     );
@@ -260,7 +284,7 @@ export class MemberAuthService {
         'INSERT INTO members (merchant_id, tier_id, email, name) VALUES (?, ?, ?, ?)',
         [merchantId, Number(tier.id), email, name],
       );
-      return { id: Number(result.insertId), isNew: true };
+      return Number(result.insertId);
     } catch (error) {
       if (!isDuplicateEntry(error)) {
         throw error;
@@ -272,7 +296,7 @@ export class MemberAuthService {
       if (!existing) {
         throw error;
       }
-      return { id: Number(existing.id), isNew: false };
+      return Number(existing.id);
     }
   }
 
