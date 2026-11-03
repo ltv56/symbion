@@ -16,11 +16,9 @@ export class MemberAuthController {
   @HttpCode(200)
   @ApiOkResponse({
     description:
-      'Code sent if the email is registered, `{ newAccount: true }` if not; `otp` only in demo mode',
+      'Code sent if the email is registered; `otp` only in demo mode',
   })
-  requestOtp(
-    @Body() body: RequestOtpDto,
-  ): Promise<{ otp?: string; newAccount?: true }> {
+  requestOtp(@Body() body: RequestOtpDto): Promise<{ otp?: string }> {
     return this.memberAuth.requestOtp(body.email);
   }
 

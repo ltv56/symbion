@@ -160,10 +160,11 @@ describe('Member auth', () => {
     await login({ email, otp: second }).expect(200);
   });
 
-  it('a code for an email with no sign-up is refused and creates no member', async () => {
-    await requestOtp({ email: 'nobody@example.com' }).expect(200);
+  it('a wrong code for a new email is refused and creates no member', async () => {
+    const res = await requestOtp({ email: 'nobody@example.com' }).expect(200);
+    const wrong = res.body.otp === '000000' ? '111111' : '000000';
 
-    await login({ email: 'nobody@example.com', otp: '123456' }).expect(401);
+    await login({ email: 'nobody@example.com', otp: wrong }).expect(401);
 
     const rows = await dataSource.query(
       `SELECT id FROM members WHERE email = 'nobody@example.com'`,
