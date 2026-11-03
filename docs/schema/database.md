@@ -53,6 +53,21 @@ At most one live code per member; a new request replaces the row, a successful l
 | `expires_at` | TIMESTAMP               | 5 minutes after the request                                 |
 | `created_at` | TIMESTAMP               | time of the latest request                                  |
 
+## member_signups
+
+A sign-up waits here until its code is confirmed; no `members` row exists before. A new request for the same email replaces the row; confirmation or a fifth wrong code deletes it.
+
+| Column       | Type            | Notes                                                                  |
+| ------------ | --------------- | ---------------------------------------------------------------------- |
+| `email`      | VARCHAR(255) PK | the address being registered                                           |
+| `name`       | VARCHAR(255)    | name of the new member                                                 |
+| `code_hash`  | CHAR(64)        | HMAC-SHA256 of `signup:<email>:<code>` keyed with `JWT_SECRET`         |
+| `attempts`   | INT UNSIGNED    | wrong codes so far; the row is deleted at 5                            |
+| `expires_at` | TIMESTAMP(3)    | 5 minutes after the request                                            |
+| `created_at` | TIMESTAMP       | time of the latest request; a new request within 30 seconds is refused |
+
+Confirmed sign-ups create the member under the merchant named `Symbion` (one row, created on the first sign-up, no API key is known for it).
+
 ## orders
 
 | Column            | Type                | Notes                                 |

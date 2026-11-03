@@ -26,7 +26,7 @@ pnpm --filter @symbion/web dev         # web on http://localhost:5173
 `apps/web`: React, Vite, Tailwind, shadcn/ui, TanStack Query, react-hook-form with zod, react-i18next.
 
 - The dev server proxies `/api/*` to `http://localhost:3000/*` (`vite.config.ts`); `API_PROXY_TARGET` sets another target. The API must be running. Production serves the build behind nginx under the same `/api/` prefix, so the API needs no CORS.
-- Member sign-in needs an existing member and `DEMO_MODE=true` on the API: the code comes back in the response and is shown on the page. No email is sent.
+- Member sign-in needs an existing member and `DEMO_MODE=true` on the API: the code comes back in the response and is shown on the page. Email is sent only when `SMTP_HOST` is set (see `docs/deploy.md`).
 - Admin console at `/admin`: sign-in with `ADMIN_EMAIL` and the password behind `ADMIN_PASSWORD_HASH`. Signed out, every `/admin/*` address shows the sign-in.
 - Admin pages: `/admin` (monthly statement, CSV download), `/admin/merchants`, `/admin/programme` (point value, tiers), `/admin/vouchers`, `/admin/members`, `/admin/counter` (calls the merchant API with a merchant key).
 - `localStorage` keys: `token` (member access token), `adminToken` (admin access token), `lang` (`vi` default, or `en`), `theme` (`light` or `dark`; the system setting when unset).
