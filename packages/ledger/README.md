@@ -33,11 +33,12 @@ await ledger.balance(tx, '42', new Date()); // 70
 
 ## API
 
-| Method                       | Returns                                           |
-| ---------------------------- | ------------------------------------------------- |
-| `earn(tx, input)`            | `{ lot, duplicate }`                              |
-| `spend(tx, input)`           | `{ consumed: { lotId, points }[], debt }`         |
-| `balance(tx, memberId, now)` | sum of `remaining` of the lots not expired at now |
+| Method                          | Returns                                           |
+| ------------------------------- | ------------------------------------------------- |
+| `earn(tx, input)`               | `{ lot, duplicate }`                              |
+| `spend(tx, input)`              | `{ consumed: { lotId, points }[], debt }`         |
+| `expire(tx, { memberId, now })` | `{ expired: { lotId, points }[] }`                |
+| `balance(tx, memberId, now)`    | sum of `remaining` of the lots not expired at now |
 
 ## Rules
 
@@ -48,6 +49,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 - **FIFO:** `spend` takes from the lot that expires first, then lots without expiry, ties by lower id.
 - **Negative balance:** `spend` does not throw when points are short. It writes an entry whose `remaining` is minus the shortfall (a debt lot), so the balance can go below 0. `debt` is the shortfall of that call.
 - **Type and ref:** every lot has `type` (`earn` or `spend`), set by the ledger from the operation. `ref` (`{ type, id }` or `null`) is the caller's source of the lot, stored as given; `earn` and `spend` take one.
+- **Expire:** `expire` writes, for each `earn` lot expired at `now` with `remaining` > 0, an entry of type `expire` (`points` = minus what was left, `remaining` 0, `ref` `{ type: 'lot', id }`, key `expire:<lot id>`) and sets the lot's `remaining` to 0. The balance does not change. A rerun finds nothing; a duplicate key skips the lot.
 - **Debt:** `earn` pays the oldest debt lots first, so the new lot has `remaining = points - paid`. A member never has a debt lot next to a spendable lot. An `earn` that is already expired at `now` is stored but pays no debt.
 
 ## Storage
@@ -55,7 +57,7 @@ await ledger.balance(tx, '42', new Date()); // 70
 `LedgerStorage<Tx>`: every method takes the caller's `tx` first.
 
 - `lockMember(tx, memberId)`: `earn` and `spend` call it first. After it returns, no other earn or spend of that member runs until the transaction ends.
-- `findSpendableLots`, `findDebtLots`, `findLotByKey`: in a real database these must be locking reads.
+- `findSpendableLots`, `findDebtLots`, `findExpiredLots`, `findLotByKey`: in a real database these must be locking reads.
 - Lot `points`, `remaining` and ids should be `BIGINT`; reading a value outside the safe integer range should throw. `expiresAt` keeps milliseconds.
 
 Adapters:

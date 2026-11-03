@@ -27,6 +27,7 @@ How points are earned and used. Each section covers what is implemented.
 - One lot per order (ledger key `order:<order id>`). Repeating the `Idempotency-Key` awards nothing. Reusing it with a different member or amount is rejected (`422`).
 - An order that earns 0 points creates no lot.
 - Points expire 12 months after the order.
+- A nightly job (02:00 Asia/Ho_Chi_Minh, `POINT_EXPIRY_CRON`) writes an `expire` entry for what is left of each expired lot and sets that lot's `remaining` to 0. The balance does not change (it already ignores expired lots). Point history does not list `expire` entries.
 
 Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 

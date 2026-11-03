@@ -25,6 +25,7 @@ Single host, Docker Compose with `nginx`, `api` and `mysql`. Nginx terminates TL
 | `DEMO_RESET`           | api     | optional, `true` resets the demo data every night (see Demo data)               |
 | `DEMO_API_KEY`         | api     | at least 16 characters; required when `DEMO_RESET=true`                         |
 | `TIER_DOWNGRADE_CRON`  | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 3 * * *`                         |
+| `POINT_EXPIRY_CRON`    | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 2 * * *`                         |
 | `DEMO_RESET_CRON`      | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 4 * * *`                         |
 
 ## First deploy
