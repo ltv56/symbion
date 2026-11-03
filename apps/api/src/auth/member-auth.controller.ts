@@ -24,10 +24,15 @@ export class MemberAuthController {
 
   @Post('login')
   @HttpCode(200)
-  @ApiOkResponse({ description: '`{ accessToken }` with role member' })
+  @ApiOkResponse({
+    description:
+      '`{ accessToken }` with role member; `{ needName: true }` for a new email whose code is right and has no name yet',
+  })
   @ApiUnauthorizedResponse({ description: 'Wrong, used or expired code' })
-  login(@Body() body: MemberLoginDto): Promise<{ accessToken: string }> {
-    return this.memberAuth.login(body.email, body.otp);
+  login(
+    @Body() body: MemberLoginDto,
+  ): Promise<{ accessToken: string } | { needName: true }> {
+    return this.memberAuth.login(body.email, body.otp, body.name);
   }
 
   @Post('signup')

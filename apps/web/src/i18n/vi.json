@@ -69,8 +69,18 @@
     "changeEmail": "Dùng email khác",
     "demo": {
       "open": "Dùng tài khoản demo",
-      "hint": "Bấm một dòng để điền email. Mã đăng nhập hiện ngay trên trang. Không gửi email: email ngoài danh sách này sẽ không nhận được mã.",
+      "hint": "Bấm một dòng để điền email. Mã đăng nhập hiện ngay trên trang.",
       "points": "điểm"
+    },
+    "name": {
+      "title": "Bạn muốn được gọi là gì?",
+      "hint": "Tên này hiện trên trang của bạn.",
+      "label": "Tên hiển thị",
+      "next": "Tiếp tục",
+      "saving": "Đang lưu…",
+      "skip": "Bỏ qua",
+      "required": "Nhập một tên.",
+      "failed": "Không tạo được tài khoản. Thử lại hoặc bỏ qua."
     },
     "validation": {
       "email": "Nhập email hợp lệ.",

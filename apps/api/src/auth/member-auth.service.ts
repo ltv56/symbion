@@ -21,6 +21,8 @@ import { MailService } from '../mail/mail.service';
 const OTP_LIFETIME_MS = 5 * 60_000;
 const MAX_ATTEMPTS = 5;
 const SIGNUP_COOLDOWN_SECONDS = 30;
+// The right code of a new email keeps working this long while the name is typed
+const NAME_STEP_MS = 10 * 60_000;
 const SYSTEM_MERCHANT_NAME = 'Symbion';
 
 @Injectable()
@@ -39,14 +41,16 @@ export class MemberAuthService {
     this.demoMode = config.get<string>('DEMO_MODE') === 'true';
   }
 
-  // Same answer for an unknown email. The code is emailed, and returned in the response only in demo mode.
+  // One form signs in and signs up: a new email gets a sign-up code instead, and the right code creates the member.
+  // Both answer the same, so the form does not reveal who is registered.
+  // The code is emailed, and returned in the response only in demo mode.
   async requestOtp(email: string): Promise<{ otp?: string }> {
     const [member]: { id: number }[] = await this.dataSource.query(
       'SELECT id FROM members WHERE email = ?',
       [email],
     );
     if (!member) {
-      return {};
+      return this.signup(email, email.split('@')[0] ?? email);
     }
 
     const memberId = Number(member.id);
@@ -102,12 +106,24 @@ export class MemberAuthService {
     return this.demoMode ? { otp } : {};
   }
 
+  // With `askName` the right code alone only answers `needName`: nobody is created until the
+  // same code comes back with a name. The code stays valid for that second call.
   async confirmSignup(
     email: string,
     otp: string,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<{ accessToken: string }>;
+  async confirmSignup(
+    email: string,
+    otp: string,
+    options: { name?: string; askName: true },
+  ): Promise<{ accessToken: string } | { needName: true }>;
+  async confirmSignup(
+    email: string,
+    otp: string,
+    options: { name?: string; askName?: boolean } = {},
+  ): Promise<{ accessToken: string } | { needName: true }> {
     // Return instead of throw inside the tx: a throw rolls back the attempt count.
-    const memberId = await this.dataSource.transaction(async (tx) => {
+    const created = await this.dataSource.transaction(async (tx) => {
       const [row]: {
         name: string;
         code_hash: string;
@@ -125,8 +141,15 @@ export class MemberAuthService {
         return null;
       }
       if (this.matches(row.code_hash, this.hash(`signup:${email}`, otp))) {
+        if (options.askName && options.name === undefined) {
+          await tx.query(
+            'UPDATE member_signups SET expires_at = GREATEST(expires_at, ?) WHERE email = ?',
+            [new Date(Date.now() + NAME_STEP_MS), email],
+          );
+          return 'needName' as const;
+        }
         await tx.query('DELETE FROM member_signups WHERE email = ?', [email]);
-        return this.createMember(tx, email, row.name);
+        return this.createMember(tx, email, options.name ?? row.name);
       }
       if (row.attempts + 1 >= MAX_ATTEMPTS) {
         await tx.query('DELETE FROM member_signups WHERE email = ?', [email]);
@@ -139,18 +162,33 @@ export class MemberAuthService {
       return null;
     });
 
-    if (memberId === null) {
+    if (created === null) {
       throw new UnauthorizedException('Invalid or expired code');
+    }
+    if (created === 'needName') {
+      return { needName: true };
     }
     return {
       accessToken: await this.jwt.signAsync({
-        sub: String(memberId),
+        sub: String(created),
         role: 'member',
       }),
     };
   }
 
-  async login(email: string, otp: string): Promise<{ accessToken: string }> {
+  // `name` only matters for a new email: it creates the member under that name
+  async login(
+    email: string,
+    otp: string,
+    name?: string,
+  ): Promise<{ accessToken: string } | { needName: true }> {
+    const [existing]: { id: number }[] = await this.dataSource.query(
+      'SELECT id FROM members WHERE email = ?',
+      [email],
+    );
+    if (!existing) {
+      return this.confirmSignup(email, otp, { name, askName: true });
+    }
     // Return instead of throw inside the tx: a throw rolls back the attempt count.
     const memberId = await this.dataSource.transaction(async (tx) => {
       const [row]: {
