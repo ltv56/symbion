@@ -2,6 +2,8 @@ import type { LedgerStorage } from './storage';
 import type {
   EarnInput,
   EarnResult,
+  ExpireInput,
+  ExpireResult,
   Lot,
   SpendInput,
   SpendResult,
@@ -135,6 +137,43 @@ export class Ledger<Tx> {
     }
 
     return { consumed, debt: shortfall };
+  }
+
+  // The balance already ignores expired lots, so this changes no balance: it records the loss.
+  // The key `expire:<lotId>` makes a rerun harmless.
+  async expire(tx: Tx, input: ExpireInput): Promise<ExpireResult> {
+    await this.storage.lockMember(tx, input.memberId);
+
+    const lots = await this.storage.findExpiredLots(
+      tx,
+      input.memberId,
+      input.now,
+    );
+
+    const expired: ExpireResult['expired'] = [];
+    for (const lot of lots) {
+      try {
+        await this.storage.insertLot(tx, {
+          merchantId: lot.merchantId,
+          memberId: lot.memberId,
+          points: -lot.remaining,
+          remaining: 0,
+          expiresAt: null,
+          idempotencyKey: `expire:${lot.id}`,
+          type: 'expire',
+          ref: { type: 'lot', id: lot.id },
+        });
+      } catch (error) {
+        if (error instanceof DuplicateKeyError) {
+          continue;
+        }
+        throw error;
+      }
+      await this.storage.setRemaining(tx, lot.id, 0);
+      expired.push({ lotId: lot.id, points: lot.remaining });
+    }
+
+    return { expired };
   }
 
   balance(tx: Tx, memberId: string, now: Date): Promise<number> {

@@ -83,6 +83,19 @@ export class InMemoryLedgerStorage<Tx> implements LedgerStorage<Tx> {
       .map((lot) => this.copy(lot));
   }
 
+  async findExpiredLots(
+    _tx: Tx,
+    memberId: Lot['memberId'],
+    now: Date,
+  ): Promise<Lot[]> {
+    return [...this.lots.values()]
+      .filter((lot) => lot.memberId === memberId)
+      .filter((lot) => lot.type === 'earn' && lot.remaining > 0)
+      .filter((lot) => lot.expiresAt !== null && lot.expiresAt <= now)
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .map((lot) => this.copy(lot));
+  }
+
   // Lots are keyed by idempotency key, so look the lot up by id.
   async setRemaining(_tx: Tx, lotId: string, remaining: number): Promise<void> {
     const lot = [...this.lots.values()].find((lot) => lot.id === lotId);
