@@ -60,7 +60,7 @@ docs/       programme rules, development, deploy, testing, API and database refe
 - One api instance: the scheduled jobs (tier downgrade, demo reset) run inside the api process with no lock across instances.
 - Changing the point value changes the VND of closed months for the issued and refunded reconciliation lines.
 - The reconciliation report is computed on request; a month is not closed or stored.
-- Members are created by a merchant through the API or sign up themselves on the sign-in form: a new email gets a code, the right code creates the member, and the form asks for a display name. Codes are emailed only when `SMTP_HOST` is set; otherwise the code is returned in the response with `DEMO_MODE=true`.
+- Members are created by a merchant through the API or sign up themselves on the sign-in form: a new email gets a code, then the form asks for a display name and creates the member. Codes are emailed only when `SMTP_HOST` is set; otherwise the code is returned in the response with `DEMO_MODE=true`.
 - Merchants authenticate with an API key only; there is no merchant login or portal.
 - No webhook intake or dead-letter handling.
 - No automated backups; the data lives in the `mysql-data` Docker volume.

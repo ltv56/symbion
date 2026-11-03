@@ -7,7 +7,6 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
-  Patch,
   Post,
   Put,
   Query,
@@ -30,7 +29,6 @@ import { RedeemVoucherDto } from '../redemptions/dto/create-redemption.dto';
 import { Redemption } from '../redemptions/redemption.entity';
 import { RedemptionsService } from '../redemptions/redemptions.service';
 import { HistoryQuery } from './dto/history.query';
-import { RenameDto } from './dto/rename.dto';
 import { Favorite, FavoritesService } from './favorites.service';
 import {
   HistoryEntry,
@@ -57,15 +55,6 @@ export class MeController {
   })
   profile(@CurrentMemberId() memberId: number): Promise<Profile> {
     return this.me.profile(memberId);
-  }
-
-  @Patch()
-  @ApiOkResponse({ description: 'The profile with the new display name' })
-  rename(
-    @CurrentMemberId() memberId: number,
-    @Body() body: RenameDto,
-  ): Promise<Profile> {
-    return this.me.rename(memberId, body.name);
   }
 
   @Get('lots')

@@ -154,7 +154,7 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 
 ## Member app
 
-- Sign-in and sign-up codes have 6 digits, live 5 minutes and allow 5 wrong tries. The sign-in form is also the sign-up form: an email that is not a member gets a code, and the right code creates the member (lowest tier, merchant `Symbion`, no points, named after the part before `@`) and signs them in; the form then asks for a display name, which can be skipped. A new code for a new email is refused for 30 seconds after the last one.
+- Sign-in and sign-up codes have 6 digits, live 5 minutes and allow 5 wrong tries. The sign-in form is also the sign-up form: an email that is not a member gets a code; with the right code the form asks for a display name (it can be skipped: the name is then the part before `@`), and only when that step is done is the member created (lowest tier, merchant `Symbion`, no points) and signed in. A new code for a new email is refused for 30 seconds after the last one.
 - The balance is the sum of the member's unexpired lots (`GET /me`). After a refund it can be negative: it is shown with a minus sign and redemption is blocked (see Redemption).
 - Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
 - The Personal page has one calendar and three tabs: Points, My vouchers, History. The header shows the member's tier seal, name and balance.
