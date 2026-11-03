@@ -9,7 +9,7 @@ export type Lot = {
   expiresAt: Date | null;
   idempotencyKey: string;
   createdAt: Date;
-  type: 'earn' | 'spend';
+  type: 'earn' | 'spend' | 'expire';
   ref: LotRef | null;
 };
 
@@ -47,4 +47,13 @@ export type SpendResult = {
 export type EarnResult = {
   lot: Lot;
   duplicate: boolean;
+};
+
+export type ExpireInput = {
+  memberId: string;
+  now: Date;
+};
+
+export type ExpireResult = {
+  expired: { lotId: string; points: number }[];
 };

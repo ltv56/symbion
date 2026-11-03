@@ -58,11 +58,19 @@ Known limitations: no refresh token, no logout, no rate limit on login, a single
 
 Member login with a one-time code.
 
-`POST /auth/member/otp`, body `email`: creates a 6 digit code valid for 5 minutes and replaces any earlier code. Responses: `200` with `{}` (also for an unknown email), or `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`; `400` invalid email. No email is sent yet.
+`POST /auth/member/otp`, body `email`: creates a 6 digit code valid for 5 minutes and replaces any earlier code, and emails it when SMTP is configured. Responses: `200` with `{}` (also for an unknown email), or `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`; `400` invalid email.
 
 `POST /auth/member/login`, body `email`, `otp` (string of 6 digits): responses `200` with `{ "accessToken": "<jwt>" }`, payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
 
 Admin endpoints reject a member token (`401`).
+
+## POST /auth/member/signup, POST /auth/member/signup/confirm
+
+Self sign-up of a member with an emailed code.
+
+`POST /auth/member/signup`, body `email`, `name` (1-255 characters): stores a pending sign-up with a 6 digit code valid for 5 minutes and emails it. No member exists yet. Responses: `200` with `{}`, or `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`; `200` with `{}` and no email when the address is already a member; `400` validation; `429` when a code for this email was requested in the last 30 seconds. A mail that cannot be sent is logged and the response is still `200`.
+
+`POST /auth/member/signup/confirm`, body `email`, `otp`: creates the member on the lowest tier under the merchant `Symbion` and responds `201` with `{ "accessToken": "<jwt>" }` (as the login). `401` `Invalid or expired code` for an unknown sign-up, wrong or expired code; after 5 wrong codes the sign-up is deleted. When the email became a member in the meantime, that member is signed in.
 
 ## GET /demo/members
 

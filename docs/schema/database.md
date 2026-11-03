@@ -53,6 +53,21 @@ At most one live code per member; a new request replaces the row, a successful l
 | `expires_at` | TIMESTAMP               | 5 minutes after the request                                 |
 | `created_at` | TIMESTAMP               | time of the latest request                                  |
 
+## member_signups
+
+A sign-up waits here until its code is confirmed; no `members` row exists before. A new request for the same email replaces the row; confirmation or a fifth wrong code deletes it.
+
+| Column       | Type            | Notes                                                                  |
+| ------------ | --------------- | ---------------------------------------------------------------------- |
+| `email`      | VARCHAR(255) PK | the address being registered                                           |
+| `name`       | VARCHAR(255)    | name of the new member                                                 |
+| `code_hash`  | CHAR(64)        | HMAC-SHA256 of `signup:<email>:<code>` keyed with `JWT_SECRET`         |
+| `attempts`   | INT UNSIGNED    | wrong codes so far; the row is deleted at 5                            |
+| `expires_at` | TIMESTAMP(3)    | 5 minutes after the request                                            |
+| `created_at` | TIMESTAMP       | time of the latest request; a new request within 30 seconds is refused |
+
+Confirmed sign-ups create the member under the merchant named `Symbion` (one row, created on the first sign-up, no API key is known for it).
+
 ## orders
 
 | Column            | Type                | Notes                                 |
@@ -80,11 +95,11 @@ One row per lot (see `packages/ledger`). Rows are never deleted; only `remaining
 | `expires_at`      | DATETIME, NULL              | NULL never expires; debt lots ignore it                          |
 | `idempotency_key` | VARCHAR(255), `utf8mb4_bin` | case sensitive; earn and spend keys share one space per merchant |
 | `created_at`      | TIMESTAMP                   | defaults to now                                                  |
-| `type`            | VARCHAR(16)                 | `earn` (points > 0) or `spend` (points < 0); `CHECK`             |
+| `type`            | VARCHAR(16)                 | `earn` (points > 0), `spend` or `expire` (points < 0); `CHECK`   |
 | `ref_type`        | VARCHAR(32), NULL           | source of the lot, e.g. `order`                                  |
 | `ref_id`          | BIGINT UNSIGNED, NULL       | id of the source row; NULL together with `ref_type` (`CHECK`)    |
 
-`UNIQUE (merchant_id, idempotency_key)` is the last line of defence for a repeated earn or spend. Index `(member_id, expires_at, id)` serves the FIFO read. `ref_type` is `order` for lots awarded for an order, `redemption` for the spend of a redemption and `refund` for the deduction of a refund; `ref_id` is the id in `orders`, `redemptions` or `refunds`.
+`UNIQUE (merchant_id, idempotency_key)` is the last line of defence for a repeated earn or spend. Index `(member_id, expires_at, id)` serves the FIFO read. `ref_type` is `order` for lots awarded for an order, `redemption` for the spend of a redemption and `refund` for the deduction of a refund; `ref_id` is the id in `orders`, `redemptions` or `refunds`. An `expire` entry has `ref_type` `lot`, `ref_id` the expired lot, key `expire:<lot id>`, `remaining` 0.
 
 ## program_settings
 

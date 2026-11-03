@@ -12,20 +12,26 @@ Single host, Docker Compose with `nginx`, `api` and `mysql`. Nginx terminates TL
 
 ## Environment
 
-| Variable               | Used by | Notes                                                                           |
-| ---------------------- | ------- | ------------------------------------------------------------------------------- |
-| `DOMAIN`               | nginx   | public host name; selects `/etc/letsencrypt/live/$DOMAIN/`                      |
-| `DB_*`                 | api     | see `infra/.env.example`                                                        |
-| `ADMIN_EMAIL`          | api     | admin login                                                                     |
-| `ADMIN_PASSWORD_HASH`  | api     | `printf '%s' '<password>' \| pnpm --silent --filter @symbion/api hash-password` |
-| `DEMO_MODE`            | api     | optional, `true` returns the member login code and serves `GET /demo/members`   |
-| `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                  |
-| `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                          |
-| `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                       |
-| `DEMO_RESET`           | api     | optional, `true` resets the demo data every night (see Demo data)               |
-| `DEMO_API_KEY`         | api     | at least 16 characters; required when `DEMO_RESET=true`                         |
-| `TIER_DOWNGRADE_CRON`  | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 3 * * *`                         |
-| `DEMO_RESET_CRON`      | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 4 * * *`                         |
+| Variable               | Used by | Notes                                                                                                         |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| `DOMAIN`               | nginx   | public host name; selects `/etc/letsencrypt/live/$DOMAIN/`                                                    |
+| `DB_*`                 | api     | see `infra/.env.example`                                                                                      |
+| `ADMIN_EMAIL`          | api     | admin login                                                                                                   |
+| `ADMIN_PASSWORD_HASH`  | api     | `printf '%s' '<password>' \| pnpm --silent --filter @symbion/api hash-password`                               |
+| `DEMO_MODE`            | api     | optional, `true` returns the member login code and serves `GET /demo/members`                                 |
+| `SMTP_HOST`            | api     | optional; without it no email is sent (sign-in codes only reach `DEMO_MODE` responses)                        |
+| `SMTP_PORT`            | api     | optional, default `587`; `465` uses TLS                                                                       |
+| `SMTP_USER`            | api     | optional; with it `SMTP_PASSWORD` is required                                                                 |
+| `SMTP_PASSWORD`        | api     | SMTP password or key                                                                                          |
+| `SMTP_FROM`            | api     | required with `SMTP_HOST`, e.g. `Symbion <noreply@example.com>`; some providers only accept a verified sender |
+| `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                                                |
+| `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                                                        |
+| `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                                                     |
+| `DEMO_RESET`           | api     | optional, `true` resets the demo data every night (see Demo data)                                             |
+| `DEMO_API_KEY`         | api     | at least 16 characters; required when `DEMO_RESET=true`                                                       |
+| `TIER_DOWNGRADE_CRON`  | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 3 * * *`                                                       |
+| `POINT_EXPIRY_CRON`    | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 2 * * *`                                                       |
+| `DEMO_RESET_CRON`      | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 4 * * *`                                                       |
 
 ## First deploy
 

@@ -27,6 +27,7 @@ How points are earned and used. Each section covers what is implemented.
 - One lot per order (ledger key `order:<order id>`). Repeating the `Idempotency-Key` awards nothing. Reusing it with a different member or amount is rejected (`422`).
 - An order that earns 0 points creates no lot.
 - Points expire 12 months after the order.
+- A nightly job (02:00 Asia/Ho_Chi_Minh, `POINT_EXPIRY_CRON`) writes an `expire` entry for what is left of each expired lot and sets that lot's `remaining` to 0. The balance does not change (it already ignores expired lots). Point history does not list `expire` entries.
 
 Implemented in `apps/api/src/earning/` as `TierEarningStrategy`.
 
@@ -153,6 +154,7 @@ Per merchant and calendar month in Asia/Ho_Chi_Minh (`GET /reconciliation?month=
 
 ## Member app
 
+- Sign-in and sign-up codes have 6 digits, live 5 minutes and allow 5 wrong tries. A sign-up creates the member only after the emailed code is confirmed: lowest tier, merchant `Symbion`, no points. An email that is already a member gets no sign-up mail; a new code is refused for 30 seconds after the last one.
 - The balance is the sum of the member's unexpired lots (`GET /me`). After a refund it can be negative: it is shown with a minus sign and redemption is blocked (see Redemption).
 - Points expire soon when they expire within 60 days (`EXPIRING_SOON_DAYS`).
 - The Personal page has one calendar and three tabs: Points, My vouchers, History. The header shows the member's tier seal, name and balance.

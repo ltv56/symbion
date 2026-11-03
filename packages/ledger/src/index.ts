@@ -5,6 +5,8 @@ export type { LedgerStorage } from './storage';
 export type {
   EarnInput,
   EarnResult,
+  ExpireInput,
+  ExpireResult,
   Lot,
   SpendInput,
   SpendResult,

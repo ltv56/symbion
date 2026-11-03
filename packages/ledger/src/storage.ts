@@ -28,4 +28,6 @@ export type LedgerStorage<Tx> = {
   // Debt lots: remaining < 0, oldest first (id asc), because earn pays the oldest debt first. Expiry does not apply to debt.
   // The MySQL adapter must also use a locking read (FOR UPDATE), so two parallel spends can't pay the same debt twice.
   findDebtLots(tx: Tx, memberId: string): Promise<Lot[]>;
+  // Earn lots with remaining > 0 and expiresAt <= now, id asc. The MySQL adapter must use a locking read (FOR UPDATE).
+  findExpiredLots(tx: Tx, memberId: string, now: Date): Promise<Lot[]>;
 };

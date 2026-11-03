@@ -26,7 +26,7 @@ pnpm --filter @symbion/web dev         # web on http://localhost:5173
 `apps/web`: React, Vite, Tailwind, shadcn/ui, TanStack Query, react-hook-form with zod, react-i18next.
 
 - The dev server proxies `/api/*` to `http://localhost:3000/*` (`vite.config.ts`); `API_PROXY_TARGET` sets another target. The API must be running. Production serves the build behind nginx under the same `/api/` prefix, so the API needs no CORS.
-- Member sign-in needs an existing member and `DEMO_MODE=true` on the API: the code comes back in the response and is shown on the page. No email is sent.
+- Member sign-in needs an existing member and `DEMO_MODE=true` on the API: the code comes back in the response and is shown on the page. Email is sent only when `SMTP_HOST` is set (see `docs/deploy.md`).
 - Admin console at `/admin`: sign-in with `ADMIN_EMAIL` and the password behind `ADMIN_PASSWORD_HASH`. Signed out, every `/admin/*` address shows the sign-in.
 - Admin pages: `/admin` (monthly statement, CSV download), `/admin/merchants`, `/admin/programme` (point value, tiers), `/admin/vouchers`, `/admin/members`, `/admin/counter` (calls the merchant API with a merchant key).
 - `localStorage` keys: `token` (member access token), `adminToken` (admin access token), `lang` (`vi` default, or `en`), `theme` (`light` or `dark`; the system setting when unset).
@@ -42,7 +42,7 @@ pnpm --filter @symbion/web dev         # web on http://localhost:5173
 
 TypeORM on MySQL 8.4. `synchronize` off. Schema changes: hand-written SQL migrations only.
 
-Required variables: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `JWT_SECRET` (at least 32 characters). Startup fails if one is missing. Optional: `MAX_POINTS_PER_ORDER` (default 10000), `JWT_EXPIRES_IN` (default `1h`), `DEMO_MODE` (`true` returns member login codes in the response), `TIER_DOWNGRADE_CRON` (when the nightly tier job runs, default `0 3 * * *` in Asia/Ho_Chi_Minh; seconds are allowed, for example `*/5 * * * * *` to watch it run), `DEMO_RESET` (`true` wipes and reseeds the demo data every night, needs `DEMO_MODE=true` and a `DEMO_API_KEY` of 16+ characters, see `docs/deploy.md`), `DEMO_RESET_CRON` (default `0 4 * * *` in Asia/Ho_Chi_Minh). Example values: `infra/.env.example`.
+Required variables: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `JWT_SECRET` (at least 32 characters). Startup fails if one is missing. Optional: `MAX_POINTS_PER_ORDER` (default 10000), `JWT_EXPIRES_IN` (default `1h`), `DEMO_MODE` (`true` returns member login codes in the response), `TIER_DOWNGRADE_CRON` (when the nightly tier job runs, default `0 3 * * *` in Asia/Ho_Chi_Minh; seconds are allowed, for example `*/5 * * * * *` to watch it run), `POINT_EXPIRY_CRON` (nightly point expiry, default `0 2 * * *`), `DEMO_RESET` (`true` wipes and reseeds the demo data every night, needs `DEMO_MODE=true` and a `DEMO_API_KEY` of 16+ characters, see `docs/deploy.md`), `DEMO_RESET_CRON` (default `0 4 * * *` in Asia/Ho_Chi_Minh). Example values: `infra/.env.example`.
 
 `start`, `start:dev`, `test`, `seed` and the migration scripts of `apps/api` load `infra/.env`; variables already set in the shell take precedence. `start:prod` does not load it.
 

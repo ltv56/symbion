@@ -157,7 +157,7 @@ export class MeService {
       `SELECT l.id, l.type, l.points, l.merchant_id, mc.name AS merchant_name,
         l.ref_type, l.ref_id, l.expires_at, l.created_at
       FROM ledger_lots l JOIN merchants mc ON mc.id = l.merchant_id
-      WHERE l.member_id = ?${after === undefined ? '' : ' AND l.id < ?'}
+      WHERE l.member_id = ? AND l.type <> 'expire'${after === undefined ? '' : ' AND l.id < ?'}
       ORDER BY l.id DESC
       LIMIT ?`,
       after === undefined ? [memberId, limit] : [memberId, after, limit],
