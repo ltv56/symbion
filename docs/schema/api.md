@@ -64,6 +64,10 @@ Member login with a one-time code.
 
 Admin endpoints reject a member token (`401`).
 
+## GET /demo/members
+
+Public, only with `DEMO_MODE=true`; otherwise `404`. The first 20 members by id: `[{ "email", "name", "tierName", "balance" }]`. `balance` is the sum of the unexpired lots and can be negative.
+
 ## GET /me, GET /me/lots, GET /me/history, GET /me/redemptions, GET /me/partners
 
 Member only (`Authorization: Bearer <member token>`). `401` for a missing, invalid or non-member token.
