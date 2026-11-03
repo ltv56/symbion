@@ -208,6 +208,104 @@ describe('Member sign-up', () => {
     expect(sent[0]?.text).toContain(res.body.otp);
   });
 
+  describe('one form for signing in and signing up', () => {
+    const requestOtp = (who = email) =>
+      request(app.getHttpServer())
+        .post('/auth/member/otp')
+        .send({ email: who });
+    const login = (otp: string, who = email) =>
+      request(app.getHttpServer())
+        .post('/auth/member/login')
+        .send({ email: who, otp });
+
+    it('a new email gets a code, and the right code creates the member named after the address', async () => {
+      const first = await requestOtp().expect(200);
+
+      expect(first.body.otp).toMatch(/^\d{6}$/);
+      expect(sent).toHaveLength(1);
+      expect(await members()).toEqual([]);
+
+      const res = await login(first.body.otp).expect(200);
+
+      expect(await members()).toEqual([
+        { email, name: 'new', tier: 'Bronze', merchant: 'Symbion' },
+      ]);
+      expect(res.body.accessToken).toEqual(expect.any(String));
+      expect(res.body.newMember).toBe(true);
+    });
+
+    it('a member gets the sign-in code again and the same member signs in', async () => {
+      const created = await requestOtp().expect(200);
+      await login(created.body.otp).expect(200);
+      sent = [];
+
+      const again = await requestOtp().expect(200);
+      const res = await login(again.body.otp).expect(200);
+
+      expect(res.body.newMember).toBeUndefined();
+      expect(sent).toHaveLength(1);
+      expect(await members()).toHaveLength(1);
+      expect(await signups()).toEqual([]);
+    });
+
+    it('asks for a new code of a new email again only after 30 seconds', async () => {
+      await requestOtp().expect(200);
+
+      await requestOtp().expect(429);
+
+      expect(sent).toHaveLength(1);
+    });
+  });
+
+  describe('display name', () => {
+    const rename = (token: string, body: object) =>
+      request(app.getHttpServer())
+        .patch('/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+
+    const newToken = async (): Promise<string> => {
+      const first = await request(app.getHttpServer())
+        .post('/auth/member/otp')
+        .send({ email })
+        .expect(200);
+      const res = await request(app.getHttpServer())
+        .post('/auth/member/login')
+        .send({ email, otp: first.body.otp })
+        .expect(200);
+      return res.body.accessToken;
+    };
+
+    it('a new member sets the name they want to be called', async () => {
+      const token = await newToken();
+
+      const res = await rename(token, { name: '  Minh Anh  ' }).expect(200);
+
+      expect(res.body.name).toBe('Minh Anh');
+      expect(await members()).toEqual([
+        { email, name: 'Minh Anh', tier: 'Bronze', merchant: 'Symbion' },
+      ]);
+    });
+
+    it.each([
+      ['no name', {}],
+      ['an empty name', { name: '   ' }],
+      ['a name over 255 characters', { name: 'n'.repeat(256) }],
+      ['a name that is not a string', { name: 7 }],
+    ])('rejects %s with 400', async (_label, body) => {
+      const token = await newToken();
+
+      await rename(token, body).expect(400);
+    });
+
+    it('needs a member token', async () => {
+      await request(app.getHttpServer())
+        .patch('/me')
+        .send({ name: 'X' })
+        .expect(401);
+    });
+  });
+
   describe('without DEMO_MODE', () => {
     let plainApp: INestApplication;
 

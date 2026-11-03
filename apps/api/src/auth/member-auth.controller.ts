@@ -24,9 +24,14 @@ export class MemberAuthController {
 
   @Post('login')
   @HttpCode(200)
-  @ApiOkResponse({ description: '`{ accessToken }` with role member' })
+  @ApiOkResponse({
+    description:
+      '`{ accessToken }` with role member; `newMember: true` when the code created the member',
+  })
   @ApiUnauthorizedResponse({ description: 'Wrong, used or expired code' })
-  login(@Body() body: MemberLoginDto): Promise<{ accessToken: string }> {
+  login(
+    @Body() body: MemberLoginDto,
+  ): Promise<{ accessToken: string; newMember?: true }> {
     return this.memberAuth.login(body.email, body.otp);
   }
 
