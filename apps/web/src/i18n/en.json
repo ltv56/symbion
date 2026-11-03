@@ -72,6 +72,11 @@
     "wrongCode": "The code is wrong or has expired.",
     "resend": "Send a new code",
     "changeEmail": "Use another email",
+    "demo": {
+      "open": "Use a demo account",
+      "hint": "Tap a row to fill in the email. The sign-in code appears on the page. No email is sent: an email outside this list gets no code.",
+      "points": "points"
+    },
     "validation": {
       "email": "Enter a valid email.",
       "code": "Enter all 6 digits."
