@@ -16,7 +16,7 @@ type LotRow = {
   expires_at: Date | null;
   idempotency_key: string;
   created_at: Date;
-  type: 'earn' | 'spend';
+  type: 'earn' | 'spend' | 'expire';
   ref_type: string | null;
   ref_id: string | number | null;
 };
@@ -175,6 +175,24 @@ export class MysqlLedgerStorage implements LedgerStorage<EntityManager> {
       WHERE member_id = ?
       AND remaining < 0 ORDER BY id FOR UPDATE`,
       [memberId],
+    );
+    return rows.map((row: LotRow) => this.toLot(row));
+  }
+
+  async findExpiredLots(
+    tx: EntityManager,
+    memberId: string,
+    now: Date,
+  ): Promise<Lot[]> {
+    const rows: LotRow[] = await tx.query(
+      `SELECT *
+      FROM ledger_lots
+      WHERE member_id = ?
+      AND type = 'earn' AND remaining > 0
+      AND expires_at IS NOT NULL AND expires_at <= ?
+      ORDER BY id
+      FOR UPDATE`,
+      [memberId, now],
     );
     return rows.map((row: LotRow) => this.toLot(row));
   }
