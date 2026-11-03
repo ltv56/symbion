@@ -18,7 +18,7 @@ Single host, Docker Compose with `nginx`, `api` and `mysql`. Nginx terminates TL
 | `DB_*`                 | api     | see `infra/.env.example`                                                        |
 | `ADMIN_EMAIL`          | api     | admin login                                                                     |
 | `ADMIN_PASSWORD_HASH`  | api     | `printf '%s' '<password>' \| pnpm --silent --filter @symbion/api hash-password` |
-| `DEMO_MODE`            | api     | optional, `true` returns the member login code in the response (no email)       |
+| `DEMO_MODE`            | api     | optional, `true` returns the member login code and serves `GET /demo/members`   |
 | `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                  |
 | `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                          |
 | `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                       |
