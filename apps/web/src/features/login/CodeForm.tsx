@@ -13,32 +13,36 @@ import {
   InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { api, ApiError } from '@/lib/api';
-import { setToken } from '@/lib/auth';
 import type { CodeSent } from './EmailForm';
 import { codeSchema } from './schemas';
 import { useRequestOtp } from './useRequestOtp';
 
 const SLOT = 'h-11 flex-1 font-mono text-lg';
 
+// needName: a new email with the right code; nobody exists until the name is given
+export type LoginResult = { accessToken: string } | { needName: true };
+
 export function CodeForm({
   email,
   demoOtp,
   onSent,
   onChangeEmail,
+  onSignedIn,
 }: CodeSent & {
   onSent: (sent: CodeSent) => void;
   onChangeEmail: () => void;
+  onSignedIn: (result: LoginResult, otp: string) => void;
 }) {
   const { t } = useTranslation();
   const input = useRef<HTMLInputElement>(null);
   const requestOtp = useRequestOtp();
   const login = useMutation({
     mutationFn: (otp: string) =>
-      api<{ accessToken: string }>('/auth/member/login', {
+      api<LoginResult>('/auth/member/login', {
         method: 'POST',
         body: { email, otp },
       }),
-    onSuccess: ({ accessToken }) => setToken(accessToken),
+    onSuccess: (result, otp) => onSignedIn(result, otp),
     onError: () => {
       form.reset();
       input.current?.focus();
