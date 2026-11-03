@@ -5,7 +5,9 @@ import type { z } from 'zod';
 import { FormError } from '@/components/FormError';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DemoAccounts } from './DemoAccounts';
 import { emailSchema } from './schemas';
+import { useDemoMembers } from './useDemoMembers';
 import { useRequestOtp } from './useRequestOtp';
 
 export interface CodeSent {
@@ -16,9 +18,11 @@ export interface CodeSent {
 export function EmailForm({ onSent }: { onSent: (sent: CodeSent) => void }) {
   const { t } = useTranslation();
   const requestOtp = useRequestOtp();
+  const demoMembers = useDemoMembers();
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
@@ -31,35 +35,45 @@ export function EmailForm({ onSent }: { onSent: (sent: CodeSent) => void }) {
     }),
   );
 
+  function fill(email: string) {
+    setValue('email', email, { shouldValidate: true });
+    document.getElementById('email')?.focus();
+  }
+
   return (
-    <form onSubmit={submit} noValidate className="mt-2 space-y-5">
-      <p className="text-sm text-muted-foreground">{t('login.intro')}</p>
-      <div className="space-y-2">
-        <label htmlFor="email" className="block text-sm font-medium">
-          {t('login.email')}
-        </label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          autoFocus
-          aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? 'email-error' : undefined}
-          {...register('email')}
-        />
-        {errors.email?.message && (
-          <FormError id="email-error">{t(errors.email.message)}</FormError>
-        )}
-      </div>
-      {requestOtp.isError && <FormError>{t('errors.generic')}</FormError>}
-      <Button
-        type="submit"
-        size="lg"
-        className="w-full"
-        disabled={requestOtp.isPending}
-      >
-        {t(requestOtp.isPending ? 'login.sending' : 'login.sendCode')}
-      </Button>
-    </form>
+    <>
+      <form onSubmit={submit} noValidate className="mt-2 space-y-5">
+        <p className="text-sm text-muted-foreground">{t('login.intro')}</p>
+        <div className="space-y-2">
+          <label htmlFor="email" className="block text-sm font-medium">
+            {t('login.email')}
+          </label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            autoFocus
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'email-error' : undefined}
+            {...register('email')}
+          />
+          {errors.email?.message && (
+            <FormError id="email-error">{t(errors.email.message)}</FormError>
+          )}
+        </div>
+        {requestOtp.isError && <FormError>{t('errors.generic')}</FormError>}
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          disabled={requestOtp.isPending}
+        >
+          {t(requestOtp.isPending ? 'login.sending' : 'login.sendCode')}
+        </Button>
+      </form>
+      {demoMembers.data && (
+        <DemoAccounts members={demoMembers.data} onPick={fill} />
+      )}
+    </>
   );
 }
