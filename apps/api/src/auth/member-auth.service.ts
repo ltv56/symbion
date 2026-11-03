@@ -39,16 +39,18 @@ export class MemberAuthService {
     this.demoMode = config.get<string>('DEMO_MODE') === 'true';
   }
 
-  // One form signs in and signs up: a new email gets a sign-up code instead, and the right code creates the member.
-  // Both answer the same, so the form does not reveal who is registered.
-  // The code is emailed, and returned in the response only in demo mode.
-  async requestOtp(email: string): Promise<{ otp?: string }> {
+  // A new email is told so and gets no mail: the form then asks for a name and calls signup.
+  // That lets anyone check whether an email is registered. The code is emailed,
+  // and returned in the response only in demo mode.
+  async requestOtp(
+    email: string,
+  ): Promise<{ otp?: string; newAccount?: true }> {
     const [member]: { id: number }[] = await this.dataSource.query(
       'SELECT id FROM members WHERE email = ?',
       [email],
     );
     if (!member) {
-      return this.signup(email, email.split('@')[0] ?? email);
+      return { newAccount: true };
     }
 
     const memberId = Number(member.id);

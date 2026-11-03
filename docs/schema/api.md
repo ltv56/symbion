@@ -58,9 +58,9 @@ Known limitations: no refresh token, no logout, no rate limit on login, a single
 
 Member login with a one-time code.
 
-`POST /auth/member/otp`, body `email`: creates a 6 digit code valid for 5 minutes and replaces any earlier code, and emails it when SMTP is configured. An email that is not a member gets a sign-up code instead (the pending sign-up is named after the part before `@`), so one form signs in and signs up. Responses: `200` with `{}`, or `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`; `400` invalid email; `429` when a sign-up code for this email was requested in the last 30 seconds.
+`POST /auth/member/otp`, body `email`: creates a 6 digit code valid for 5 minutes and replaces any earlier code, and emails it when SMTP is configured. An email that is not a member gets `{ "newAccount": true }` and no mail: the form then asks for a name and calls `POST /auth/member/signup`. Responses: `200` with `{}`, `{ "otp": "<6 digits>" }` when `DEMO_MODE=true`, or `{ "newAccount": true }`; `400` invalid email.
 
-`POST /auth/member/login`, body `email`, `otp` (string of 6 digits): for an email that is not a member the code confirms the sign-up and creates the member (see below). Responses: `200` with `{ "accessToken": "<jwt>" }`, payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
+`POST /auth/member/login`, body `email`, `otp` (string of 6 digits): for an email that is not a member the code of a sign-up confirms it and creates the member (see below). Responses: `200` with `{ "accessToken": "<jwt>" }`, payload `{ "sub": "<member id>", "role": "member" }`, expires after `JWT_EXPIRES_IN`; `400` validation; `401` `Invalid or expired code` (unknown email, wrong, used or expired code). A code works once. After 5 wrong codes it is deleted and a new one must be requested.
 
 Admin endpoints reject a member token (`401`).
 

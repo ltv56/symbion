@@ -208,7 +208,7 @@ describe('Member sign-up', () => {
     expect(sent[0]?.text).toContain(res.body.otp);
   });
 
-  describe('one form for signing in and signing up', () => {
+  describe('the sign-in form tells a new email apart', () => {
     const requestOtp = (who = email) =>
       request(app.getHttpServer())
         .post('/auth/member/otp')
@@ -218,39 +218,33 @@ describe('Member sign-up', () => {
         .post('/auth/member/login')
         .send({ email: who, otp });
 
-    it('a new email gets a code, and the right code creates the member named after the address', async () => {
-      const first = await requestOtp().expect(200);
+    it('a new email is told so, with no mail and no sign-up stored', async () => {
+      const res = await requestOtp().expect(200);
 
-      expect(first.body.otp).toMatch(/^\d{6}$/);
-      expect(sent).toHaveLength(1);
-      expect(await members()).toEqual([]);
+      expect(res.body).toEqual({ newAccount: true });
+      expect(sent).toEqual([]);
+      expect(await signups()).toEqual([]);
+    });
 
-      const res = await login(first.body.otp).expect(200);
+    it('after the name is given, the emailed code signs the new member in', async () => {
+      const code = await signup().expect(200);
+
+      const res = await login(code.body.otp).expect(200);
 
       expect(await members()).toEqual([
-        { email, name: 'new', tier: 'Bronze', merchant: 'Symbion' },
+        { email, name: 'New Member', tier: 'Bronze', merchant: 'Symbion' },
       ]);
       expect(res.body.accessToken).toEqual(expect.any(String));
     });
 
-    it('a member gets the sign-in code again and the same member signs in', async () => {
-      const created = await requestOtp().expect(200);
-      await login(created.body.otp).expect(200);
+    it('a member gets the sign-in code and no newAccount flag', async () => {
+      const first = await signup().expect(200);
+      await login(first.body.otp).expect(200);
       sent = [];
 
-      const again = await requestOtp().expect(200);
-      await login(again.body.otp).expect(200);
+      const res = await requestOtp().expect(200);
 
-      expect(sent).toHaveLength(1);
-      expect(await members()).toHaveLength(1);
-      expect(await signups()).toEqual([]);
-    });
-
-    it('asks for a new code of a new email again only after 30 seconds', async () => {
-      await requestOtp().expect(200);
-
-      await requestOtp().expect(429);
-
+      expect(res.body.newAccount).toBeUndefined();
       expect(sent).toHaveLength(1);
     });
   });
