@@ -39,14 +39,16 @@ export class MemberAuthService {
     this.demoMode = config.get<string>('DEMO_MODE') === 'true';
   }
 
-  // Same answer for an unknown email. The code is emailed, and returned in the response only in demo mode.
+  // One form signs in and signs up: a new email gets a sign-up code instead, and the right code creates the member.
+  // Both answer the same, so the form does not reveal who is registered.
+  // The code is emailed, and returned in the response only in demo mode.
   async requestOtp(email: string): Promise<{ otp?: string }> {
     const [member]: { id: number }[] = await this.dataSource.query(
       'SELECT id FROM members WHERE email = ?',
       [email],
     );
     if (!member) {
-      return {};
+      return this.signup(email, email.split('@')[0] ?? email);
     }
 
     const memberId = Number(member.id);
@@ -151,6 +153,13 @@ export class MemberAuthService {
   }
 
   async login(email: string, otp: string): Promise<{ accessToken: string }> {
+    const [existing]: { id: number }[] = await this.dataSource.query(
+      'SELECT id FROM members WHERE email = ?',
+      [email],
+    );
+    if (!existing) {
+      return this.confirmSignup(email, otp);
+    }
     // Return instead of throw inside the tx: a throw rolls back the attempt count.
     const memberId = await this.dataSource.transaction(async (tx) => {
       const [row]: {
