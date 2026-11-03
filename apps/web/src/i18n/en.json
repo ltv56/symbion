@@ -74,8 +74,18 @@
     "changeEmail": "Use another email",
     "demo": {
       "open": "Use a demo account",
-      "hint": "Tap a row to fill in the email. The sign-in code appears on the page. No email is sent: an email outside this list gets no code.",
+      "hint": "Tap a row to fill in the email. The sign-in code appears on the page.",
       "points": "points"
+    },
+    "name": {
+      "title": "What should we call you?",
+      "hint": "This name appears on your page.",
+      "label": "Display name",
+      "next": "Continue",
+      "saving": "Saving…",
+      "skip": "Skip",
+      "required": "Enter a name.",
+      "failed": "The account was not created. Try again or skip."
     },
     "validation": {
       "email": "Enter a valid email.",
