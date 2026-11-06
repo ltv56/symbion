@@ -123,7 +123,12 @@ describe('Demo accounts', () => {
     await app.close();
     process.env.DEMO_ADMIN_PASSWORD = 'not-the-admin-password';
 
-    await expect(bootApp()).rejects.toThrow(/DEMO_ADMIN_PASSWORD/);
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    const failing = moduleRef.createNestApplication();
+    await expect(failing.init()).rejects.toThrow(/DEMO_ADMIN_PASSWORD/);
+    await failing.close();
     process.env.DEMO_ADMIN_PASSWORD = ADMIN_TEST_PASSWORD;
     app = await bootApp();
   });
