@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { setAdminToken } from '@/lib/adminAuth';
 import { api, ApiError } from '@/lib/api';
+import { useDemoAccounts } from '../useDemoAccounts';
 import { adminLoginSchema } from './schemas';
 
 type Credentials = z.infer<typeof adminLoginSchema>;
@@ -26,6 +27,7 @@ export function AdminLoginForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<Credentials>({
     resolver: zodResolver(adminLoginSchema),
@@ -33,6 +35,7 @@ export function AdminLoginForm() {
   });
 
   const submit = handleSubmit((values) => login.mutate(values));
+  const demoAdmin = useDemoAccounts().data?.admin;
 
   return (
     <form onSubmit={submit} noValidate className="mt-2 space-y-5">
@@ -93,6 +96,20 @@ export function AdminLoginForm() {
       >
         {t(login.isPending ? 'admin.login.signingIn' : 'admin.login.signIn')}
       </Button>
+      {demoAdmin && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          className="w-full"
+          onClick={() => {
+            setValue('email', demoAdmin.email, { shouldValidate: true });
+            setValue('password', demoAdmin.password, { shouldValidate: true });
+          }}
+        >
+          {t('admin.login.useDemo')}
+        </Button>
+      )}
     </form>
   );
 }

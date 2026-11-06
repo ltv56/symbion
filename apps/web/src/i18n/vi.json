@@ -251,6 +251,7 @@
       "signIn": "Đăng nhập",
       "signingIn": "Đang đăng nhập…",
       "wrong": "Email hoặc mật khẩu không đúng.",
+      "useDemo": "Dùng tài khoản demo",
       "validation": {
         "email": "Nhập một địa chỉ email hợp lệ.",
         "password": "Nhập mật khẩu."
@@ -558,6 +559,7 @@
       "merchant": "Cửa hàng",
       "apiKey": "Khóa API của cửa hàng",
       "apiKeyHint": "Hệ thống chỉ lưu bản băm nên không đọc lại được khóa. Dán khóa hiện khi tạo hoặc đổi khóa; khóa chỉ nhớ trong tab này.",
+      "demoKey": "Khóa demo, đã điền sẵn.",
       "operations": "Thao tác",
       "pickVoucher": "Chọn voucher",
       "newKey": "Tạo khóa chống trùng mới",
