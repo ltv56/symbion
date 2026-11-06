@@ -25,6 +25,7 @@ function restoreStep(): Step {
       if (
         typeof email === 'string' &&
         typeof at === 'number' &&
+        Date.now() - at >= 0 &&
         Date.now() - at < CODE_TTL_MS
       ) {
         return {
@@ -65,8 +66,8 @@ export function LoginPage() {
     setStepState(next);
   }
   function signedIn(accessToken: string) {
-    rememberStep({ kind: 'email' });
     setToken(accessToken);
+    rememberStep({ kind: 'email' });
   }
   const defaultName =
     step.kind === 'name' ? (step.email.split('@')[0] ?? step.email) : '';
