@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
   ApiOkResponse,
@@ -37,6 +38,9 @@ export class SettingsController {
 
   @Patch()
   @ApiOkResponse({ description: 'The programme settings after the change' })
+  @ApiBadRequestResponse({
+    description: 'Invalid value, or outside 50-200 while DEMO_MODE is on',
+  })
   @ApiConflictResponse({
     description: 'A sellable voucher would fall under its floor',
   })
