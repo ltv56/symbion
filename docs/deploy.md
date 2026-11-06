@@ -66,17 +66,17 @@ docker compose -f infra/compose.yaml --profile prod up -d
 docker compose -f infra/compose.yaml --profile prod restart nginx
 ```
 
-Nginx resolves `api` once, when it starts. A recreated `api` container gets a new address, so without the restart `/api/` answers `502 Bad Gateway`.
+Do not run the update while certbot renews (see Certificate renewal): the restart would take port 80 from its standalone challenge. Nginx resolves `api` once, when it starts. A recreated `api` container gets a new address, so without the restart `/api/` answers `502 Bad Gateway`.
 
 ## Admin password
 
-Generate the hash on the host with the api image, so the host needs no Node.js. Use ASCII characters only.
+Generate the hash on the host with the api image, so the host needs no Node.js. Use ASCII characters only. The password is read from stdin, so it stays out of the shell history and the process arguments.
 
 ```sh
-docker compose -f infra/compose.yaml run --rm --no-deps api node dist/hash-password.js '<new password>'
+( IFS= read -rs PASSWORD && printf '%s' "$PASSWORD" | docker compose -f infra/compose.yaml run --rm -T --no-deps api node dist/hash-password.js )
 ```
 
-Put the output in `infra/.env` as `ADMIN_PASSWORD_HASH='<hash>'` (single quotes, see Requirements), then recreate the api and restart nginx as in Update. Signed-in admin sessions stay valid until the token expires (`JWT_EXPIRES_IN`); change `JWT_SECRET` as well to end them. With `DEMO_ADMIN_PASSWORD` set, change it to the same new password or the api does not start.
+Put the output in `infra/.env` as `ADMIN_PASSWORD_HASH='<hash>'` (single quotes, see Requirements), then recreate the api and restart nginx as in Update. Signed-in admin sessions stay valid until the token expires (`JWT_EXPIRES_IN`); change `JWT_SECRET` as well to end them. That also signs every member out and voids the login codes not used yet, and the next member self-sign-up creates a second `Symbion` system merchant (the merchant key is derived from `JWT_SECRET`), so avoid it on a host with real members. With `DEMO_ADMIN_PASSWORD` set, change it to the same new password or the api does not start.
 
 ## Restart and logs
 
