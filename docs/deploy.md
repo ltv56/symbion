@@ -63,7 +63,20 @@ git pull
 docker compose -f infra/compose.yaml --profile prod build
 docker compose -f infra/compose.yaml run --rm api node node_modules/typeorm/cli.js -d dist/data-source.js migration:run
 docker compose -f infra/compose.yaml --profile prod up -d
+docker compose -f infra/compose.yaml --profile prod restart nginx
 ```
+
+Nginx resolves `api` once, when it starts. A recreated `api` container gets a new address, so without the restart `/api/` answers `502 Bad Gateway`.
+
+## Admin password
+
+Generate the hash on the host with the api image, so the host needs no Node.js. Use ASCII characters only.
+
+```sh
+docker compose -f infra/compose.yaml run --rm --no-deps api node dist/hash-password.js '<new password>'
+```
+
+Put the output in `infra/.env` as `ADMIN_PASSWORD_HASH='<hash>'` (single quotes, see Requirements), then recreate the api and restart nginx as in Update. Signed-in admin sessions stay valid until the token expires (`JWT_EXPIRES_IN`); change `JWT_SECRET` as well to end them. With `DEMO_ADMIN_PASSWORD` set, change it to the same new password or the api does not start.
 
 ## Restart and logs
 
