@@ -1,3 +1,4 @@
+import { createHash, createHmac } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -101,21 +102,39 @@ describe('Member sign-up', () => {
     expect(Number(row.n)).toBe(1);
   });
 
-  it('keeps using the same Symbion merchant after JWT_SECRET changed', async () => {
+  it('does not give sign-ups to an ordinary merchant that is called Symbion', async () => {
+    const result = await dataSource.query(
+      `INSERT INTO merchants (name, api_key_hash) VALUES ('Symbion', ?)`,
+      ['a'.repeat(64)],
+    );
+    const ordinary = Number(result.insertId);
+
     const first = await signup().expect(200);
     await confirm(first.body.otp).expect(201);
-    // The merchant key is derived from JWT_SECRET: a new secret derives a new key
-    await dataSource.query(
-      `UPDATE merchants SET api_key_hash = ? WHERE name = 'Symbion'`,
-      ['f'.repeat(64)],
+
+    const [member] = await dataSource.query(`SELECT merchant_id FROM members`);
+    expect(Number(member.merchant_id)).not.toBe(ordinary);
+  });
+
+  it('keeps using the system merchant made before its key hash was fixed', async () => {
+    const legacyKey = createHmac('sha256', process.env.JWT_SECRET ?? '')
+      .update('system-merchant')
+      .digest('hex');
+    const result = await dataSource.query(
+      `INSERT INTO merchants (name, api_key_hash) VALUES ('Symbion', ?)`,
+      [createHash('sha256').update(legacyKey).digest('hex')],
     );
+    const legacy = Number(result.insertId);
+
+    const first = await signup().expect(200);
+    await confirm(first.body.otp).expect(201);
     const second = await signup({ email: 'two@example.com', name: 'Two' });
     await confirm(second.body.otp, 'two@example.com').expect(201);
 
-    const [row] = await dataSource.query(
-      `SELECT COUNT(*) AS n FROM merchants WHERE name = 'Symbion'`,
-    );
-    expect(Number(row.n)).toBe(1);
+    const rows = await dataSource.query(`SELECT merchant_id FROM members`);
+    expect(
+      rows.map((r: { merchant_id: number }) => Number(r.merchant_id)),
+    ).toEqual([legacy, legacy]);
   });
 
   it('rejects a wrong code, and deletes the sign-up after 5 wrong codes', async () => {
