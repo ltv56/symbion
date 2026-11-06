@@ -369,6 +369,19 @@ curl -s -w ' [%{http_code}]\n' 'localhost:3000/reconciliation?month=2026-13' -H 
 curl -s -w ' [%{http_code}]\n' "localhost:3000/reconciliation?month=$MONTH"
 ```
 
+## Demo accounts
+
+With `DEMO_MODE=true`, `DEMO_API_KEY` and `DEMO_ADMIN_PASSWORD` set, after `pnpm seed:demo`:
+
+```sh
+# admin login and the six merchant keys -> 200
+curl -s localhost:3000/demo/accounts
+
+# error path -> 404 without DEMO_MODE
+curl -s -w ' [%{http_code}]
+' localhost:3000/demo/accounts
+```
+
 ## Health and logs
 
 ```sh

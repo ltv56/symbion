@@ -76,6 +76,10 @@ Self sign-up of a member with an emailed code.
 
 Public, only with `DEMO_MODE=true`; otherwise `404`. The first 20 members by id: `[{ "email", "name", "tierName", "balance" }]`. `balance` is the sum of the unexpired lots and can be negative.
 
+## GET /demo/accounts
+
+Public, only with `DEMO_MODE=true`; otherwise `404`. `{ "admin": { "email", "password" } | null, "merchants": [{ "id", "name", "apiKey" }] }`. `admin` is `null` unless `DEMO_ADMIN_PASSWORD` is set. `merchants` lists the seeded demo merchants whose key is still the one derived from `DEMO_API_KEY`; empty when `DEMO_API_KEY` is not set.
+
 ## GET /me, GET /me/lots, GET /me/history, GET /me/redemptions, GET /me/partners
 
 Member only (`Authorization: Bearer <member token>`). `401` for a missing, invalid or non-member token.
