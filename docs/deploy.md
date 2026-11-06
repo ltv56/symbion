@@ -12,26 +12,27 @@ Single host, Docker Compose with `nginx`, `api` and `mysql`. Nginx terminates TL
 
 ## Environment
 
-| Variable               | Used by | Notes                                                                                                         |
-| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| `DOMAIN`               | nginx   | public host name; selects `/etc/letsencrypt/live/$DOMAIN/`                                                    |
-| `DB_*`                 | api     | see `infra/.env.example`                                                                                      |
-| `ADMIN_EMAIL`          | api     | admin login                                                                                                   |
-| `ADMIN_PASSWORD_HASH`  | api     | `printf '%s' '<password>' \| pnpm --silent --filter @symbion/api hash-password`                               |
-| `DEMO_MODE`            | api     | optional, `true` returns the member login code and serves `GET /demo/members`                                 |
-| `SMTP_HOST`            | api     | optional; without it no email is sent (sign-in codes only reach `DEMO_MODE` responses)                        |
-| `SMTP_PORT`            | api     | optional, default `587`; `465` uses TLS                                                                       |
-| `SMTP_USER`            | api     | optional; with it `SMTP_PASSWORD` is required                                                                 |
-| `SMTP_PASSWORD`        | api     | SMTP password or key                                                                                          |
-| `SMTP_FROM`            | api     | required with `SMTP_HOST`, e.g. `Symbion <noreply@example.com>`; some providers only accept a verified sender |
-| `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                                                |
-| `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                                                        |
-| `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                                                     |
-| `DEMO_RESET`           | api     | optional, `true` resets the demo data every night (see Demo data)                                             |
-| `DEMO_API_KEY`         | api     | at least 16 characters; required when `DEMO_RESET=true`                                                       |
-| `TIER_DOWNGRADE_CRON`  | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 3 * * *`                                                       |
-| `POINT_EXPIRY_CRON`    | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 2 * * *`                                                       |
-| `DEMO_RESET_CRON`      | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 4 * * *`                                                       |
+| Variable               | Used by | Notes                                                                                                                        |
+| ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `DOMAIN`               | nginx   | public host name; selects `/etc/letsencrypt/live/$DOMAIN/`                                                                   |
+| `DB_*`                 | api     | see `infra/.env.example`                                                                                                     |
+| `ADMIN_EMAIL`          | api     | admin login                                                                                                                  |
+| `ADMIN_PASSWORD_HASH`  | api     | `printf '%s' '<password>' \| pnpm --silent --filter @symbion/api hash-password`                                              |
+| `DEMO_MODE`            | api     | optional, `true` returns the member login code and serves `GET /demo/members`                                                |
+| `SMTP_HOST`            | api     | optional; without it no email is sent (sign-in codes only reach `DEMO_MODE` responses)                                       |
+| `SMTP_PORT`            | api     | optional, default `587`; `465` uses TLS                                                                                      |
+| `SMTP_USER`            | api     | optional; with it `SMTP_PASSWORD` is required                                                                                |
+| `SMTP_PASSWORD`        | api     | SMTP password or key                                                                                                         |
+| `SMTP_FROM`            | api     | required with `SMTP_HOST`, e.g. `Symbion <noreply@example.com>`; some providers only accept a verified sender                |
+| `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                                                               |
+| `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                                                                       |
+| `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                                                                    |
+| `DEMO_RESET`           | api     | optional, `true` resets the demo data every night (see Demo data)                                                            |
+| `DEMO_API_KEY`         | api     | at least 16 characters; required when `DEMO_RESET=true`                                                                      |
+| `DEMO_ADMIN_PASSWORD`  | api     | optional, the plaintext behind `ADMIN_PASSWORD_HASH`; `GET /demo/accounts` shows it (the api refuses to start on a mismatch) |
+| `TIER_DOWNGRADE_CRON`  | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 3 * * *`                                                                      |
+| `POINT_EXPIRY_CRON`    | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 2 * * *`                                                                      |
+| `DEMO_RESET_CRON`      | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 4 * * *`                                                                      |
 
 ## First deploy
 
@@ -62,7 +63,20 @@ git pull
 docker compose -f infra/compose.yaml --profile prod build
 docker compose -f infra/compose.yaml run --rm api node node_modules/typeorm/cli.js -d dist/data-source.js migration:run
 docker compose -f infra/compose.yaml --profile prod up -d
+docker compose -f infra/compose.yaml --profile prod restart nginx
 ```
+
+Do not run the update while certbot renews (see Certificate renewal): the restart would take port 80 from its standalone challenge. Nginx resolves `api` once, when it starts. A recreated `api` container gets a new address, so without the restart `/api/` answers `502 Bad Gateway`.
+
+## Admin password
+
+Generate the hash on the host with the api image, so the host needs no Node.js. Use ASCII characters only. The password is read from stdin, so it stays out of the shell history and the process arguments.
+
+```sh
+( IFS= read -rs PASSWORD && printf '%s' "$PASSWORD" | docker compose -f infra/compose.yaml run --rm -T --no-deps api node dist/hash-password.js )
+```
+
+Put the output in `infra/.env` as `ADMIN_PASSWORD_HASH='<hash>'` (single quotes, see Requirements), then recreate the api and restart nginx as in Update. Signed-in admin sessions stay valid until the token expires (`JWT_EXPIRES_IN`); change `JWT_SECRET` as well to end them. That also signs every member out and voids the login codes not used yet. With `DEMO_ADMIN_PASSWORD` set, change it to the same new password or the api does not start.
 
 ## Restart and logs
 
@@ -113,6 +127,8 @@ docker run --rm -e DOMAIN=example.com -v /etc/letsencrypt:/etc/letsencrypt:ro --
 
 ## Demo data
 
+A public demo shows its accounts: set `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` and `DEMO_ADMIN_PASSWORD` to a throwaway admin login (for example `admin@demo.example`) that is used nowhere else, with `DEMO_MODE=true` and `DEMO_API_KEY`. `GET /demo/accounts` then returns the admin login and the six merchant keys. The nightly reset puts the point value back to 100; it does not undo a change of `ADMIN_*`.
+
 ```sh
 # development
 DEMO_API_KEY=<16+ characters> pnpm seed:demo
@@ -140,6 +156,6 @@ Safe to run twice; the events are keyed by the month they fall in, so a run in a
 
 ### Nightly reset
 
-`DEMO_RESET=true` deletes every row except `migrations` and `program_settings` at 04:00 Asia/Ho_Chi_Minh and seeds the demo data again, as `pnpm seed:demo` does with `DEMO_API_KEY`. `DEMO_RESET_CRON` changes the time (cron expression, seconds allowed). Rows get new ids.
+`DEMO_RESET=true` deletes every row except `migrations` at 04:00 Asia/Ho_Chi_Minh, sets the point value back to 100 and seeds the demo data again, as `pnpm seed:demo` does with `DEMO_API_KEY`. `DEMO_RESET_CRON` changes the time (cron expression, seconds allowed). Rows get new ids.
 
 The api refuses to start with `DEMO_RESET=true` unless `DEMO_MODE=true` and a `DEMO_API_KEY` of at least 16 characters are set. A failed night is logged and the next one runs; a reset that fails after the delete leaves the demo empty until then. Run it only on a demo host: it deletes all data.

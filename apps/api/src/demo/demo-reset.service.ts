@@ -9,8 +9,9 @@ import { seedDemoHistory } from '../seed-demo-history';
 const JOB_NAME = 'demo-reset';
 const DEFAULT_CRON = '0 4 * * *';
 const TIME_ZONE = 'Asia/Ho_Chi_Minh';
+const DEFAULT_POINT_VALUE_VND = 100;
 
-// Children before parents (FKs). migrations and program_settings stay.
+// Children before parents (FKs). migrations stays; program_settings is reset, not wiped.
 export const WIPED_TABLES = [
   'refunds',
   'redemptions',
@@ -90,6 +91,11 @@ export class DemoResetService implements OnModuleInit {
       for (const table of WIPED_TABLES) {
         await tx.query(`DELETE FROM ${table}`);
       }
+      // The public admin can change the point value
+      await tx.query(
+        'UPDATE program_settings SET point_value_vnd = ? WHERE id = 1',
+        [DEFAULT_POINT_VALUE_VND],
+      );
     });
     await seedDemo(this.dataSource, apiKey);
     return seedDemoHistory(this.dataSource, apiKey, now);

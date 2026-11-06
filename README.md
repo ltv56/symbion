@@ -32,7 +32,35 @@ Details and environment variables: [Development](docs/development.md).
 https://symbion-demo.duckdns.org
 
 - Member app: sign in with `member1@demo.example` to `member10@demo.example` ([what each member shows](docs/deploy.md#demo-data)). The sign-in code appears on the page; no email is sent.
+- Admin: `/admin`. The login and the merchant keys are at `GET /api/demo/accounts`.
+- Merchant (point of sale): `/admin/counter` sends orders, refunds, redemptions and code confirmations with a merchant key from `GET /api/demo/accounts`, as a real POS would.
 - Swagger UI: https://symbion-demo.duckdns.org/api/docs
+
+The data resets every night at 04:00 (Asia/Ho_Chi_Minh), including the point value.
+
+## Try it
+
+Against a local api seeded with `DEMO_API_KEY=demo-key-demo-key-1234 pnpm seed:demo` (see [Development](docs/development.md)). `member7@demo.example` starts with 487 points; voucher 9 costs 240.
+
+Duplicate order: the same `Idempotency-Key` returns the first order (201, then 200); a different amount is rejected (422).
+
+```bash
+K=demo-key-demo-key-1234; U=localhost:3000
+for a in 250000 250000 5; do
+  curl -s -w ' [%{http_code}]\n' -X POST $U/orders -H 'content-type: application/json' \
+    -H "x-api-key: $K" -H 'Idempotency-Key: try-1' -d "{\"memberEmail\":\"member7@demo.example\",\"amount\":$a}"
+done
+```
+
+Parallel redemption: 10 simultaneous requests; the balance covers two (201), the rest are refused (409), and the balance never goes below zero.
+
+```bash
+seq 1 10 | xargs -P 10 -I{} curl -s -o /dev/null -w '%{http_code}\n' -X POST $U/redemptions \
+  -H 'content-type: application/json' -H "x-api-key: $K" -H "Idempotency-Key: par-{}" \
+  -d '{"memberEmail":"member7@demo.example","voucherId":9}' | sort | uniq -c
+```
+
+More requests: [Testing](docs/testing.md).
 
 ## Surfaces
 

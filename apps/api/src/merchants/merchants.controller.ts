@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -11,12 +12,15 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiBearerAuth,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { demoLimitsOn } from '../demo/demo-limits';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
 import { UpdateMerchantDto } from './dto/update-merchant.dto';
 import { Merchant } from './merchant.entity';
@@ -26,7 +30,10 @@ import { CreatedMerchant, MerchantsService } from './merchants.service';
 @UseGuards(AdminGuard)
 @ApiBearerAuth()
 export class MerchantsController {
-  constructor(private readonly merchantsService: MerchantsService) {}
+  constructor(
+    private readonly merchantsService: MerchantsService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Get()
   findAll(): Promise<Merchant[]> {
@@ -66,9 +73,14 @@ export class MerchantsController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ description: 'New API key, shown only here' })
   @ApiNotFoundResponse({ description: 'Unknown merchant' })
+  @ApiForbiddenResponse({ description: 'Disabled in the demo' })
   async rotateApiKey(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<CreatedMerchant> {
+    // Rotating would break the demo keys shown on the login page until the nightly reset
+    if (demoLimitsOn(this.config)) {
+      throw new ForbiddenException('API keys cannot be rotated in the demo');
+    }
     const merchant = await this.merchantsService.rotateApiKey(id);
     if (!merchant) {
       throw new NotFoundException(`Merchant with id ${id} not found`);

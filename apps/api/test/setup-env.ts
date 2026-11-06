@@ -10,3 +10,5 @@ process.env.ADMIN_PASSWORD_HASH = ADMIN_TEST_PASSWORD_HASH;
 process.env.JWT_SECRET = 'test-secret-test-secret-test-secret-1234';
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.DEMO_MODE = 'true';
+// The demo admin limits would break suites that set arbitrary values; demo-limits turns them on.
+process.env.DEMO_ADMIN_LIMITS = 'false';

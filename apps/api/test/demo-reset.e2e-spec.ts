@@ -152,20 +152,24 @@ describe('Demo reset job', () => {
       expect(await counts(ds)).toEqual(first);
     });
 
-    it('keeps the migrations and the programme settings', async () => {
-      const before = {
-        migrations: await ds.query('SELECT * FROM migrations ORDER BY id'),
-        settings: await ds.query('SELECT * FROM program_settings'),
-      };
+    it('keeps the migrations', async () => {
+      const before = await ds.query('SELECT * FROM migrations ORDER BY id');
 
       await service.reset(new Date());
 
       expect(await ds.query('SELECT * FROM migrations ORDER BY id')).toEqual(
-        before.migrations,
+        before,
       );
-      expect(await ds.query('SELECT * FROM program_settings')).toEqual(
-        before.settings,
-      );
+    });
+
+    it('puts the point value back to 100 after an admin changed it', async () => {
+      await ds.query('UPDATE program_settings SET point_value_vnd = 250');
+
+      await service.reset(new Date());
+
+      expect(await ds.query('SELECT * FROM program_settings')).toEqual([
+        { id: 1, point_value_vnd: 100 },
+      ]);
     });
 
     it('lists every table, so a new migration cannot leave data behind', async () => {
