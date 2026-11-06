@@ -24,6 +24,9 @@ const SIGNUP_COOLDOWN_SECONDS = 30;
 // The right code of a new email keeps working this long while the name is typed
 const NAME_STEP_MS = 10 * 60_000;
 const SYSTEM_MERCHANT_NAME = 'Symbion';
+// Random, not the hash of any key
+const SYSTEM_MERCHANT_KEY_HASH =
+  'c6c0fcf48a2fe16479aa4c7ef66fe742153afb48dd76e49c3874415b567c4f05';
 
 @Injectable()
 export class MemberAuthService {
@@ -252,16 +255,40 @@ export class MemberAuthService {
     }
   }
 
-  // Self sign-ups belong to one system merchant. The key hash comes from the secret, so nobody holds a key for it
-  // and the unique index keeps it a single row.
+  // Self sign-ups belong to one system merchant, found by a fixed key hash. Nobody holds the key
+  // behind it, so no merchant made through the API can match it, whatever its name or JWT_SECRET.
   private async systemMerchantId(tx: EntityManager): Promise<number> {
-    const key = createHmac('sha256', this.secret)
+    const find = async (): Promise<number | null> => {
+      const [row]: { id: number | string }[] = await tx.query(
+        'SELECT id FROM merchants WHERE api_key_hash = ?',
+        [SYSTEM_MERCHANT_KEY_HASH],
+      );
+      return row ? Number(row.id) : null;
+    };
+    const found = await find();
+    if (found !== null) {
+      return found;
+    }
+    // Made before the hash was fixed: it came from JWT_SECRET
+    const legacyKey = createHmac('sha256', this.secret)
       .update('system-merchant')
       .digest('hex');
+    await tx.query(
+      'UPDATE merchants SET api_key_hash = ? WHERE api_key_hash = ? AND name = ?',
+      [
+        SYSTEM_MERCHANT_KEY_HASH,
+        createHash('sha256').update(legacyKey).digest('hex'),
+        SYSTEM_MERCHANT_NAME,
+      ],
+    );
+    const adopted = await find();
+    if (adopted !== null) {
+      return adopted;
+    }
     const result: { insertId: number | string } = await tx.query(
       `INSERT INTO merchants (name, api_key_hash) VALUES (?, ?)
       ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
-      [SYSTEM_MERCHANT_NAME, createHash('sha256').update(key).digest('hex')],
+      [SYSTEM_MERCHANT_NAME, SYSTEM_MERCHANT_KEY_HASH],
     );
     return Number(result.insertId);
   }
