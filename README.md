@@ -90,7 +90,6 @@ docs/       programme rules, development, deploy, testing, API and database refe
 - The reconciliation report is computed on request; a month is not closed or stored.
 - Members are created by a merchant through the API or sign up themselves on the sign-in form: a new email gets a code, then the form asks for a display name and creates the member. Codes are emailed only when `SMTP_HOST` is set; otherwise the code is returned in the response with `DEMO_MODE=true`.
 - Merchants authenticate with an API key only; there is no merchant login or portal.
-- Changing `JWT_SECRET` creates a second system merchant for member self-sign-ups, because its key is derived from the secret.
 - No webhook intake or dead-letter handling.
 - No automated backups; the data lives in the `mysql-data` Docker volume.
 

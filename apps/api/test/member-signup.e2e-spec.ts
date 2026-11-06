@@ -101,6 +101,23 @@ describe('Member sign-up', () => {
     expect(Number(row.n)).toBe(1);
   });
 
+  it('keeps using the same Symbion merchant after JWT_SECRET changed', async () => {
+    const first = await signup().expect(200);
+    await confirm(first.body.otp).expect(201);
+    // The merchant key is derived from JWT_SECRET: a new secret derives a new key
+    await dataSource.query(
+      `UPDATE merchants SET api_key_hash = ? WHERE name = 'Symbion'`,
+      ['f'.repeat(64)],
+    );
+    const second = await signup({ email: 'two@example.com', name: 'Two' });
+    await confirm(second.body.otp, 'two@example.com').expect(201);
+
+    const [row] = await dataSource.query(
+      `SELECT COUNT(*) AS n FROM merchants WHERE name = 'Symbion'`,
+    );
+    expect(Number(row.n)).toBe(1);
+  });
+
   it('rejects a wrong code, and deletes the sign-up after 5 wrong codes', async () => {
     const { body } = await signup().expect(200);
     const wrong = body.otp === '000000' ? '111111' : '000000';

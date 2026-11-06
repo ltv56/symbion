@@ -255,6 +255,14 @@ export class MemberAuthService {
   // Self sign-ups belong to one system merchant. The key hash comes from the secret, so nobody holds a key for it
   // and the unique index keeps it a single row.
   private async systemMerchantId(tx: EntityManager): Promise<number> {
+    // Found by name: the key below changes with JWT_SECRET
+    const [existing]: { id: number | string }[] = await tx.query(
+      'SELECT id FROM merchants WHERE name = ? ORDER BY id LIMIT 1',
+      [SYSTEM_MERCHANT_NAME],
+    );
+    if (existing) {
+      return Number(existing.id);
+    }
     const key = createHmac('sha256', this.secret)
       .update('system-merchant')
       .digest('hex');
