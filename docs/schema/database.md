@@ -99,7 +99,7 @@ One row per lot (see `packages/ledger`). Rows are never deleted; only `remaining
 | `ref_type`        | VARCHAR(32), NULL           | source of the lot, e.g. `order`                                  |
 | `ref_id`          | BIGINT UNSIGNED, NULL       | id of the source row; NULL together with `ref_type` (`CHECK`)    |
 
-`UNIQUE (merchant_id, idempotency_key)` is the last line of defence for a repeated earn or spend. Index `(member_id, expires_at, id)` serves the FIFO read. `ref_type` is `order` for lots awarded for an order, `redemption` for the spend of a redemption and `refund` for the deduction of a refund; `ref_id` is the id in `orders`, `redemptions` or `refunds`. An `expire` entry has `ref_type` `lot`, `ref_id` the expired lot, key `expire:<lot id>`, `remaining` 0.
+`UNIQUE (merchant_id, idempotency_key)` is the last line of defence for a repeated earn or spend. Index `(member_id, expires_at, id)` serves the FIFO read. Index `(ref_type, ref_id)` (`idx_ledger_lots_ref`) serves the refund lookup of an order's earn lot. `ref_type` is `order` for lots awarded for an order, `redemption` for the spend of a redemption and `refund` for the deduction of a refund; `ref_id` is the id in `orders`, `redemptions` or `refunds`. An `expire` entry has `ref_type` `lot`, `ref_id` the expired lot, key `expire:<lot id>`, `remaining` 0.
 
 ## program_settings
 
