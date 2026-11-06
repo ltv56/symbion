@@ -133,7 +133,7 @@ Liveness plus a MySQL check (`SELECT 1`). Responses: `200` with `{ "status": "ok
 
 Admin only. Replaces the merchant's API key; the old key is rejected (`401`) from then on. No body.
 
-Responses: `200` with `{ "id", "name", "apiKey" }` (`apiKey`: 64 hex characters, shown only in this response), `400` id is not an integer, `401` no or invalid admin token, `404` unknown merchant.
+Responses: `200` with `{ "id", "name", "apiKey" }` (`apiKey`: 64 hex characters, shown only in this response), `400` id is not an integer, `401` no or invalid admin token, `403` `DEMO_MODE` is on (rotating would break the demo keys; set `DEMO_ADMIN_LIMITS=false` to allow), `404` unknown merchant.
 
 ## PATCH /merchants/:id
 
@@ -182,7 +182,9 @@ Admin only. Settings are `{ "pointValueVnd" }`, VND per point.
 
 The change is refused when a sellable voucher (`status` `active`, `valid_until` in the future) would fall under its floor (`faceValue < pointsPrice × pointValueVnd`). A voucher exactly on the floor is kept. Lowering the value never conflicts.
 
-Responses: `200` with the settings, `400` validation (unknown fields included), `401` no or invalid admin token, `409` `"message": "Point value 101 puts 1 voucher under their floor: #7 \"50k off\" (500 points x 101 VND > 50000)"` (up to 5 vouchers named, then `, and N more`). `GET` returns `200` or `401`.
+With `DEMO_MODE=true` the value must also be 50-200 (`DEMO_ADMIN_LIMITS=false` lifts this).
+
+Responses: `200` with the settings, `400` validation (unknown fields included) or outside the demo range, `401` no or invalid admin token, `409` `"message": "Point value 101 puts 1 voucher under their floor: #7 \"50k off\" (500 points x 101 VND > 50000)"` (up to 5 vouchers named, then `, and N more`). `GET` returns `200` or `401`.
 
 ## GET /admin/members
 
