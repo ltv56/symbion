@@ -140,6 +140,6 @@ Safe to run twice; the events are keyed by the month they fall in, so a run in a
 
 ### Nightly reset
 
-`DEMO_RESET=true` deletes every row except `migrations` and `program_settings` at 04:00 Asia/Ho_Chi_Minh and seeds the demo data again, as `pnpm seed:demo` does with `DEMO_API_KEY`. `DEMO_RESET_CRON` changes the time (cron expression, seconds allowed). Rows get new ids.
+`DEMO_RESET=true` deletes every row except `migrations` at 04:00 Asia/Ho_Chi_Minh, sets the point value back to 100 and seeds the demo data again, as `pnpm seed:demo` does with `DEMO_API_KEY`. `DEMO_RESET_CRON` changes the time (cron expression, seconds allowed). Rows get new ids.
 
 The api refuses to start with `DEMO_RESET=true` unless `DEMO_MODE=true` and a `DEMO_API_KEY` of at least 16 characters are set. A failed night is logged and the next one runs; a reset that fails after the delete leaves the demo empty until then. Run it only on a demo host: it deletes all data.
