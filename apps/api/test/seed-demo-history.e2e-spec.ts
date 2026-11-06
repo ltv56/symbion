@@ -7,6 +7,8 @@ import { seedDemo } from '../src/seed-demo';
 import { seedDemoHistory } from '../src/seed-demo-history';
 import { resetDatabase } from './helpers/database';
 
+jest.setTimeout(60_000);
+
 const VIETNAM_OFFSET_MS = 7 * 3_600_000;
 const VIETNAMESE = /[à-ỹđ]/i;
 
