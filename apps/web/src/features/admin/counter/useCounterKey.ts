@@ -13,8 +13,8 @@ function read(): Record<string, string> {
   }
 }
 
-// The merchant keys typed in, kept for this tab only
-export function useCounterKey(merchantId: string) {
+// The merchant keys typed in, kept for this tab only; fallback is the demo key
+export function useCounterKey(merchantId: string, fallback = '') {
   const [keys, setKeys] = useState(read);
   function set(value: string) {
     const next = { ...keys, [merchantId]: value };
@@ -25,5 +25,5 @@ export function useCounterKey(merchantId: string) {
       // storage blocked: the key lives in memory
     }
   }
-  return [keys[merchantId] ?? '', set] as const;
+  return [keys[merchantId] ?? fallback, set] as const;
 }
