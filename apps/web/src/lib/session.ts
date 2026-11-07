@@ -29,6 +29,15 @@ export function createSession(key: string) {
     listeners.forEach((listener) => listener());
   }
 
+  // Another tab signed in or out
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (event) => {
+      if (event.key !== null && event.key !== key) return;
+      token = readStored();
+      listeners.forEach((listener) => listener());
+    });
+  }
+
   function subscribe(listener: () => void) {
     listeners.add(listener);
     return () => {
