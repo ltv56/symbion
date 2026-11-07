@@ -48,10 +48,7 @@ describe('Demo accounts', () => {
       .get('/demo/accounts')
       .expect(200);
 
-    expect(res.body.admin).toEqual({
-      email: ADMIN_TEST_EMAIL,
-      password: ADMIN_TEST_PASSWORD,
-    });
+    expect(res.body.admin).toEqual({ email: ADMIN_TEST_EMAIL });
     expect(res.body.merchants).toHaveLength(6);
     expect(res.body.merchants[0]).toEqual({
       id: expect.any(Number),
@@ -61,13 +58,25 @@ describe('Demo accounts', () => {
     expect(res.body.merchants[1].apiKey).toBe(`${API_KEY}-cafe`);
   });
 
+  it('signs in as the admin without a password', async () => {
+    const login = await request(app.getHttpServer())
+      .post('/demo/admin-login')
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get('/merchants')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .expect(200);
+  });
+
+  it('never hands out the admin password', async () => {
+    const res = await request(app.getHttpServer()).get('/demo/accounts');
+
+    expect(JSON.stringify(res.body)).not.toContain(ADMIN_TEST_PASSWORD);
+  });
+
   it('works with the keys it hands out', async () => {
     const res = await request(app.getHttpServer()).get('/demo/accounts');
-    const login = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send(res.body.admin)
-      .expect(200);
-    expect(typeof login.body.accessToken).toBe('string');
 
     await request(app.getHttpServer())
       .get('/members')
@@ -101,6 +110,14 @@ describe('Demo accounts', () => {
     expect(res.body.admin).toBeNull();
   });
 
+  it('has no passwordless admin sign-in when DEMO_ADMIN_PASSWORD is not set', async () => {
+    await app.close();
+    delete process.env.DEMO_ADMIN_PASSWORD;
+    app = await bootApp();
+
+    await request(app.getHttpServer()).post('/demo/admin-login').expect(404);
+  });
+
   it('gives no merchants when DEMO_API_KEY is not set', async () => {
     await app.close();
     delete process.env.DEMO_API_KEY;
@@ -117,6 +134,7 @@ describe('Demo accounts', () => {
     app = await bootApp();
 
     await request(app.getHttpServer()).get('/demo/accounts').expect(404);
+    await request(app.getHttpServer()).post('/demo/admin-login').expect(404);
   });
 
   it('refuses to start when DEMO_ADMIN_PASSWORD does not match the admin hash', async () => {

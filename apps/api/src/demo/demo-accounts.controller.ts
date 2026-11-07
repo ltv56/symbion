@@ -2,23 +2,26 @@ import { createHash } from 'node:crypto';
 import {
   Controller,
   Get,
+  HttpCode,
   NotFoundException,
   OnModuleInit,
+  Post,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
+import { AuthService } from '../auth/auth.service';
 import { verifyPassword } from '../auth/password-hash';
 import { MERCHANTS } from '../seed-demo-data';
 
 type MerchantRow = { id: number; name: string; api_key_hash: string };
 
 export type DemoAccounts = {
-  admin: { email: string; password: string } | null;
+  admin: { email: string } | null;
   merchants: { id: number; name: string; apiKey: string }[];
 };
 
-// Public on purpose, and only in DEMO_MODE: the demo's credentials are meant to be tried
+// Public on purpose, and only in DEMO_MODE: the demo is meant to be tried
 @ApiTags('demo')
 @Controller('demo')
 export class DemoAccountsController implements OnModuleInit {
@@ -30,6 +33,7 @@ export class DemoAccountsController implements OnModuleInit {
 
   constructor(
     private readonly dataSource: DataSource,
+    private readonly auth: AuthService,
     config: ConfigService,
   ) {
     this.demoMode = config.get<string>('DEMO_MODE') === 'true';
@@ -51,7 +55,7 @@ export class DemoAccountsController implements OnModuleInit {
 
   @Get('accounts')
   @ApiOperation({
-    summary: 'Admin login and merchant keys to try (DEMO_MODE only)',
+    summary: 'Admin email and merchant keys to try (DEMO_MODE only)',
   })
   async accounts(): Promise<DemoAccounts> {
     if (!this.demoMode) {
@@ -59,11 +63,22 @@ export class DemoAccountsController implements OnModuleInit {
     }
     return {
       admin:
-        this.adminPassword === undefined
-          ? null
-          : { email: this.adminEmail, password: this.adminPassword },
+        this.adminPassword === undefined ? null : { email: this.adminEmail },
       merchants: await this.merchants(),
     };
+  }
+
+  // The password stays on the server; DEMO_ADMIN_PASSWORD is the switch
+  @Post('admin-login')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Sign in as the demo admin without a password (DEMO_MODE only)',
+  })
+  adminLogin(): Promise<{ accessToken: string }> {
+    if (!this.demoMode || this.adminPassword === undefined) {
+      throw new NotFoundException();
+    }
+    return this.auth.issueAdminToken();
   }
 
   // The seed derives each key from DEMO_API_KEY; a merchant whose key changed is left out

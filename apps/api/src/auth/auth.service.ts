@@ -31,6 +31,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    return this.issueAdminToken();
+  }
+
+  // For the demo sign-in, which skips the password
+  async issueAdminToken(): Promise<{ accessToken: string }> {
     return {
       accessToken: await this.jwt.signAsync({ sub: 'admin', role: 'admin' }),
     };

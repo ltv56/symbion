@@ -24,10 +24,17 @@ export function AdminLoginForm() {
       }),
     onSuccess: ({ accessToken }) => setAdminToken(accessToken),
   });
+  const demoLogin = useMutation({
+    mutationFn: () =>
+      api<{ accessToken: string }>('/demo/admin-login', {
+        method: 'POST',
+        as: 'admin',
+      }),
+    onSuccess: ({ accessToken }) => setAdminToken(accessToken),
+  });
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<Credentials>({
     resolver: zodResolver(adminLoginSchema),
@@ -96,16 +103,15 @@ export function AdminLoginForm() {
       >
         {t(login.isPending ? 'admin.login.signingIn' : 'admin.login.signIn')}
       </Button>
+      {demoLogin.isError && <FormError>{t('errors.generic')}</FormError>}
       {demoAdmin && (
         <Button
           type="button"
           variant="secondary"
           size="lg"
           className="w-full"
-          onClick={() => {
-            setValue('email', demoAdmin.email, { shouldValidate: true });
-            setValue('password', demoAdmin.password, { shouldValidate: true });
-          }}
+          disabled={demoLogin.isPending}
+          onClick={() => demoLogin.mutate()}
         >
           {t('admin.login.useDemo')}
         </Button>
