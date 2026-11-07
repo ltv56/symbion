@@ -78,7 +78,11 @@ Public, only with `DEMO_MODE=true`; otherwise `404`. The first 20 members by id:
 
 ## GET /demo/accounts
 
-Public, only with `DEMO_MODE=true`; otherwise `404`. `{ "admin": { "email", "password" } | null, "merchants": [{ "id", "name", "apiKey" }] }`. `admin` is `null` unless `DEMO_ADMIN_PASSWORD` is set. `merchants` lists the seeded demo merchants whose key is still the one derived from `DEMO_API_KEY`; empty when `DEMO_API_KEY` is not set.
+Public, only with `DEMO_MODE=true`; otherwise `404`. `{ "admin": { "email" } | null, "merchants": [{ "id", "name", "apiKey" }] }`. `admin` is `null` unless `DEMO_ADMIN_PASSWORD` is set. `merchants` lists the seeded demo merchants whose key is still the one derived from `DEMO_API_KEY`; empty when `DEMO_API_KEY` is not set.
+
+## POST /demo/admin-login
+
+No body. Public, only with `DEMO_MODE=true` and `DEMO_ADMIN_PASSWORD` set; otherwise `404`. `200 { "accessToken" }`, the same admin token as `POST /auth/login`, without the password. `GET /demo/accounts` never returns the password.
 
 ## GET /me, GET /me/lots, GET /me/history, GET /me/redemptions, GET /me/partners
 

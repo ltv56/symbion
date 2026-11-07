@@ -32,7 +32,7 @@ Details and environment variables: [Development](docs/development.md).
 https://symbion-demo.duckdns.org
 
 - Member app: sign in with `member1@demo.example` to `member10@demo.example` ([what each member shows](docs/deploy.md#demo-data)). The sign-in code appears on the page; no email is sent.
-- Admin: https://symbion-demo.duckdns.org/admin. The demo login and the merchant keys are at https://symbion-demo.duckdns.org/api/demo/accounts.
+- Admin: https://symbion-demo.duckdns.org/admin. Press "Use the demo account" to sign in. The merchant keys are at https://symbion-demo.duckdns.org/api/demo/accounts.
 - Merchant (point of sale): https://symbion-demo.duckdns.org/admin/counter sends orders, refunds, redemptions and code confirmations with a merchant key from the same accounts page, as a real POS would.
 - Swagger UI: https://symbion-demo.duckdns.org/api/docs
 

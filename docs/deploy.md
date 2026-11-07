@@ -12,27 +12,27 @@ Single host, Docker Compose with `nginx`, `api` and `mysql`. Nginx terminates TL
 
 ## Environment
 
-| Variable               | Used by | Notes                                                                                                                        |
-| ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `DOMAIN`               | nginx   | public host name; selects `/etc/letsencrypt/live/$DOMAIN/`                                                                   |
-| `DB_*`                 | api     | see `infra/.env.example`                                                                                                     |
-| `ADMIN_EMAIL`          | api     | admin login                                                                                                                  |
-| `ADMIN_PASSWORD_HASH`  | api     | `printf '%s' '<password>' \| pnpm --silent --filter @symbion/api hash-password`                                              |
-| `DEMO_MODE`            | api     | optional, `true` returns the member login code and serves `GET /demo/members`                                                |
-| `SMTP_HOST`            | api     | optional; without it no email is sent (sign-in codes only reach `DEMO_MODE` responses)                                       |
-| `SMTP_PORT`            | api     | optional, default `587`; `465` uses TLS                                                                                      |
-| `SMTP_USER`            | api     | optional; with it `SMTP_PASSWORD` is required                                                                                |
-| `SMTP_PASSWORD`        | api     | SMTP password or key                                                                                                         |
-| `SMTP_FROM`            | api     | required with `SMTP_HOST`, e.g. `Symbion <noreply@example.com>`; some providers only accept a verified sender                |
-| `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                                                               |
-| `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                                                                       |
-| `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                                                                    |
-| `DEMO_RESET`           | api     | optional, `true` resets the demo data every night (see Demo data)                                                            |
-| `DEMO_API_KEY`         | api     | at least 16 characters; required when `DEMO_RESET=true`                                                                      |
-| `DEMO_ADMIN_PASSWORD`  | api     | optional, the plaintext behind `ADMIN_PASSWORD_HASH`; `GET /demo/accounts` shows it (the api refuses to start on a mismatch) |
-| `TIER_DOWNGRADE_CRON`  | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 3 * * *`                                                                      |
-| `POINT_EXPIRY_CRON`    | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 2 * * *`                                                                      |
-| `DEMO_RESET_CRON`      | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 4 * * *`                                                                      |
+| Variable               | Used by | Notes                                                                                                                                                    |
+| ---------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DOMAIN`               | nginx   | public host name; selects `/etc/letsencrypt/live/$DOMAIN/`                                                                                               |
+| `DB_*`                 | api     | see `infra/.env.example`                                                                                                                                 |
+| `ADMIN_EMAIL`          | api     | admin login                                                                                                                                              |
+| `ADMIN_PASSWORD_HASH`  | api     | `printf '%s' '<password>' \| pnpm --silent --filter @symbion/api hash-password`                                                                          |
+| `DEMO_MODE`            | api     | optional, `true` returns the member login code and serves `GET /demo/members`                                                                            |
+| `SMTP_HOST`            | api     | optional; without it no email is sent (sign-in codes only reach `DEMO_MODE` responses)                                                                   |
+| `SMTP_PORT`            | api     | optional, default `587`; `465` uses TLS                                                                                                                  |
+| `SMTP_USER`            | api     | optional; with it `SMTP_PASSWORD` is required                                                                                                            |
+| `SMTP_PASSWORD`        | api     | SMTP password or key                                                                                                                                     |
+| `SMTP_FROM`            | api     | required with `SMTP_HOST`, e.g. `Symbion <noreply@example.com>`; some providers only accept a verified sender                                            |
+| `JWT_SECRET`           | api     | random, at least 32 characters, e.g. `openssl rand -base64 48`                                                                                           |
+| `JWT_EXPIRES_IN`       | api     | optional, default `1h`                                                                                                                                   |
+| `MAX_POINTS_PER_ORDER` | api     | optional, default `10000`                                                                                                                                |
+| `DEMO_RESET`           | api     | optional, `true` resets the demo data every night (see Demo data)                                                                                        |
+| `DEMO_API_KEY`         | api     | at least 16 characters; required when `DEMO_RESET=true`                                                                                                  |
+| `DEMO_ADMIN_PASSWORD`  | api     | optional, the plaintext behind `ADMIN_PASSWORD_HASH`; turns on the passwordless demo admin sign-in, never shown (the api refuses to start on a mismatch) |
+| `TIER_DOWNGRADE_CRON`  | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 3 * * *`                                                                                                  |
+| `POINT_EXPIRY_CRON`    | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 2 * * *`                                                                                                  |
+| `DEMO_RESET_CRON`      | api     | optional, cron in Asia/Ho_Chi_Minh, default `0 4 * * *`                                                                                                  |
 
 ## First deploy
 
@@ -127,7 +127,7 @@ docker run --rm -e DOMAIN=example.com -v /etc/letsencrypt:/etc/letsencrypt:ro --
 
 ## Demo data
 
-A public demo shows its accounts: set `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` and `DEMO_ADMIN_PASSWORD` to a throwaway admin login (for example `admin@demo.example`) that is used nowhere else, with `DEMO_MODE=true` and `DEMO_API_KEY`. `GET /demo/accounts` then returns the admin login and the six merchant keys. The nightly reset puts the point value back to 100; it does not undo a change of `ADMIN_*`.
+A public demo shows its accounts: set `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` and `DEMO_ADMIN_PASSWORD` to a throwaway admin login (for example `admin@demo.example`) that is used nowhere else, with `DEMO_MODE=true` and `DEMO_API_KEY`. `GET /demo/accounts` then returns the admin email and the six merchant keys, and `POST /demo/admin-login` signs in as the admin without a password. The nightly reset puts the point value back to 100; it does not undo a change of `ADMIN_*`.
 
 ```sh
 # development
