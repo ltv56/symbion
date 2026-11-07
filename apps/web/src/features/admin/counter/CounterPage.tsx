@@ -10,6 +10,7 @@ import type { TapeEntry } from './counterApi';
 import { OperationForm, type LastCalls } from './OperationForm';
 import { OPERATIONS, type OperationId } from './operations';
 import { ReceiptTape } from './ReceiptTape';
+import { useDemoAccounts } from '../useDemoAccounts';
 import { useCounterKey } from './useCounterKey';
 
 type AllValues = Record<OperationId, Record<string, string>>;
@@ -49,7 +50,10 @@ export function CounterPage() {
     ?.slice()
     .sort((a, b) => a.name.localeCompare(b.name, i18n.language));
   const activeId = merchantId || String(options?.[0]?.id ?? '');
-  const [apiKey, setApiKey] = useCounterKey(activeId);
+  const demoKey = useDemoAccounts().data?.merchants.find(
+    (m) => String(m.id) === activeId,
+  )?.apiKey;
+  const [apiKey, setApiKey] = useCounterKey(activeId, demoKey);
   const operation = OPERATIONS.find((op) => op.id === operationId)!;
 
   const last: LastCalls = {
@@ -108,6 +112,9 @@ export function CounterPage() {
           />
           <p id="counter-key-hint" className="text-sm text-muted-foreground">
             {t('admin.counter.apiKeyHint')}
+            {demoKey !== undefined && apiKey === demoKey
+              ? ` ${t('admin.counter.demoKey')}`
+              : ''}
           </p>
         </div>
       </div>

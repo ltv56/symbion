@@ -13,9 +13,62 @@ type Step =
   | { kind: 'code'; sent: CodeSent }
   | { kind: 'name'; email: string; otp: string };
 
+const STORE = 'symbion.login.code';
+const CODE_TTL_MS = 5 * 60_000;
+
+// A refresh on the code step keeps the step for as long as the code lives
+function restoreStep(): Step {
+  try {
+    const saved: unknown = JSON.parse(sessionStorage.getItem(STORE) ?? 'null');
+    if (typeof saved === 'object' && saved !== null) {
+      const { email, demoOtp, at } = saved as Record<string, unknown>;
+      if (
+        typeof email === 'string' &&
+        typeof at === 'number' &&
+        Date.now() - at >= 0 &&
+        Date.now() - at < CODE_TTL_MS
+      ) {
+        return {
+          kind: 'code',
+          sent: {
+            email,
+            demoOtp: typeof demoOtp === 'string' ? demoOtp : null,
+          },
+        };
+      }
+    }
+  } catch {
+    // storage blocked or broken: start from the email
+  }
+  return { kind: 'email' };
+}
+
+function rememberStep(step: Step) {
+  try {
+    if (step.kind === 'code') {
+      sessionStorage.setItem(
+        STORE,
+        JSON.stringify({ ...step.sent, at: Date.now() }),
+      );
+    } else {
+      sessionStorage.removeItem(STORE);
+    }
+  } catch {
+    // storage blocked: the step lives in memory
+  }
+}
+
 export function LoginPage() {
   const { t } = useTranslation();
-  const [step, setStep] = useState<Step>({ kind: 'email' });
+  const [step, setStepState] = useState<Step>(restoreStep);
+  function setStep(next: Step) {
+    rememberStep(next);
+    setStepState(next);
+  }
+  function signedIn(accessToken: string) {
+    setToken(accessToken);
+    rememberStep({ kind: 'email' });
+  }
   const defaultName =
     step.kind === 'name' ? (step.email.split('@')[0] ?? step.email) : '';
   // The same code goes back with the name: that call creates the member
@@ -25,7 +78,7 @@ export function LoginPage() {
         method: 'POST',
         body: input,
       }),
-    onSuccess: ({ accessToken }) => setToken(accessToken),
+    onSuccess: ({ accessToken }) => signedIn(accessToken),
   });
 
   return (
@@ -61,7 +114,7 @@ export function LoginPage() {
                 onSignedIn={(result, otp) =>
                   'needName' in result
                     ? setStep({ kind: 'name', email: step.sent.email, otp })
-                    : setToken(result.accessToken)
+                    : signedIn(result.accessToken)
                 }
               />
             ) : (

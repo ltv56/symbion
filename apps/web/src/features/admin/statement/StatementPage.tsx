@@ -8,7 +8,7 @@ import { PageHeader, TwoHalves } from '../layout';
 import { OUTLINE } from '../styles';
 import { useDetailScroll } from '../useDetailScroll';
 import { downloadCsv, statementCsv } from './csv';
-import { currentMonth } from './month';
+import { currentMonth, shiftMonth } from './month';
 import { MonthSwitch } from './MonthSwitch';
 import { StatementDetail } from './StatementDetail';
 import { sides, StickRow } from './StickRow';
@@ -17,7 +17,7 @@ import { useStatement } from './useStatement';
 // The month's settlement: what each merchant and the app owe
 export function StatementPage() {
   const { t, i18n } = useTranslation();
-  const [month, setMonth] = useState(currentMonth);
+  const [month, setMonth] = useState(() => shiftMonth(currentMonth(), -1));
   const [picked, setPicked] = useState<number | null>(null);
   const { detail, reveal } = useDetailScroll();
   const query = useStatement(month);
