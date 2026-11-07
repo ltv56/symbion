@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
 export type DemoAccounts = {
-  admin: { email: string; password: string } | null;
+  admin: { email: string } | null;
   merchants: { id: number; name: string; apiKey: string }[];
 };
 

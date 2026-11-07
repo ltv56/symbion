@@ -35,6 +35,6 @@ const MIN_SECRET_LENGTH = 32;
   ],
   controllers: [AuthController, MemberAuthController],
   providers: [AuthService, AdminGuard, MemberGuard, MemberAuthService],
-  exports: [JwtModule, AdminGuard, MemberGuard],
+  exports: [JwtModule, AuthService, AdminGuard, MemberGuard],
 })
 export class AuthModule {}

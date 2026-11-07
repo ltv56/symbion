@@ -374,12 +374,17 @@ curl -s -w ' [%{http_code}]\n' "localhost:3000/reconciliation?month=$MONTH"
 With `DEMO_MODE=true`, `DEMO_API_KEY` and `DEMO_ADMIN_PASSWORD` set, after `pnpm seed:demo`:
 
 ```sh
-# admin login and the six merchant keys -> 200
+# admin email and the six merchant keys -> 200
 curl -s localhost:3000/demo/accounts
+
+# passwordless demo admin sign-in -> 200 {"accessToken":"<jwt>"}
+curl -s -X POST localhost:3000/demo/admin-login
 
 # error path -> 404 without DEMO_MODE
 curl -s -w ' [%{http_code}]
 ' localhost:3000/demo/accounts
+curl -s -X POST -w ' [%{http_code}]
+' localhost:3000/demo/admin-login
 ```
 
 ## Health and logs
