@@ -2,7 +2,7 @@ import { queryClient } from './query';
 import { createSession } from './session';
 
 // Its own key: a member tab stays signed in
-const admin = createSession('adminToken');
+const admin = createSession('adminToken', () => queryClient.clear());
 
 export const getAdminToken = admin.get;
 export const setAdminToken = admin.set;

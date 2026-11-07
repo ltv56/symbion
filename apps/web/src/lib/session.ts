@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 // A token kept in memory and in localStorage under its own key
-export function createSession(key: string) {
+export function createSession(key: string, onExternalChange?: () => void) {
   const listeners = new Set<() => void>();
 
   function readStored(): string | null {
@@ -34,6 +34,7 @@ export function createSession(key: string) {
     window.addEventListener('storage', (event) => {
       if (event.key !== null && event.key !== key) return;
       token = readStored();
+      onExternalChange?.();
       listeners.forEach((listener) => listener());
     });
   }
