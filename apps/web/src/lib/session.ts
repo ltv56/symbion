@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 // A token kept in memory and in localStorage under its own key
-export function createSession(key: string) {
+export function createSession(key: string, onExternalChange?: () => void) {
   const listeners = new Set<() => void>();
 
   function readStored(): string | null {
@@ -27,6 +27,16 @@ export function createSession(key: string) {
       // storage can be blocked
     }
     listeners.forEach((listener) => listener());
+  }
+
+  // Another tab signed in or out
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (event) => {
+      if (event.key !== null && event.key !== key) return;
+      token = readStored();
+      onExternalChange?.();
+      listeners.forEach((listener) => listener());
+    });
   }
 
   function subscribe(listener: () => void) {

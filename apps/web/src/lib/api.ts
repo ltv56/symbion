@@ -33,7 +33,9 @@ export async function api<T>(
 
   if (!res.ok) {
     // 401 without a token: wrong code; with one: expired session
-    if (res.status === 401 && token) {
+    // Only if no other tab replaced the token meanwhile
+    const current = as === 'admin' ? getAdminToken() : getToken();
+    if (res.status === 401 && token && current === token) {
       if (as === 'admin') adminSignOut();
       else signOut();
     }
